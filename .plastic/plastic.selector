@@ -1,0 +1,4 @@
+repository "Tentimeidou/Tentimeidou@15668127618532@cloud"
+  path "/"
+    br "/main"
+    co "/main"
