@@ -54,7 +54,7 @@ public partial class Unit : MonoBehaviour
     /// (DataManagerからロードされたUnitDataを使用)
     /// </summary>
     /// <param name="data">ユニットのマスターデータ</param>
-    public void Initialized(UnitData data)
+    public void Initialize(UnitData data)
     {
         UnitId = data.UnitId;
         UnitName = data.UnitName;
