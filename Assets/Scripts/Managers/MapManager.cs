@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 
+/// Tiles.csへ移行（済み）2025/06
 /// < summary >
 /// マップ上の各グリッドの情報を保持するクラス
 /// </ summary >
@@ -99,6 +100,9 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    //オフセットフィールド
+    [SerializeField] private Vector3 _offset = Vector3.zero;
+
     [field: SerializeField] private Vector2Int _gridSize;//マップのグリッドサイズ
     public Vector2Int GridSize => _gridSize;
     [SerializeField]private Tile[,] _tileGrid;//各グリッドの情報を格納する2次元配列(Inspector表示不可のため[SerializeField]は無効)
@@ -110,9 +114,13 @@ public class MapManager : MonoBehaviour
     [SerializeField] private Sprite[] _terrainSprite;//地形タイプに対応するスプライトを設定するための配列
 
     private int _currentMapIndex = 0;//現在ロードしているマップのインデックス
-    private MapData _currentmapData;//MapDtaLoaderによって読み込まれるマップデータ
+    private MapData _currentMapData;//MapDtaLoaderによって読み込まれるマップデータ
 
     private Dictionary<Vector2Int ,Tile> _tiles = new Dictionary<Vector2Int, Tile>();//生成された全てのTileオブジェクトとグリッド座標を管理する
+
+    //PlayerUnit関連
+    [SerializeField] private GameObject _playerUnitPrefub;
+    private PlayerUnit _currentPlayerUnit;//現在のプレイヤーユニットの参照
 
     private void Awake()
     {
@@ -127,38 +135,39 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    //GenerateMapとして処理を統合2025/06
     /// <summary>
     /// ステージIDに基づいてマップデータをロードし、TileGridを生成する
     /// </summary>
     /// <param name="stageId">ロードするステージID</param>
-    public void LoadMap(int stageId)
-    {
+    //public void LoadMap(int stageId)
+    //{
 
-        Debug.Log($"MapManager:ステージ{stageId}のマップをロードします");
+    //    Debug.Log($"MapManager:ステージ{stageId}のマップをロードします");
 
-        //_mapCsvFilesPath = new string "";
+    //    //_mapCsvFilesPath = new string "";
 
-        //仮マップを生成
-        _gridSize = new Vector2Int(10, 10);
-        _tileGrid = new Tile[_gridSize.x, _gridSize.y];
+    //    //仮マップを生成
+    //    _gridSize = new Vector2Int(10, 10);
+    //    _tileGrid = new Tile[_gridSize.x, _gridSize.y];
 
-        for (int y = 0; y < _gridSize.y; y++)
-        {
-            for (int x = 0; x < _gridSize.x; x++)
-            {
-                //地形タイプを設定するロジック（マップデータからの読み込み）
-                //現在は仮のマップを生成する　2025/06
-                TerrainType type = TerrainType.Plain;
-                if(x == 5 && y == 5) { type = TerrainType.Forest; }//仮の森
-                if(x== 0 || y == 0 || x == _gridSize.x -1 || y == _gridSize.y -1) { type = TerrainType.Water; }//仮の水場　外周
-                if(x % 2 == 0 && y % 2 == 0) { type = TerrainType.Desert; }//仮の砂漠
-                _tileGrid[y, x] = new Tile(new Vector2Int(x, y), type);
-            }
-        }
-        Debug.Log($"MapManager:マップサイズ{_gridSize.x}×{_gridSize.y}で生成");
+    //    for (int y = 0; y < _gridSize.y; y++)
+    //    {
+    //        for (int x = 0; x < _gridSize.x; x++)
+    //        {
+    //            //地形タイプを設定するロジック（マップデータからの読み込み）
+    //            //現在は仮のマップを生成する　2025/06
+    //            TerrainType type = TerrainType.Plain;
+    //            if(x == 5 && y == 5) { type = TerrainType.Forest; }//仮の森
+    //            if(x== 0 || y == 0 || x == _gridSize.x -1 || y == _gridSize.y -1) { type = TerrainType.Water; }//仮の水場　外周
+    //            if(x % 2 == 0 && y % 2 == 0) { type = TerrainType.Desert; }//仮の砂漠
+    //            _tileGrid[y, x] = new Tile(new Vector2Int(x, y), type);
+    //        }
+    //    }
+    //    Debug.Log($"MapManager:マップサイズ{_gridSize.x}×{_gridSize.y}で生成");
 
-        //仮：タイルの視覚的に表示する処理関係
-    }
+    //    //仮：タイルの視覚的に表示する処理関係
+    //}
 
     /// <summary>
     /// マップデータに基づいてマップを生成する
@@ -168,20 +177,21 @@ public class MapManager : MonoBehaviour
         ClearMap();//既にマップが生成されている可能性を考慮して、一度クリアする
 
         //MapDataLoaderでCSVファイルからマップデータを読み込む
-        _currentmapData = MapDataLoader.LoadMapDataFromCSV(mapPath);
+        _currentMapData = MapDataLoader.LoadMapDataFromCSV(mapPath);
 
-        if(_currentmapData == null)
+        if(_currentMapData == null)
         {
             Debug.LogError("MapManager:マップデータの読み込みに失敗しました。マップ生成できません");
             return;
         }
 
-        for(int y = 0; y < _currentmapData.Height; y++)
+        for(int y = 0; y < _currentMapData.Height; y++)
         {
-            for(int x = 0; x < _currentmapData.Width; x++)
+            for(int x = 0; x < _currentMapData.Width; x++)
             {
                 Vector2Int gridPos = new Vector2Int(x, y);//現在のグリッド座標
-                TerrainType terrainType = _currentmapData.GetTerrainType(gridPos);//その座標の地形タイプを取得
+                TerrainType terrainType = _currentMapData.GetTerrainType(gridPos);//その座標の地形タイプを取得
+                
 
                 Vector3 worldPos = GetWorldPosition(gridPos);//グリッド座標をワールド座標に変換
 
@@ -206,7 +216,10 @@ public class MapManager : MonoBehaviour
                 _tiles.Add(gridPos,tile);
             }
         }
-        Debug.Log($"MapManager:マップを生成しました({_currentmapData.Width}x{_currentmapData.Height})");
+        Debug.Log($"MapManager:マップを生成しました({_currentMapData.Width}x{_currentMapData.Height})");
+
+        //PlayerUnitの初期配置
+        PlacePlayerUnitAtInitialPostiton();
     }
 
 
@@ -239,7 +252,7 @@ public class MapManager : MonoBehaviour
         }
 
         //地形とユニットタイプに応じた移動コストのロジック
-        switch (tile.Type)
+        switch (tile.TerrainType)
         {
             case TerrainType.Plain://平地
                 return 1;
@@ -287,7 +300,7 @@ public class MapManager : MonoBehaviour
         Tile tile = GetTileAt(position);
         if(tile == null)
         {
-            Debug.Log($"MapManager:{position}の地形を{tile.Type}から{newType}変化しました");
+            Debug.Log($"MapManager:{position}の地形を{tile.TerrainType}から{newType}変化しました");
             //見た目の変化のため視覚的処理を指示
         }
     }
@@ -336,21 +349,47 @@ public class MapManager : MonoBehaviour
     /// <return>対応するワールド座標</return>
     public Vector3 GetWorldPosition(Vector2Int gridPos)
     {
-        return new Vector3(gridPos.x * _tileSize, gridPos.y * _tileSize, 0);
+        float x = gridPos.x * _tileSize + _offset.x + (_tileSize / 2.0f);
+        float y = gridPos.y * _tileSize + _offset.y + (_tileSize / 2.0f);
+        return new Vector3(x, y, 0);
     }
 
+    /// <summary>
+    /// ワールド座標をグリッド座標に変換
+    /// </summary>
+    /// <param name="worldPos">変換したいワールド座標</param>
+    /// <returns>対応するグリッド座標</returns>
+    public Vector2Int GetGridPositionFromWorld(Vector3 worldPos)
+    {
+        //オフセットとタイルサイズを考慮してグリッド座標を計算
+        //int gridX = Mathf.FloorToInt((worldPos.x - _offset.x) / _tileSize);
+        //int gridY = Mathf.FloorToInt((worldPos.y - _offset.y) / _tileSize);
+
+        float x = (worldPos.x - _offset.x) / _tileSize;
+        float y = (worldPos.y - _offset.y) / _tileSize;
+
+        //return new Vector2Int(gridX, gridY);
+
+        return new Vector2Int(Mathf.FloorToInt(x), Mathf.FloorToInt(y));
+    }
+
+
+
+
+    //オフセットによる座標管理に変更のため削除
     ///<summary>
     /// ワールド座標をグリッド座標に変換する
     /// </summary>
     /// <param name="worldPos">変換したいワールド座標</param>
     /// <return>対応するグリッド座標</return>
-    public Vector2Int GetGridPositio(Vector3 worldPos)
-    {
-        //ワールド座標をタイルサイズで割り、四捨五入して整数グリッド座標にする
-        int x = Mathf.RoundToInt(worldPos.x / _tileSize);
-        int y = Mathf.RoundToInt(worldPos.y / _tileSize);
-        return new Vector2Int(x, y);
-    }
+    //public Vector2Int GetGridPosition(Vector3 worldPos)
+    //{
+    //    //ワールド座標をタイルサイズで割り、四捨五入して整数グリッド座標にする
+    //    int x = Mathf.RoundToInt(worldPos.x / _tileSize);
+    //    int y = Mathf.RoundToInt(worldPos.y / _tileSize);
+    //    return new Vector2Int(x, y);
+    //}
+
 
     ///<summary>
     /// 既存のマップを全てクリアする
@@ -362,10 +401,92 @@ public class MapManager : MonoBehaviour
             Destroy(tileEntry.Value.gameObject);//TileオブジェクトがアタッチされているGameObjectを破棄
         }
         _tiles.Clear();         //Dictionaryの中身をクリア
-        _currentmapData = null; //読み込んだマップデータをクリア
+        _currentMapData = null; //読み込んだマップデータをクリア
         Debug.Log("MapManager:既存のマップをクリアしました");
     }
 
+    /// <summary>
+    /// プレイヤーユニットを初期位置に配置する
+    /// </summary>
+    private void PlacePlayerUnitAtInitialPostiton()
+    {
+        //プロトタイプ用の仮初期座標
+        Vector2Int initialPlayerGridPos = new Vector2Int(0, 0);
+
+        //指定された座標がマップ範囲内か確認
+        if(initialPlayerGridPos.x < 0 || initialPlayerGridPos.x >= _currentMapData.Width ||
+            initialPlayerGridPos.y < 0 || initialPlayerGridPos.y >= _currentMapData.Height)
+        {
+            Debug.LogError($"MapManager:プレイヤーユニットの初期配置座標({initialPlayerGridPos})がマップ範囲外です");
+        }
+
+        //プレイヤーユニットが既に存在する場合は破棄(シーン遷移などで再生成する場合)
+        if(_currentPlayerUnit != null)
+        {
+            Destroy(_currentPlayerUnit.gameObject);
+        }
+
+        //プレイヤーユニットプレハブの生成
+        GameObject playerUnitGO = Instantiate(_playerUnitPrefub,transform);
+        _currentPlayerUnit = playerUnitGO.GetComponent<PlayerUnit>();
+
+        if(_currentPlayerUnit == null)
+        {
+            Debug.LogError($"MapManager:PlayerUnitPrefubにPlayerUnitコンポーネントがアタッチされていません:{_playerUnitPrefub.name}");
+            Destroy(playerUnitGO);
+            return;
+        }
+
+        //プレイヤーユニットの初期化とワールド座標への配置
+        _currentPlayerUnit.Initialize(initialPlayerGridPos, "none");//ユニット名も渡す
+        _currentPlayerUnit.transform.position = GetWorldPosition(initialPlayerGridPos);//ワールド座標を設定
+
+        Debug.Log($"PlayerUnit'{_currentPlayerUnit.name}'placed at grid:{initialPlayerGridPos}");
+    }
+
+    private void HandleMouseClick()
+    {
+        //マウスのスクリーン座標をワールド座標に変換
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorldPos.z = 0;//2DゲームなのでZは0に固定
+
+        Debug.Log($"クリックされたワールド座標：{mouseWorldPos}");
+
+        //ワールド座標をグリッド座標に変換
+        Vector2Int clickedGridPos = GetGridPositionFromWorld(mouseWorldPos);
+
+        Debug.Log($"クリックされたグリッド座標：{clickedGridPos}");
+
+        //クリックされたグリッド座標がマップ範囲内かチェック
+        if(_currentMapData == null || clickedGridPos.x < 0 || clickedGridPos.x >= _currentMapData.Width ||
+            clickedGridPos.y < 0 || clickedGridPos.y >= _currentMapData.Height)
+        {
+            Debug.Log("マップ範囲外がクリックされました");
+            return;
+        }
+
+        //クリックされたタイルを取得
+        if(_tiles.TryGetValue(clickedGridPos, out Tile clickedTile))
+        {
+            Debug.Log($"クリックされたタイル：{clickedTile.GridPosition},地形：{clickedTile.TerrainType}ゴール：{clickedTile}");
+            
+            //仮の移動処理（クリックなどの事前処理の確認のため
+            //現在は、クリックされたタイルへプレイヤーユニットを移動させるのみ
+            if(_currentPlayerUnit != null)
+            {
+                //仮の移動処理
+                _currentPlayerUnit.SetGridPosition(clickedGridPos);
+                _currentPlayerUnit.transform.position = GetWorldPosition(clickedGridPos);
+                Debug.Log($"PlayerUnit moved to:{clickedGridPos}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"グリッド座標{clickedGridPos}に対応するタイルが見つかりません");
+        }
+    }
+
+   
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -384,6 +505,10 @@ public class MapManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        //マウス操作を検知（左クリック2025/06）
+        if(Input.GetMouseButtonDown(0))
+        {
+            HandleMouseClick();
+        }
     }
 }

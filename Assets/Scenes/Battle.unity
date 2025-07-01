@@ -227,6 +227,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b755c8b1721e5d5408251fbc453529c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _offset: {x: -4, y: -3, z: 0}
   _gridSize: {x: 0, y: 0}
   _mapSequence:
   - Maps/map_00
@@ -238,6 +239,7 @@ MonoBehaviour:
   - {fileID: -5269519099407390509, guid: f5f90caa95aabde4896185b5975a45cb, type: 3}
   - {fileID: -1304275475, guid: 56c2d8557a89ad94caa7c5a85bfd94de, type: 3}
   - {fileID: -2446290683397990192, guid: 4d3786898b41dec438eda50b62c87467, type: 3}
+  _playerUnitPrefub: {fileID: 2968785956472499736, guid: 3f090872849152d468fbd26e053b2795, type: 3}
 --- !u!4 &306895319
 Transform:
   m_ObjectHideFlags: 0
@@ -247,7 +249,7 @@ Transform:
   m_GameObject: {fileID: 306895317}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 180.91118, y: 116.422226, z: -3.8741689}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -316,7 +318,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 4
+  orthographic size: 3
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -341,7 +343,7 @@ Transform:
   m_GameObject: {fileID: 629396256}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5, y: 4, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

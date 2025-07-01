@@ -5,16 +5,16 @@ public partial class Tile : MonoBehaviour
 
 
     [field: SerializeField] public Vector2Int GridPosition { get; private set; }//グリッドの座標
-    [field: SerializeField] public TerrainType Type { get; private set; }//地形の種類
+    [field: SerializeField] public TerrainType TerrainType { get; private set; }//地形の種類
     [field: SerializeField] public Unit OccupyingUnit { get; private set; }//そのグリッドに存在するユニット
 
     private SpriteRenderer _spriteRenderer;
 
     //コンストラクタ
-    public Tile(Vector2Int position, TerrainType type)
+    public Tile(Vector2Int position, TerrainType terrainType)
     {
         GridPosition = position;
-        Type = type;
+        TerrainType = terrainType;
         OccupyingUnit = null;//初期状態ではユニットはいない
     }
 
@@ -22,10 +22,10 @@ public partial class Tile : MonoBehaviour
     /// タイルの地形タイプを設定する
     /// (Typeプロパティがprivate　setのため、外部から変更するためのメソッド)
     /// </summary>
-    /// <param name="newType"></param>
-    public void SetType(TerrainType newType)
+    /// <param name="TerrainType"></param>
+    public void SetType(TerrainType newTerrainType)
     {
-        Type = newType;
+        TerrainType = newTerrainType;
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ public partial class Tile : MonoBehaviour
     /// c<return>防御ボーナス</return>
     public int GetDefenseBonus()
     {
-        switch (Type)
+        switch (TerrainType)
         {
             case TerrainType.Forest: return 1;
             case TerrainType.Mountain: return 1;
@@ -61,7 +61,7 @@ public partial class Tile : MonoBehaviour
     /// c<return>回避ボーナス</return>
     public int GetEvadeBonus()
     {
-        switch (Type)
+        switch (TerrainType)
         {
             case TerrainType.Forest: return 10;
             case TerrainType.Mountain: return 10;
@@ -89,10 +89,10 @@ public partial class Tile : MonoBehaviour
         }
     }
 
-    public void Initialize(Vector2Int gridPos, TerrainType type)
+    public void Initialize(Vector2Int gridPos, TerrainType terraintype)
     {
         GridPosition = gridPos;
-        Type = type;
+        TerrainType = terraintype;
         OccupyingUnit=null;
         //GameObjectの名前をデバッグ用に設定
         gameObject.name = $"({gridPos.x},{gridPos.y})";
