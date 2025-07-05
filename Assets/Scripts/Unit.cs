@@ -20,6 +20,8 @@ public partial class Unit : MonoBehaviour
     [field:SerializeField]public string UnitId { get;private set; }//ユニットのユニークID
     [field:SerializeField]public string UnitName { get; private set; }//ユニット名
     [field:SerializeField]public UnitType Type { get; private set; }//ユニットタイプ
+    [field: SerializeField] protected FactionType _factionType = FactionType.Player;//デフォルトはプレイヤー
+    public FactionType Faction => _factionType;
 
     [field:SerializeField]public int CurrentHP { get; private set; }//現在のHP
     [field:SerializeField]public int MaxHP { get; private set; }//最大HP
@@ -34,14 +36,33 @@ public partial class Unit : MonoBehaviour
 
 
     [field:SerializeField]public Weapon EquippedWeapon { get; private set; }//装備中の武器
-    [field: SerializeField] public Vector2Int CurrentGridPosition { get; private set; }//マップ上の現在のグリッド座標
+    [field: SerializeField] public Vector2Int CurrentGridPosition { get; protected set; }//マップ上の現在のグリッド座標
     [field: SerializeField] public bool HasActedThisTurn { get; private set; }//今ターン行動済みか
 
     [field: SerializeField] public int CurrentExperience { get; private set; }//現在の経験値
     [field:SerializeField]public int CurrentLevel { get; private set; }//現在のレベル
 
-    private void Awake()
+    public Tile OccupyingTile { get; protected set; }
+    
+
+    //ユニットの選択状態を管理
+    private SpriteRenderer _spriteRenderer;
+    //ユニットの選択状態と非選択状態
+    [SerializeField] private Color _selectedColor = Color.blue;//選択状態の色
+    [SerializeField] private Color _defaultColor = Color.white;//非選択状態の色
+
+    protected virtual void Awake()
     {
+        _spriteRenderer = GetComponent<SpriteRenderer>();
+        if( _spriteRenderer == null)
+        {
+            Debug.LogError($"{gameObject.name}:SpriteRendererが見つかりません");
+        }
+
+        //仮データ
+        UnitId = "NoId";
+
+
         //デバッグ用
         if (string.IsNullOrEmpty(UnitId))
         {
@@ -54,7 +75,7 @@ public partial class Unit : MonoBehaviour
     /// (DataManagerからロードされたUnitDataを使用)
     /// </summary>
     /// <param name="data">ユニットのマスターデータ</param>
-    public void Initialize(UnitData data)
+    public virtual void Initialize(UnitData data)
     {
         UnitId = data.UnitId;
         UnitName = data.UnitName;
@@ -62,7 +83,7 @@ public partial class Unit : MonoBehaviour
         MaxHP = data.BaseHP;
         CurrentHP = MaxHP;
         BaseMovement = data.BaseMovement;
-        //CurrentMovementPoints = BaseMovement;
+        CurrentMovementPoints = BaseMovement;
         AttackPower = data.BaseAttackPower;
         DefensePower = data.BaseDefensePower;
         Skill = data.BaseSkill;
@@ -84,8 +105,10 @@ public partial class Unit : MonoBehaviour
     /// (BatteManagerから呼ばれる)
     /// </summary>
     /// <param name="newPosition">新しいグリッド座標</param>
-    public void UpdatePosition(Vector2Int vector2Int){
+    public void UpdatePosition(Vector2Int newPosition){
         //MapManagerに処理の指示する予定
+        CurrentGridPosition = newPosition;
+        UpdateOccupyingTile();
     }
 
     /// <summary>
@@ -99,6 +122,7 @@ public partial class Unit : MonoBehaviour
         {
             CurrentMovementPoints = 0;
         }
+        Debug.Log($"移動力を消費しました。残り：{CurrentMovementPoints}");
     }
 
     /// <summary>
@@ -210,6 +234,74 @@ public partial class Unit : MonoBehaviour
     public void ResetMovementPoints()
     {
         CurrentMovementPoints = BaseMovement;
+    }
+
+    //占有タイルを更新する
+    protected virtual void UpdateOccupyingTile()
+    {
+        if (MapManager.Instance != null)
+        {
+            //古いタイルからユニットを解除
+            if (OccupyingTile != null)
+            {
+                OccupyingTile.OccupyingUnit = null;
+            }
+            //新しいタイルを設定し、ユニットを占有
+            OccupyingTile = MapManager.Instance.GetTileAt(CurrentGridPosition);
+            if (OccupyingTile != null)
+            {
+                OccupyingTile.OccupyingUnit = this;//このユニットがタイルを占有
+            }
+        }
+    }
+
+    /// <summary>
+    /// ユニットの現在のグリッド座標を更新する
+    /// </summary>
+    /// <param name="newGridPos">新しいグリッド座標</param>
+    public void SetGridPosition(Vector2Int newGridPos)
+    {
+        CurrentGridPosition = newGridPos;
+    }
+
+    /// <summary>
+    /// ユニットの現在のグリッド座標を取得する
+    /// </summary>
+    /// <returns></returns>
+    public Vector2Int GetCurrentGridPostion()
+    {
+        return CurrentGridPosition;
+    }
+        /// <summary>
+        /// ユニットの移動範囲を取得する
+        /// </summary>
+        public int GetMoveRange()
+    {
+        return CurrentMovementPoints;
+    }
+
+    //ユニットの選択状態を設定する
+    public void SetSelected(bool isSelected)
+    {
+        if (_spriteRenderer != null)
+        {
+            _spriteRenderer.color = isSelected ? _selectedColor : _defaultColor;
+        }
+    }
+
+    protected void OnDestroy()
+    {
+        //ユニットが破壊されるときに、占有していたタイルから参照を解除
+        if (OccupyingTile != null && OccupyingTile.OccupyingUnit == this)
+        {
+            OccupyingTile.OccupyingUnit = null;
+        }
+    }
+
+    //デバッグ用：マウスでユニットの座標確認用
+    protected virtual void OnMouseEnter()
+    {
+        Debug.Log($"Unit:{UnitName},GridPos:{CurrentGridPosition}");
     }
 
 

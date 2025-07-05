@@ -239,7 +239,10 @@ MonoBehaviour:
   - {fileID: -5269519099407390509, guid: f5f90caa95aabde4896185b5975a45cb, type: 3}
   - {fileID: -1304275475, guid: 56c2d8557a89ad94caa7c5a85bfd94de, type: 3}
   - {fileID: -2446290683397990192, guid: 4d3786898b41dec438eda50b62c87467, type: 3}
-  _playerUnitPrefub: {fileID: 2968785956472499736, guid: 3f090872849152d468fbd26e053b2795, type: 3}
+  _terrainCosts: []
+  _movableHighlightPrefab: {fileID: 2112004532673721051, guid: c33f3a646dfa4534997e8c03ff0e326f, type: 3}
+  _pathLinePrefab: {fileID: 4717480643199746719, guid: cc76b8a067ca31e4caa034fb53e65ca3, type: 3}
+  _playerUnitPrefab: {fileID: 2968785956472499736, guid: 3f090872849152d468fbd26e053b2795, type: 3}
 --- !u!4 &306895319
 Transform:
   m_ObjectHideFlags: 0
@@ -268,6 +271,7 @@ GameObject:
   - component: {fileID: 629396257}
   - component: {fileID: 629396260}
   - component: {fileID: 629396261}
+  - component: {fileID: 629396262}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -405,6 +409,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9814aef2f8c50934cb8bb74362f5ed8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &629396262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 629396256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56666c5a40171f54783dd416a44f42bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_EventMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_MaxRayIntersections: 0
 --- !u!1 &1711437392
 GameObject:
   m_ObjectHideFlags: 0

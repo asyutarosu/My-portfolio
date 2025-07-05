@@ -83,7 +83,7 @@ using System.Collections.Generic;
 public class MapManager : MonoBehaviour
 {
     private static MapManager _instance;
-    public static MapManager Instance
+    public static MapManager Instance 
     {
         get
         {
@@ -113,14 +113,31 @@ public class MapManager : MonoBehaviour
     [SerializeField] private float _tileSize = 1.0f;//グリッドの1マスあたりのワールド座標でのサイズ
     [SerializeField] private Sprite[] _terrainSprite;//地形タイプに対応するスプライトを設定するための配列
 
+    [SerializeField] private TerrainCost[] _terrainCosts;
+
+    //移動関連
+    [SerializeField] private GameObject _movableHighlightPrefab;
+    private Dictionary<Vector2Int,GameObject> _currentHighlights = new Dictionary<Vector2Int, GameObject>();
+    [SerializeField] private LineRenderer _pathLinePrefab;//経路表示用のプレハブ
+    private LineRenderer _currentPathLine;//現在表示されている経路ライン
+    
+
+
     private int _currentMapIndex = 0;//現在ロードしているマップのインデックス
     private MapData _currentMapData;//MapDtaLoaderによって読み込まれるマップデータ
 
     private Dictionary<Vector2Int ,Tile> _tiles = new Dictionary<Vector2Int, Tile>();//生成された全てのTileオブジェクトとグリッド座標を管理する
 
     //PlayerUnit関連
-    [SerializeField] private GameObject _playerUnitPrefub;
-    private PlayerUnit _currentPlayerUnit;//現在のプレイヤーユニットの参照
+    [SerializeField] private GameObject _playerUnitPrefab;
+    private Unit _currentPlayerUnit;//現在のプレイヤーユニットの参照
+    private Unit _selectedUnit;//選択中のプレイヤーユニット
+
+    [System.Serializable]public class TerrainCost
+    {
+        public TerrainType terrainType;
+        public int cost;
+    }
 
     private void Awake()
     {
@@ -207,7 +224,7 @@ public class MapManager : MonoBehaviour
                 }
 
                 //取得したTileコンポーネントを初期化
-                tile.Initialize(gridPos, terrainType);
+                tile.Initialize(gridPos, terrainType,false);
 
                 //地形タイプに応じたスプライトをTileに設定
                 SetTileSprite(tile,terrainType);
@@ -219,7 +236,7 @@ public class MapManager : MonoBehaviour
         Debug.Log($"MapManager:マップを生成しました({_currentMapData.Width}x{_currentMapData.Height})");
 
         //PlayerUnitの初期配置
-        PlacePlayerUnitAtInitialPostiton();
+        //PlacePlayerUnitAtInitialPostiton();
     }
 
 
@@ -230,9 +247,9 @@ public class MapManager : MonoBehaviour
     /// <return>Tileオブジェクト、範囲外ならnull</return>
     public Tile GetTileAt(Vector2Int position)
     {
-        if(position.x >= 0 && position.x <= _gridSize.x && position.y >= 0 && position.y < _gridSize.y)
+        if(_tiles.TryGetValue(position, out Tile tile))
         {
-            return _tileGrid[position.x, position.y];
+            return tile;
         }
         return null;
     }
@@ -413,6 +430,7 @@ public class MapManager : MonoBehaviour
         //プロトタイプ用の仮初期座標
         Vector2Int initialPlayerGridPos = new Vector2Int(0, 0);
 
+
         //指定された座標がマップ範囲内か確認
         if(initialPlayerGridPos.x < 0 || initialPlayerGridPos.x >= _currentMapData.Width ||
             initialPlayerGridPos.y < 0 || initialPlayerGridPos.y >= _currentMapData.Height)
@@ -427,19 +445,33 @@ public class MapManager : MonoBehaviour
         }
 
         //プレイヤーユニットプレハブの生成
-        GameObject playerUnitGO = Instantiate(_playerUnitPrefub,transform);
-        _currentPlayerUnit = playerUnitGO.GetComponent<PlayerUnit>();
+        GameObject unitGO = Instantiate(_playerUnitPrefab, GetWorldPosition(initialPlayerGridPos), Quaternion.identity, transform);
+        Unit playerUnit = unitGO.GetComponent<Unit>();
 
-        if(_currentPlayerUnit == null)
+        if(playerUnit == null)
         {
-            Debug.LogError($"MapManager:PlayerUnitPrefubにPlayerUnitコンポーネントがアタッチされていません:{_playerUnitPrefub.name}");
-            Destroy(playerUnitGO);
+            Debug.LogError($"MapManager:PlayerUnitPrefubにPlayerUnitコンポーネントがアタッチされていません:{_playerUnitPrefab.name}");
+            Destroy(unitGO);
             return;
         }
+        _currentPlayerUnit = playerUnit;
+
+        UnitData dummyData = new UnitData();
+        dummyData.UnitId = "PLAYER001";
+        dummyData.UnitName = "none";
+        dummyData.Type = UnitType.Infantry;
+        dummyData.BaseMovement = 5;
+        dummyData.BaseAttackPower = 5;
+        dummyData.BaseDefensePower = 5;
+        dummyData.BaseHP = 5;
+        dummyData.BaseSkill = 5;
+        dummyData.BaseSpeed = 5;
 
         //プレイヤーユニットの初期化とワールド座標への配置
-        _currentPlayerUnit.Initialize(initialPlayerGridPos, "none");//ユニット名も渡す
-        _currentPlayerUnit.transform.position = GetWorldPosition(initialPlayerGridPos);//ワールド座標を設定
+        _currentPlayerUnit.Initialize(dummyData);//ユニット名も渡す
+        _currentPlayerUnit.UpdatePosition(initialPlayerGridPos);//ワールド座標を設定
+        
+        
 
         Debug.Log($"PlayerUnit'{_currentPlayerUnit.name}'placed at grid:{initialPlayerGridPos}");
     }
@@ -457,36 +489,303 @@ public class MapManager : MonoBehaviour
 
         Debug.Log($"クリックされたグリッド座標：{clickedGridPos}");
 
-        //クリックされたグリッド座標がマップ範囲内かチェック
-        if(_currentMapData == null || clickedGridPos.x < 0 || clickedGridPos.x >= _currentMapData.Width ||
-            clickedGridPos.y < 0 || clickedGridPos.y >= _currentMapData.Height)
-        {
-            Debug.Log("マップ範囲外がクリックされました");
-            return;
-        }
+        //Ryacastを使ってクリックされたオブジェクトを検出
+        RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
 
-        //クリックされたタイルを取得
-        if(_tiles.TryGetValue(clickedGridPos, out Tile clickedTile))
+        if(hit.collider != null)
         {
-            Debug.Log($"クリックされたタイル：{clickedTile.GridPosition},地形：{clickedTile.TerrainType}ゴール：{clickedTile}");
-            
-            //仮の移動処理（クリックなどの事前処理の確認のため
-            //現在は、クリックされたタイルへプレイヤーユニットを移動させるのみ
-            if(_currentPlayerUnit != null)
+            //クリックされたのがプレイヤーユニットか確認
+            PlayerUnit clickedUnit = hit.collider.GetComponent<PlayerUnit>();
+            if(clickedUnit != null)
             {
-                //仮の移動処理
-                _currentPlayerUnit.SetGridPosition(clickedGridPos);
-                _currentPlayerUnit.transform.position = GetWorldPosition(clickedGridPos);
-                Debug.Log($"PlayerUnit moved to:{clickedGridPos}");
+                //ユニットがクリックされた場合はタイルクリック処理を行わない
+                HandleUnitClick(clickedUnit);
+                return;
+            }
+
+            //クリックされたのがタイルか確認
+            Tile clickedTile = hit.collider.GetComponent<Tile>();
+            if(clickedTile != null)
+            {
+                HandleTileClick(clickedTile);
+                return;
             }
         }
         else
         {
-            Debug.LogWarning($"グリッド座標{clickedGridPos}に対応するタイルが見つかりません");
+            //何もクリックされなかった場合（マップ外など）
+            Debug.Log("何もクリックされませんでした");
+            //選択中のユニットがいれば非選択状態にする
+            if(_selectedUnit != null)
+            {
+                _selectedUnit.SetSelected(false);
+                _selectedUnit = null;
+                Debug.Log("ユニットの選択を解除しました。");
+            }
+        }
+
+        ////クリックされたグリッド座標がマップ範囲内かチェック
+        //if(_currentMapData == null || clickedGridPos.x < 0 || clickedGridPos.x >= _currentMapData.Width ||
+        //    clickedGridPos.y < 0 || clickedGridPos.y >= _currentMapData.Height)
+        //{
+        //    Debug.Log("マップ範囲外がクリックされました");
+        //    return;
+        //}
+
+        //プレイヤーユニットの移動処理の導入に伴い変更2025/06
+        ////クリックされたタイルを取得
+        //if(_tiles.TryGetValue(clickedGridPos, out Tile clickedTile))
+        //{
+        //    Debug.Log($"クリックされたタイル：{clickedTile.GridPosition},地形：{clickedTile.TerrainType}ゴール：{clickedTile}");
+
+        //    
+        //    //仮の移動処理（クリックなどの事前処理の確認のため
+        //    //現在は、クリックされたタイルへプレイヤーユニットを移動させるのみ
+        //    //if(_currentPlayerUnit != null)
+        //    //{
+        //    //    //仮の移動処理
+        //    //    _currentPlayerUnit.SetGridPosition(clickedGridPos);
+        //    //    _currentPlayerUnit.transform.position = GetWorldPosition(clickedGridPos);
+        //    //    Debug.Log($"PlayerUnit moved to:{clickedGridPos}");
+        //    //}
+        //}
+        //else
+        //{
+        //    Debug.LogWarning($"グリッド座標{clickedGridPos}に対応するタイルが見つかりません");
+        //}
+    }
+
+    //ユニットがクリックされた時の処理
+    private void HandleUnitClick(Unit clickedUnit)
+    {
+        if(_selectedUnit == clickedUnit)
+        {
+            _selectedUnit.SetSelected(false);
+            _selectedUnit = null;
+            ClearMovableRangeDisplay();
+            Debug.Log("ユニットの選択を解除しました");
+            return;
+        }
+
+        if(_selectedUnit != null)
+        {
+            _selectedUnit.SetSelected(false);//前に選択していたユニットを非選択状態にする
+        }
+
+        _selectedUnit = clickedUnit;//新しくクリックされたユニットを選択状態にする
+        _selectedUnit.SetSelected(true);
+        Debug.Log($"PlayerUnit'{_selectedUnit.name}'(Grid:{_selectedUnit.CurrentGridPosition}が選択されました");
+
+        //移動範囲処理
+        //ShowMovableRange(_selectdUnit);
+
+        CalculateAndShowMovableRange(_selectedUnit);
+    }
+
+    //タイルがクリックされた時の処理
+    private void HandleTileClick(Tile clickedTile)
+    {
+        Debug.Log($"クリックされたタイル：{clickedTile.GridPosition},地形：{clickedTile.TerrainType}");
+        
+        if(_selectedUnit != null)
+        {
+            //クリックされたタイルが移動可能範囲内にあるかチェック
+            if (_currentHighlights.ContainsKey(clickedTile.GridPosition))
+            {
+                Debug.Log($"移動可能なタイル {clickedTile.GridPosition} がクリックされました。");
+
+                //経路を計算する
+                List<Vector2Int> path = DijkstraPathfinder.GetPathToTarget(
+                    _selectedUnit.CurrentGridPosition,
+                    clickedTile.GridPosition,
+                    _selectedUnit);
+
+                if(path != null && path.Count > 0)
+                {
+                    ShowPathLine(path);
+                    StartCoroutine(MoveUnitAlogPath(_selectedUnit, path));
+                }
+                else
+                {
+                    Debug.LogWarning("経路が見つからないか、計算された経路が空です。");
+                }
+            }
+            Debug.Log("移動不可能なタイルがクリックされました。");
+
+            //現段階では移動後選択状態を解除するようにする
+            //_selectdUnit.SetSelected(false);
+            //_selectdUnit = null;
+
+            //移動範囲の表示のクリア
+            //ClearMovableRangeDisplay();
+        }
+        else
+        {
+            Debug.Log("ユニットが選択されていません");
         }
     }
 
-   
+    //移動可能範囲を表示する
+    //private void ShowMovableRange(Unit unit)
+    //{
+    //    //現段階ではテスト用としてユニットの周囲のタイルをハイライト表示
+    //    Debug.Log($"ユニットの移動範囲を表示。移動力{unit.GetMoveRange()}");
+
+    //    //仮：現在地から周囲1マスをハイライト表示
+    //    Vector2Int cuurentPos = unit.GetCurrentGridPostion();
+    //    for(int y = -1; y <= 1; y++)
+    //    {
+    //        for(int x = -1; x <= 1; x++)
+    //        {
+    //            Vector2Int cheakPos = new Vector2Int(cuurentPos.x + x , cuurentPos.y + y);
+    //            if(_tiles.TryGetValue(cheakPos, out Tile tile))
+    //            {
+    //                if(tile.GetComponent<SpriteRenderer>() != null)
+    //                {
+    //                    tile.GetComponent<SpriteRenderer>().color = Color.blue;
+    //                }
+    //            }
+    //        }
+    //    }
+    //}
+
+    //移動範囲の表示をクリアする
+    private void ClearMovableRangeDisplay()
+    {
+        //全てのタイルをデフォルトに戻す
+        foreach(var highlight in _currentHighlights.Values)
+        {
+            Destroy(highlight);
+        }
+        _currentHighlights.Clear();
+    }
+
+    /// <summary>
+    /// 経路ラインを表示する
+    /// </summary>
+    /// <param name="path">経路のグリッド座標リスト</param>
+    private void ShowPathLine(List<Vector2Int> path)
+    {
+        ClearPathLine();//既存のラインをクリア
+
+        if(path == null || path.Count < 2)
+        {
+            return;
+        }
+
+        if(_pathLinePrefab == null)
+        {
+            Debug.LogWarning("Path Line Prefubが設定されていません");
+            return;
+        }
+
+        _currentPathLine = Instantiate(_pathLinePrefab, Vector3.zero, Quaternion.identity);
+        _currentPathLine.transform.SetParent(transform);//MapManagerの子にする
+
+        //経路のグリッド座標をワールド座標のリストに変換
+        Vector3[] worldPoints = new Vector3[path.Count];
+        for(int i = 0; i < path.Count; i++)
+        {
+            worldPoints[i] = GetWorldPosition(path[i]);
+        }
+        
+        //LineRendererに頂点数を設定し、経路のワールド座標をセット
+        _currentPathLine.positionCount = worldPoints.Length;
+        _currentPathLine.SetPositions(worldPoints);
+
+        //LineRendererの表示設定
+        _currentPathLine.startWidth = 0.1f;//線の開始時の太さ
+        _currentPathLine.endWidth = 0.1f;//線の終了時の太さ
+        _currentPathLine.material = new Material(Shader.Find("Sprites/Default"));//マテリアル
+        _currentPathLine.startColor = Color.white;//線の開始時の色
+        _currentPathLine.endColor = Color.white;//線の終了時の色
+        _currentPathLine.sortingLayerName = "Foreground"; // 表示レイヤーを設定（任意、最前面に表示したい場合）
+        _currentPathLine.sortingOrder = 10; // 表示順序を設定（任意）
+
+        Debug.Log($"経路ラインを表示：経路長：{path.Count}");
+    }
+    
+    /// <summary>
+    /// 経路ラインをクリアする
+    /// </summary>
+    private void ClearPathLine()
+    {
+        if(_currentPathLine != null)
+        {
+            Destroy(_currentPathLine.gameObject);
+            _currentPathLine = null;
+        }
+    }
+
+    /// <summary>
+    /// 移動可能範囲を計算し、ハイライト表示する
+    /// </summary>
+    /// <param name="unit">移動するユニット</param>
+    private void CalculateAndShowMovableRange(Unit unit)
+    {
+        ClearMovableRangeDisplay();
+        ClearPathLine();
+
+        if(unit == null || _movableHighlightPrefab == null)
+        {
+            return;
+        }
+
+        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableNodes =
+            DijkstraPathfinder.FindReachableTiles(unit.CurrentGridPosition, unit);
+
+        //計算された移動可能範囲のタイルをハイライト表示
+        foreach(var entry in reachableNodes)
+        {
+            Vector2Int highlightPos = entry.Key;
+
+            GameObject highlightGO = Instantiate(_movableHighlightPrefab, GetWorldPosition(highlightPos), Quaternion.identity, transform);
+            _currentHighlights.Add(highlightPos,highlightGO);
+        }
+    } 
+
+    /// <summary>
+    /// ユニットを経路に沿って移動させる
+    /// </summary>
+    /// <param name="unit">移動するユニット</param>
+    /// <param name="path">移動経路のグリッド座標リスト</param>
+    private System.Collections.IEnumerator MoveUnitAlogPath(Unit unit,List<Vector2Int> path)
+    {
+        //選択解除とハイライトクリアは移動開始時に行う2025/06
+        if(_selectedUnit != null)
+        {
+            _selectedUnit.SetSelected(false);
+            _selectedUnit = null;
+        }
+        ClearMovableRangeDisplay();
+
+
+        float moveSpeed = 5.0f;//Unitの見た目の移動速度
+
+        for(int i = 0; i < path.Count; i++)
+        {
+            Vector3 startWorldPos = unit.transform.position;
+            Vector3 targetWorldPos = GetWorldPosition(path[i]);
+            float distance = Vector3.Distance(startWorldPos, targetWorldPos);
+            float duration = distance / moveSpeed;
+            float elapsed = 0f;
+
+            //各タイルへ向けて移動
+            while(elapsed < duration)
+            {
+                unit.transform.position = Vector3.Lerp(startWorldPos, targetWorldPos, elapsed / duration);
+                elapsed += Time.deltaTime;
+                yield return null;//1フレーム待つ
+            }
+            unit.transform.position = targetWorldPos;//確実に目標地点に到達させる
+
+            
+            unit.UpdatePosition(path[i]);
+        }
+        ClearPathLine();//現在は移動完了でクリア
+        Debug.Log("ユニットの移動が完了しました");
+    }
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -495,6 +794,7 @@ public class MapManager : MonoBehaviour
         {
             //GenerateMap(_mapSequence[_currentMapIndex]);
             GenerateMap(_mapSequence[0]);
+            PlacePlayerUnitAtInitialPostiton();
         }
         else
         {
@@ -505,10 +805,31 @@ public class MapManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //マウス操作を検知（左クリック2025/06）
-        if(Input.GetMouseButtonDown(0))
+        //Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        //Vector2Int clickedGridPos = GetGridPositionFromWorld(mouseWorldPos);
+        
+        
+        //マウス操作を検知（左クリック2025 / 06）
+        if (Input.GetMouseButtonDown(0))
         {
             HandleMouseClick();
         }
+
+        //Tile clickedTile = GetTileAt(clickedGridPos);
+        //if(clickedTile == null)
+        //{
+        //    return;
+        //}
+
+        ////ユニットがクリックされた場合
+        //if(clickedTile.OccupyingUnit != null)
+        //{
+        //    HandleUnitClick(clickedTile.OccupyingUnit);
+        //}
+        ////タイルがクリックされた場合
+        //else
+        //{
+        //    HandleTileClick(clickedTile);
+        //}
     }
 }

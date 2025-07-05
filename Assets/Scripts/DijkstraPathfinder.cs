@@ -3,22 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 
-/// <summary>
-/// ダイクストラ法による経路探索ノード
-/// </summary>
-//public class PathNode
-//{
-//    public Vector2Int Position;//グリッド座標
-//    public int Cost;           //開始地点からの累積コスト
-//    public PathNode Parent;    //親ノード（経路再構築用）
 
-//    public PathNode(Vector2Int postion, int cost, PathNode parent)
-//    {
-//        Position = postion;
-//        Cost = cost;
-//        Parent = parent;
-//    }
-//}
 
 /// <summary>
 /// ダイクストラ法を用いて、開始地点から到達可能な全てのマスへの最短コストを計算する
@@ -33,6 +18,23 @@ public static class DijkstraPathfinder
         new Vector2Int(1, 0), //右
         new Vector2Int(-1, 0) //左
     };
+
+    /// <summary>
+    /// ダイクストラ法による経路探索ノード
+    /// </summary>
+    public class PathNode
+    {
+        public Vector2Int Position;//グリッド座標
+        public int Cost;           //開始地点からの累積コスト
+        public PathNode Parent;    //親ノード（経路再構築用）
+
+        public PathNode(Vector2Int postion, int cost, PathNode parent)
+        {
+            Position = postion;
+            Cost = cost;
+            Parent = parent;
+        }
+    }
 
     /// <summary>
     /// ダイクストラ法を用いて、開始地点から到達可能な全てのタイルとその最小移動コストを計算する
@@ -76,7 +78,7 @@ public static class DijkstraPathfinder
                 Tile nextTile = MapManager.Instance.GetTileAt(nextPos);
 
                 //範囲外またはユニットが占有しているマス
-                if(nextPos == null || (nextTile.OccupyingUnit != null && nextTile.OccupyingUnit != unit))
+                if(nextTile == null || (nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != unit.Faction))
                 {
                     continue;
                 }
@@ -95,10 +97,10 @@ public static class DijkstraPathfinder
                 //かつ、
                 //そのnextPosがまだ探索されていない(visitedNodesに含まれていない)か、
                 //または、新しいコストがこれまでに記録されたnextPosへの最小コストよりも小さい場合
-                if(newCost <= unit.CurrentMovementPoints && (!visiteNodes.ContainsKey(nextPos) || newCost > visiteNodes[nextPos].Cost))
+                if(newCost <= unit.CurrentMovementPoints && (!visiteNodes.ContainsKey(nextPos) || newCost < visiteNodes[nextPos].Cost))
                 {
                     //visitedNodesを新しい最小コストと経路情報で更新
-                    PathNode nextNode = new PathNode(startPos, newCost, current);
+                    PathNode nextNode = new PathNode(nextPos, newCost, current);
                     visiteNodes[nextPos] = nextNode;
 
                     //優先度キューに新しいノードを追加
@@ -109,20 +111,7 @@ public static class DijkstraPathfinder
         return visiteNodes;
     }
 
-    public class PathNode
-    {
-        public Vector2Int Position { get; private set; }
-        public int Cost { get; private set; }
-        public PathNode Parent { get; private set; }
-
-        public PathNode(Vector2Int position, int cost, PathNode parent)
-        {
-            Position = position;
-            Cost = cost;
-            Parent = parent;
-        }
-    }
-
+    
 
     /// <summary>
     /// 計算された到達可能なタイル情報から、目標地点への最短経路を再構築して返す
@@ -138,6 +127,7 @@ public static class DijkstraPathfinder
         if (!allReachableNodes.ContainsKey(targetPos))
         {
             Debug.Log($"経路が見つかりませんでした：{startPos}から{targetPos}");
+            return null;
         }
 
         List<Vector2Int> path = new List<Vector2Int>();
@@ -167,6 +157,11 @@ public static class DijkstraPathfinder
 
         public int Count => heap.Count;
 
+        public PathNodePriorityQueue()
+        {
+            heap = new List<(PathNode node, int priority)>();
+        }
+
         /// <summary>
         /// ノードを優先度付きでキューに追加する
         /// </summary>
@@ -176,6 +171,23 @@ public static class DijkstraPathfinder
         {
             heap.Add((node,priority));//リストの末尾に追加
             HeapifyUp(heap.Count - 1);//ヒープのプロパティを維持するために上に辿る
+
+            int currentIndex = heap.Count - 1;
+            int parentIndex;
+
+            while(currentIndex >= 0)
+            {
+                parentIndex = (currentIndex -1) / 2;
+                if(heap[currentIndex].priority < heap[parentIndex].priority)
+                {
+                    Swap(currentIndex, parentIndex);
+                    currentIndex = parentIndex;
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
 
         /// <summary>
@@ -191,18 +203,19 @@ public static class DijkstraPathfinder
             }
 
             //最も優先度の高いルート結果
-            (PathNode node, int priority) result = heap[0];
+            //(PathNode node, int priority) result = heap[0];
 
             //最後の要素をルートに移動し、元のルートを削除
-            int lastIndex = heap.Count - 1;
-            heap[0] = heap[lastIndex];
-            heap.RemoveAt(lastIndex);
+            PathNode result = heap[0].node;
+            heap[0] = heap[heap.Count - 1];
+            heap.RemoveAt(heap.Count - 1);
+            HeapifyDown(0);
 
             if(heap.Count > 0)
             {
                 HeapifyDown(0);//新しいルートからヒープのプロパティを維持するために下に辿る
             }
-            return result.node;
+            return result;
         }
 
         /// <summary>
@@ -249,7 +262,7 @@ public static class DijkstraPathfinder
                 }
 
                 //右の子が存在し、それが現在の最小より優先度が高い場合
-                if(rightChildIndex < heap.Count && heap[rightChildIndex].priority > heap[smallestChildIndex].priority)
+                if(rightChildIndex < heap.Count && heap[rightChildIndex].priority < heap[smallestChildIndex].priority)
                 {
                     smallestChildIndex = rightChildIndex;
                 }

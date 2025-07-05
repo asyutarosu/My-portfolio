@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2100998784333974931}
   - component: {fileID: 8483156367883898756}
   - component: {fileID: 423041336984131943}
-  - component: {fileID: 7813364596938062738}
+  - component: {fileID: -1097306113952750907}
   m_Layer: 0
   m_Name: PlayerPrefub
   m_TagString: Untagged
@@ -127,15 +127,15 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.8, y: 0.8}
+    oldSize: {x: 1, y: 1}
     newSize: {x: 0.32, y: 0.32}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.32, y: 0.32}
+  m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &7813364596938062738
+--- !u!114 &-1097306113952750907
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -147,4 +147,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fa16c546ebac9a4a8ce77044f6e9256, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _moveRange: 3
+  <UnitId>k__BackingField: 
+  <UnitName>k__BackingField: 
+  <Type>k__BackingField: 0
+  _factionType: 0
+  <CurrentHP>k__BackingField: 0
+  <MaxHP>k__BackingField: 0
+  <BaseMovement>k__BackingField: 0
+  <CurrentMovementPoints>k__BackingField: 0
+  <AttackPower>k__BackingField: 0
+  <DefensePower>k__BackingField: 0
+  <Skill>k__BackingField: 0
+  <Speed>k__BackingField: 0
+  <EquippedWeapon>k__BackingField:
+    <WeaponId>k__BackingField: 
+    <WeaponName>k__BackingField: 
+    <AttackPower>k__BackingField: 0
+    <Range>k__BackingField: 0
+    <HitRate>k__BackingField: 0
+    <CurrentWeaponExperience>k__BackingField: 0
+    <CurrentWeaponLevel>k__BackingField: 0
+  <CurrentGridPosition>k__BackingField: {x: 0, y: 0}
+  <HasActedThisTurn>k__BackingField: 0
+  <CurrentExperience>k__BackingField: 0
+  <CurrentLevel>k__BackingField: 0
+  _selectedColor: {r: 0, g: 0, b: 1, a: 1}
+  _defaultColor: {r: 1, g: 1, b: 1, a: 1}
