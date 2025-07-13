@@ -1,11 +1,16 @@
 using UnityEngine;
-
+using System.Collections.Generic;
+using System.Linq;
 
 //ユニットのタイプを識別するEnum
 
 
 public class PlayerUnit : Unit
 {
+    [SerializeField] private PlayerUnit _playerUnit;//対象のプレイヤーユニット
+    private MapManager _tileHighlighter;//MapManagerのハイライト関連への参照
+
+    public static PlayerUnit Instance;
 
     //[SerializeField] private int _moveRange = 3;//移動範囲
     //[SerializeField] private int _currentMovementPoints = 3;
@@ -134,10 +139,80 @@ public class PlayerUnit : Unit
     //    Debug.Log($"Unit:{_unitName},GridPos:{_currentPosition}");
     //}
 
+
+    //ユニットが選択された場合に呼び出す
+    public void OnUnitSelected()
+    {
+        _tileHighlighter.ClearAllHighlights();//既存のハイライトをクリア
+
+        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableTiles = DijkstraPathfinder.FindReachableTiles(
+            _playerUnit.GetCurrentGridPostion(),_playerUnit);
+
+        foreach (Vector2Int pos in reachableTiles.Keys)
+        {
+            _tileHighlighter.HighlightTile(pos, HighlightType.Move);
+        }
+
+        //攻撃可能範囲を計算し、赤色でハイライト
+        ShowAttackRangeHighlight(reachableTiles.Keys.ToList());
+
+        //確認
+        Debug.LogError("呼ばれたよ！");
+    }
+
+    public void OnUnitActionCompleted()
+    {
+        _tileHighlighter.ClearAllHighlights();//全てのハイライトをクリア
+    }
+
+    /// <summary>
+    /// 攻撃可能範囲をハイライト表示する
+    /// </summary>
+    /// <param name="moveableTiles">移動可能なタイルリスト</param>
+    private void ShowAttackRangeHighlight(List<Vector2Int> moveableTiles)
+    {
+        HashSet<Vector2Int> attackableTiles = new HashSet<Vector2Int>();
+        Vector2Int[] directions = { new Vector2Int(0, 1), new Vector2Int(1, 0), new Vector2Int(0, -1), new Vector2Int(1, 0), new Vector2Int(-1, 0), };
+
+        //各移動可能タイルから1マス隣接するタイルを攻撃可能範囲候補として追加
+        foreach (Vector2Int movePos in moveableTiles)
+        {
+            foreach(Vector2Int dir in directions)
+            {
+                Vector2Int attackTargetPos = movePos + dir;
+                //マップの範囲内か確認
+                if (MapManager.Instance.IsValidGridPosition(attackTargetPos))
+                {
+                    attackableTiles.Add(attackTargetPos);
+                }
+            }
+        }
+
+        //敵ユニットが存在するタイルのみを赤色ハイライト
+        foreach(Vector2Int targetPos in attackableTiles)
+        {
+            Tile targetTile = MapManager.Instance.GetTileAt(targetPos);
+            if(targetTile != null && targetTile.OccupyingUnit != null)
+            {
+                //ユニットが敵factionTypeであるか確認
+                if(targetTile.OccupyingUnit.Faction == FactionType.Enemy)
+                {
+                    _tileHighlighter.HighlightTile(targetPos,HighlightType.Attack);
+                }
+            }
+        }
+    }
+
+
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        _tileHighlighter = FindObjectOfType<MapManager>();//シーン内のMapManagerを取得
+        if( _tileHighlighter == null)
+        {
+            Debug.LogError("MapManagerが見つかりません");
+        }
     }
 
     // Update is called once per frame

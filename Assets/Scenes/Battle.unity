@@ -241,8 +241,10 @@ MonoBehaviour:
   - {fileID: -2446290683397990192, guid: 4d3786898b41dec438eda50b62c87467, type: 3}
   _terrainCosts: []
   _movableHighlightPrefab: {fileID: 2112004532673721051, guid: c33f3a646dfa4534997e8c03ff0e326f, type: 3}
+  _attackHighlightPrefab: {fileID: 2112004532673721051, guid: 86404d89c54c9ec4a9210e2e3b53334d, type: 3}
   _pathLinePrefab: {fileID: 4717480643199746719, guid: cc76b8a067ca31e4caa034fb53e65ca3, type: 3}
   _playerUnitPrefab: {fileID: 2968785956472499736, guid: 3f090872849152d468fbd26e053b2795, type: 3}
+  _enemyUnitprefab: {fileID: 8331606119897806834, guid: 5883c741009fdaf4f978338660bbe515, type: 3}
 --- !u!4 &306895319
 Transform:
   m_ObjectHideFlags: 0

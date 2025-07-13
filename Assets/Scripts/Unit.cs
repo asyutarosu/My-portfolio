@@ -47,7 +47,7 @@ public partial class Unit : MonoBehaviour
 
     //ユニットの選択状態を管理
     private SpriteRenderer _spriteRenderer;
-    //ユニットの選択状態と非選択状態
+    //ユニットの選択状態と非選択状態(デバッグ用)
     [SerializeField] private Color _selectedColor = Color.blue;//選択状態の色
     [SerializeField] private Color _defaultColor = Color.white;//非選択状態の色
 
