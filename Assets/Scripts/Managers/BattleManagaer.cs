@@ -52,30 +52,30 @@ public partial class BattleManager : MonoBehaviour
     /// <summary>
     /// 戦闘を開始する
     /// </summary>
-    public void StartBattle()
-    {
-        Debug.Log("BattleManager:戦闘を開始します");
-        _cuurrentTurn = 1;
+    //public void StartBattle()
+    //{
+    //    Debug.Log("BattleManager:戦闘を開始します");
+    //    _cuurrentTurn = 1;
 
-        //最初期段階として手動で仮のユニットを配置
-        _allUnits = new List<Unit>();
-        //仮のプレイヤーユニット
-        GameObject playerUnitObj = new GameObject("PlayerUnit");
-        playerUnitObj.transform.position = new Vector3(0, 0, 0);
-        Unit playerUnit = playerUnitObj.AddComponent<Unit>();
-        playerUnit.Initialize(new UnitData { UnitId = "PLAYER001", UnitName = "勇者", BaseHP = 10, BaseMovement = 5 });
-        playerUnit.UpdatePosition(new Vector2Int(0, 0));
-        _allUnits.Add(playerUnit);
-        //仮の敵ユニット
-        GameObject enemyUnitObj = new GameObject("EnemyUnit");
-        enemyUnitObj.transform.position = new Vector3(5, 5, 0);
-        Unit enemyUnit = enemyUnitObj.AddComponent<Unit>();
-        enemyUnit.Initialize(new UnitData { UnitId = "ENEMY001", UnitName = "一般兵士", BaseHP = 1, BaseMovement = 3 });
-        enemyUnit.UpdatePosition(new Vector2Int(3, 3));
-        _allUnits.Add(enemyUnit);
+    //    //最初期段階として手動で仮のユニットを配置
+    //    _allUnits = new List<Unit>();
+    //    //仮のプレイヤーユニット
+    //    GameObject playerUnitObj = new GameObject("PlayerUnit");
+    //    playerUnitObj.transform.position = new Vector3(0, 0, 0);
+    //    Unit playerUnit = playerUnitObj.AddComponent<Unit>();
+    //    playerUnit.Initialize(new UnitData { UnitId = "PLAYER001", UnitName = "勇者", BaseHP = 10, BaseMovement = 5 });
+    //    playerUnit.UpdatePosition(new Vector2Int(0, 0));
+    //    _allUnits.Add(playerUnit);
+    //    //仮の敵ユニット
+    //    GameObject enemyUnitObj = new GameObject("EnemyUnit");
+    //    enemyUnitObj.transform.position = new Vector3(5, 5, 0);
+    //    Unit enemyUnit = enemyUnitObj.AddComponent<Unit>();
+    //    enemyUnit.Initialize(new UnitData { UnitId = "ENEMY001", UnitName = "一般兵士", BaseHP = 1, BaseMovement = 3 });
+    //    enemyUnit.UpdatePosition(new Vector2Int(3, 3));
+    //    _allUnits.Add(enemyUnit);
 
-        StartTurn();//最初のターン開始
-    }
+    //    StartTurn();//最初のターン開始
+    //}
 
     /// <summary>
     /// ターンを開始する

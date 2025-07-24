@@ -33,7 +33,7 @@ public partial class Unit : MonoBehaviour
 
     [field: SerializeField]public int Speed { get; private set; }//速さ
 
-
+    [field:SerializeField]protected UnitData unitData { get; private set; }//ユニットデータ取得用
 
     [field:SerializeField]public Weapon EquippedWeapon { get; private set; }//装備中の武器
     [field: SerializeField] public Vector2Int CurrentGridPosition { get; protected set; }//マップ上の現在のグリッド座標
@@ -60,8 +60,33 @@ public partial class Unit : MonoBehaviour
         }
 
         //仮データ
-        UnitId = "NoId";
+        //UnitId = "NoId";
 
+        //UnitDataからステータスを読み取る
+        if(unitData != null)
+        {
+            UnitId = unitData.UnitId;
+            UnitName  = unitData.UnitName;
+            Type = unitData.Type;
+            _factionType = unitData.FactionType;
+            CurrentHP = unitData.MaxHP;
+            MaxHP = unitData.MaxHP;
+            BaseMovement = unitData.BaseMovement;
+            CurrentMovementPoints = BaseMovement;
+            AttackPower = unitData.BaseAttackPower;
+            DefensePower = unitData.BaseDefensePower;
+
+            Debug.Log($"{UnitName} (ID: {UnitId}) のステータスをUnitDataから設定しました。" +
+                      $"HP: {CurrentHP}/{MaxHP}, 移動力: {BaseMovement}, 攻撃力: {AttackPower}, 防御力: {DefensePower}");
+        }
+        else
+        {
+            Debug.LogWarning($"{this.name} に UnitData が割り当てられていません！デフォルト値を使用します。");
+            UnitId = "0";
+            UnitName= "0";
+            MaxHP = 1;
+            BaseMovement = 1;
+        }
 
         //デバッグ用
         if (string.IsNullOrEmpty(UnitId))
@@ -80,7 +105,7 @@ public partial class Unit : MonoBehaviour
         UnitId = data.UnitId;
         UnitName = data.UnitName;
         Type = data.Type;
-        MaxHP = data.BaseHP;
+        MaxHP = data.MaxHP;
         CurrentHP = MaxHP;
         BaseMovement = data.BaseMovement;
         CurrentMovementPoints = BaseMovement;
@@ -217,6 +242,7 @@ public partial class Unit : MonoBehaviour
     public void ResetAction()
     {
         HasActedThisTurn = false;
+        //CurrentMovementPoints = BaseMovement;
     }
 
     /// <summary>
@@ -272,10 +298,11 @@ public partial class Unit : MonoBehaviour
     {
         return CurrentGridPosition;
     }
-        /// <summary>
-        /// ユニットの移動範囲を取得する
-        /// </summary>
-        public int GetMoveRange()
+
+    /// <summary>
+    /// ユニットの移動範囲を取得する
+    /// </summary>
+    public int GetMoveRange()
     {
         return CurrentMovementPoints;
     }

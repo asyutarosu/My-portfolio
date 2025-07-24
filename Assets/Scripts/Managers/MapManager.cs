@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections;
 
 /// Tiles.csへ移行（済み）2025/06
 /// < summary >
@@ -115,6 +116,11 @@ public class MapManager : MonoBehaviour
 
     [SerializeField] private TerrainCost[] _terrainCosts;
 
+    private int _currentMapIndex = 0;//現在ロードしているマップのインデックス
+    private MapData _currentMapData;//MapDtaLoaderによって読み込まれるマップデータ
+
+    private Dictionary<Vector2Int, Tile> _tiles = new Dictionary<Vector2Int, Tile>();//生成された全てのTileオブジェクトとグリッド座標を管理する
+
     //移動関連
     //ハイライト表示関連
     [SerializeField] private GameObject _movableHighlightPrefab;//移動用の青色ハイライトプレハブ
@@ -129,11 +135,7 @@ public class MapManager : MonoBehaviour
     private Vector2Int _currentPlannedMovePositon = Vector2Int.zero;//移動先のグリッド座標
     private bool _isMovingOrPlanning = false;//移動計画中または移動中かを示すフラグ
 
-    private int _currentMapIndex = 0;//現在ロードしているマップのインデックス
-    private MapData _currentMapData;//MapDtaLoaderによって読み込まれるマップデータ
-
-    private Dictionary<Vector2Int ,Tile> _tiles = new Dictionary<Vector2Int, Tile>();//生成された全てのTileオブジェクトとグリッド座標を管理する
-
+    
     //PlayerUnit関連
     [SerializeField] private GameObject _playerUnitPrefab;
     private Unit _currentPlayerUnit;//現在のプレイヤーユニットの参照
@@ -145,6 +147,20 @@ public class MapManager : MonoBehaviour
     private Unit _currentEnemyUnit;//現在の敵ユニットの参照
     private Unit _selectedEnemyUnit;//選択中の敵ユニット
 
+    //各のユニットのリスト(管理を一括化するか個別化するか検討中2025/07）
+    //各ユニットリスト
+    private List<PlayerUnit> _allPlayerUnits = new List<PlayerUnit>();
+    private List<EnemyUnit> _allEnemyUnits = new List<EnemyUnit>();
+    //2025/07仮として個別化で実装（一部一括用の処理も記載）
+    private List<Unit> _allUnit = new List<Unit>();
+    //private List<PlayerUnit> _playerUnit;
+    //private List<EnemyUnit> _enemyUnit;
+
+    // 新しく用意したユニットプレハブのフィールド
+    [SerializeField] private PlayerUnit _player001Prefab;
+    [SerializeField] private PlayerUnit _player002Prefab;
+    [SerializeField] private EnemyUnit _enemy001Prefab;
+    [SerializeField] private EnemyUnit _enemy002Prefab;
 
     [System.Serializable]public class TerrainCost
     {
@@ -163,6 +179,85 @@ public class MapManager : MonoBehaviour
         {
             _instance = this;
         }
+    }
+
+    //初期化処理
+    public void Initialize()
+    {
+        GenerateMap(_mapSequence[0]);
+
+        _allPlayerUnits.Clear();
+        _allEnemyUnits.Clear();
+
+        //複数のユニット配置2025/07
+
+        //プレイヤーユニット
+        //GameObject player1GO = Instantiate(_playerUnitPrefab,transform);
+        //PlayerUnit player1 = player1GO.GetComponent<PlayerUnit>();
+        //if (player1 != null)
+        //{
+        //    player1.name = "Player001";
+        //    PlaceUnit(player1,new Vector2Int(0,4));
+        //}
+        //else
+        //{
+        //    Debug.LogError("Player1プレハブにPlayerUnitコンポーネントが見つかりません！");
+        //}
+
+        if(_player001Prefab != null)
+        {
+            PlayerUnit player001 = Instantiate(_player001Prefab,transform);
+            PlaceUnit(player001, new Vector2Int(0, 0));
+        }
+        else 
+        { 
+            Debug.LogError("MapManager: _player001Prefabが割り当てられていません！"); 
+        }
+
+        if (_player002Prefab != null)
+        {
+            PlayerUnit player002 = Instantiate(_player002Prefab, transform);
+            PlaceUnit(player002, new Vector2Int(0, 2));
+        }
+        else
+        {
+            Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
+        }
+
+        //敵ユニット
+        //GameObject enemy1Go = Instantiate(_enemyUnitprefab, transform);
+        //EnemyUnit enemy1 = enemy1Go.GetComponent<EnemyUnit>();
+        //if (enemy1 != null)
+        //{
+        //    enemy1.name = "Enemy001";
+        //    PlaceUnit(enemy1, new Vector2Int(5, 0));
+        //}
+        //else
+        //{
+        //    Debug.LogError("Enemy001プレハブにPlayerUnitコンポーネントが見つかりません！");
+        //}
+
+        if(_enemy001Prefab != null)
+        {
+            EnemyUnit enemy001 = Instantiate(_enemy001Prefab, transform);
+            PlaceUnit(enemy001, new Vector2Int(5, 0));
+        }
+        else
+        {
+            Debug.LogError("MapManager: _enemy001Prefabが割り当てられていません！");
+        }
+
+        if(_enemy002Prefab != null)
+        {
+            EnemyUnit enemy002 = Instantiate(_enemy002Prefab, transform);
+            PlaceUnit(enemy002, new Vector2Int(4, 4));
+        }
+        else
+        {
+            Debug.LogError("MapManager: _enemy002Prefabが割り当てられていません！");
+        }
+
+        TurnManager.Instance.InitializeTurnManager();
     }
 
     //GenerateMapとして処理を統合2025/06
@@ -278,7 +373,7 @@ public class MapManager : MonoBehaviour
         Tile tile = GetTileAt(position);
         if (tile == null)
         {
-            return int.MinValue; //範囲外は移動不可
+            return int.MaxValue; //範囲外は移動不可
         }
 
         //地形とユニットタイプに応じた移動コストのロジック
@@ -453,6 +548,31 @@ public class MapManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 全てのユニットのリストを取得する
+    /// </summary>
+    public List<Unit> GetAllUnits()
+    {
+        return _allUnit.OfType<Unit>().ToList();
+    }
+
+    /// <summary>
+    /// 全てのプレイヤーユニットのリストを取得する
+    /// </summary>
+    public List<PlayerUnit> GetAllPlayerUnits()
+    {
+        return _allPlayerUnits.OfType<PlayerUnit>().ToList();
+    }
+
+    /// <summary>
+    /// 全ての敵ユニットのリストを取得する
+    /// </summary>
+    public List<EnemyUnit> GetAllEnemyUnits()
+    {
+        return _allEnemyUnits.OfType<EnemyUnit>().ToList();
+    }
+
+
+    /// <summary>
     /// プレイヤーユニットを初期位置に配置する
     /// </summary>
     private void PlacePlayerUnitAtInitialPostiton()
@@ -487,15 +607,15 @@ public class MapManager : MonoBehaviour
         _currentPlayerUnit = playerUnit;
 
         UnitData dummyData = new UnitData();
-        dummyData.UnitId = "PLAYER001";
-        dummyData.UnitName = "none";
-        dummyData.Type = UnitType.Infantry;
-        dummyData.BaseMovement = 3;
-        dummyData.BaseAttackPower = 5;
-        dummyData.BaseDefensePower = 5;
-        dummyData.BaseHP = 5;
-        dummyData.BaseSkill = 5;
-        dummyData.BaseSpeed = 5;
+        //dummyData.UnitId = "PLAYER001";
+        //dummyData.UnitName = "none";
+        //dummyData.Type = UnitType.Infantry;
+        //dummyData.BaseMovement = 3;
+        //dummyData.BaseAttackPower = 5;
+        //dummyData.BaseDefensePower = 5;
+        //dummyData.MaxHP = 5;
+        //dummyData.BaseSkill = 5;
+        //dummyData.BaseSpeed = 5;
 
         //プレイヤーユニットの初期化とワールド座標への配置
         _currentPlayerUnit.Initialize(dummyData);//ユニット名も渡す
@@ -512,7 +632,7 @@ public class MapManager : MonoBehaviour
     private void PlaceEnemyUnitAtInitialPostiton()
     {
         //プロトタイプ用の仮初期座標
-        Vector2Int initialEnemyGridPos = new Vector2Int(4, 0);
+        Vector2Int initialEnemyGridPos = new Vector2Int(5, 0);
 
 
         //指定された座標がマップ範囲内か確認
@@ -541,23 +661,42 @@ public class MapManager : MonoBehaviour
         _currentEnemyUnit = enemyUnit;
 
         UnitData dummyData = new UnitData();
-        dummyData.UnitId = "ENEMY001";
-        dummyData.UnitName = "one";
-        dummyData.Type = UnitType.Infantry;
-        dummyData.BaseMovement = 5;
-        dummyData.BaseAttackPower = 5;
-        dummyData.BaseDefensePower = 5;
-        dummyData.BaseHP = 5;
-        dummyData.BaseSkill = 5;
-        dummyData.BaseSpeed = 5;
+        //dummyData.UnitId = "ENEMY001";
+        //dummyData.UnitName = "one";
+        //dummyData.Type = UnitType.Infantry;
+        //dummyData.BaseMovement = 3;
+        //dummyData.BaseAttackPower = 5;
+        //dummyData.BaseDefensePower = 5;
+        //dummyData.MaxHP = 5;
+        //dummyData.BaseSkill = 5;
+        //dummyData.BaseSpeed = 5;
 
         //敵ユニットの初期化とワールド座標への配置
-        _currentEnemyUnit.Initialize(dummyData);//ユニット名も渡す
+        //_currentEnemyUnit.Initialize(dummyData);//ユニット名も渡す
         _currentEnemyUnit.UpdatePosition(initialEnemyGridPos);//ワールド座標を設定
 
 
 
-        Debug.Log($"PlayerUnit'{_currentEnemyUnit.name}'placed at grid:{initialEnemyGridPos}");
+        Debug.Log($"EnemyUnit'{_currentEnemyUnit.name}'placed at grid:{initialEnemyGridPos}");
+    }
+
+    /// <summary>
+    /// ユニットの配置
+    /// </summary>
+    public void PlaceUnit(Unit unit, Vector2Int gridPos)
+    {
+        unit.SetGridPosition(gridPos);
+        GetTileAt(gridPos).OccupyingUnit = unit;
+        unit.transform.position = GetWorldPositionFromGrid(gridPos);
+
+        if (unit is PlayerUnit playerUnit)
+        {
+            _allPlayerUnits.Add(playerUnit);
+        }
+        else if(unit is EnemyUnit enemyUnit)
+        {
+            _allEnemyUnits.Add(enemyUnit);
+        }
     }
 
     /// <summary>
@@ -565,6 +704,13 @@ public class MapManager : MonoBehaviour
     /// </summary>
     private void HandleMouseClick()
     {
+        //仮：プレイヤーターンでなければ処理しない
+        if(TurnManager.Instance != null && TurnManager.Instance.CurrnetTurnState != TurnState.PlayerTurn)
+        {
+            return;
+        }
+
+
         //ユニットが移動計画中または移動中の場合は、新たなマウスクリック入力を受け付けない
         if (_isMovingOrPlanning)
         {
@@ -681,6 +827,8 @@ public class MapManager : MonoBehaviour
     //ユニットがクリックされた時の処理
     private void HandleUnitClick(Unit clickedUnit)
     {
+        
+
         if(_selectedUnit == clickedUnit)
         {
             _selectedUnit.SetSelected(false);
@@ -889,22 +1037,22 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    public void OnUnitSelected(Unit unit)
-    {
-        ClearAllHighlights();//既存のハイライトをクリア
+    //public void OnUnitSelected(Unit unit)
+    //{
+    //    ClearAllHighlights();//既存のハイライトをクリア
 
-        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableTiles =
-            DijkstraPathfinder.FindReachableTiles(unit.CurrentGridPosition, unit);
+    //    Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableTiles =
+    //        DijkstraPathfinder.FindReachableTiles(unit.CurrentGridPosition, unit);
 
-        foreach (Vector2Int pos in reachableTiles.Keys)
-        {
-            HighlightTile(pos, HighlightType.Move);
-        }
+    //    foreach (Vector2Int pos in reachableTiles.Keys)
+    //    {
+    //        HighlightTile(pos, HighlightType.Move);
+    //    }
 
-        //攻撃可能範囲を計算し、赤色でハイライト
-        ShowAttackRangeHighlight(reachableTiles.Keys.ToList(),unit);
+    //    //攻撃可能範囲を計算し、赤色でハイライト
+    //    ShowAttackRangeHighlight(reachableTiles.Keys.ToList(),unit);
 
-    }
+    //}
 
     /// <summary>
     /// 移動可能範囲を計算し、ハイライト表示する
@@ -922,6 +1070,8 @@ public class MapManager : MonoBehaviour
 
         Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableNodes =
             DijkstraPathfinder.FindReachableTiles(unit.CurrentGridPosition, unit);
+
+        
 
         //計算された移動可能範囲のタイルをハイライト表示
         foreach(var entry in reachableNodes)
@@ -1025,7 +1175,7 @@ public class MapManager : MonoBehaviour
     /// </summary>
     /// <param name="unit">移動するユニット</param>
     /// <param name="path">移動経路のグリッド座標リスト</param>
-    private System.Collections.IEnumerator MoveUnitAlogPath(Unit unit,List<Vector2Int> path)
+    public System.Collections.IEnumerator MoveUnitAlogPath(Unit unit,List<Vector2Int> path)
     {
         //選択解除とハイライトクリアは移動開始時に行う2025/06
         //if(_selectedUnit != null)
@@ -1040,8 +1190,10 @@ public class MapManager : MonoBehaviour
 
         for(int i = 0; i < path.Count; i++)
         {
+            Vector2Int targetGridPosInPath = path[i];
             Vector3 startWorldPos = unit.transform.position;
             Vector3 targetWorldPos = GetWorldPositionFromGrid(path[i]);
+            Vector3 endWorldPos = GetWorldPositionFromGrid(targetGridPosInPath);
             float distance = Vector3.Distance(startWorldPos, targetWorldPos);
             float duration = distance / moveSpeed;
             float elapsed = 0f;
@@ -1059,8 +1211,64 @@ public class MapManager : MonoBehaviour
             unit.UpdatePosition(path[i]);
         }
 
+        
         ClearPathLine();//現在は移動完了でクリア
         Debug.Log("ユニットの移動が完了しました");
+    }
+
+    public IEnumerator SmoothMoveCoroutine(Unit unit, Vector2Int startGridPos, Vector2Int endGridPos,List<Vector2Int> path)
+    {
+        if (path == null || path.Count <= 1) // パスが見つからない、または同じ位置にいる場合 (path.Count <= 1 は開始地点のみの場合)
+        {
+            Debug.LogWarning("移動パスが見つからないか、ユニットが既に目的地にいます。");
+            // プレイヤーユニットの場合のみFinalizeMoveStateを呼び出す
+            if (unit is PlayerUnit)
+            {
+                ConfirmMove();
+            }
+            yield break;
+        }
+
+        // 経路の各ポイントを辿って移動
+        // 最初の要素は現在の位置なのでスキップ (path.Count > 1 を確認)
+        for (int i = 1; i < path.Count; i++) // 最初の地点は既にいる場所なので、2番目の地点から移動を開始
+        {
+            Vector2Int targetGridPosInPath = path[i];
+            Vector3 startWorldPos = unit.transform.position;
+            Vector3 endWorldPos = GetWorldPositionFromGrid(targetGridPosInPath);
+            float durationPerTile = 0.2f; // タイル1マスあたりの移動時間
+            float elapsed = 0f;
+
+            while (elapsed < durationPerTile)
+            {
+                unit.transform.position = Vector3.Lerp(startWorldPos, endWorldPos, elapsed / durationPerTile);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+            unit.transform.position = endWorldPos; // 各タイルの中心に正確にスナップ
+        }
+
+        // 全ての移動が完了したら、最終的な状態を確定
+        // ユニットのグリッド座標を更新
+        unit.SetGridPosition(endGridPos);
+
+        // ユニットの占有タイルを更新 (MapManagerのGetTileAtとOccupyingUnitプロパティを使用)
+        Tile oldTile = GetTileAt(startGridPos);
+        if (oldTile != null) oldTile.OccupyingUnit = null; // 元のタイルからユニットを解除
+
+        Tile newTile = GetTileAt(endGridPos);
+        if (newTile != null) newTile.OccupyingUnit = unit; // 新しいタイルにユニットを設定
+
+        // プレイヤーユニットの場合のみFinalizeMoveStateを呼び出す
+        if (unit is PlayerUnit)
+        {
+            ConfirmMove();
+        }
+        else // 敵ユニットの場合の移動完了処理 (必要に応じて追加)
+        {
+            // 敵ユニット固有の移動完了後の処理があればここに記述
+            // 例: ターン終了をAIに通知するなど
+        }
     }
 
     /// <summary>
@@ -1074,11 +1282,15 @@ public class MapManager : MonoBehaviour
             //_selectedUnit.SetGridPosition(_currentPlannedMovePositon);
             //_selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
 
-            //ユニットの行動を完了状態にする（未実装）
+            
+            //ユニットの行動を完了状態にする
+            _selectedUnit.SetActionTaken(true);
 
             //ハイライトをクリアし、選択状態を解除
             ClearAllHighlights();
             ClearMovableRangeDisplay();
+            _selectedUnit.SetSelected(false);
+            _selectedUnit.SetActionTaken(true);
             _selectedUnit = null;
 
             //状態をリセット
@@ -1120,10 +1332,12 @@ public class MapManager : MonoBehaviour
     {
         if(_mapSequence.Length > 0)
         {
+            Initialize();
+
             //GenerateMap(_mapSequence[_currentMapIndex]);
-            GenerateMap(_mapSequence[0]);
-            PlacePlayerUnitAtInitialPostiton();
-            PlaceEnemyUnitAtInitialPostiton();
+            //GenerateMap(_mapSequence[0]);
+            //PlacePlayerUnitAtInitialPostiton();
+            //PlaceEnemyUnitAtInitialPostiton();
         }
         else
         {
@@ -1137,7 +1351,12 @@ public class MapManager : MonoBehaviour
         //Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         //Vector2Int clickedGridPos = GetGridPositionFromWorld(mouseWorldPos);
         
-        
+        //プレイヤーターン中のみ入力を受け付ける
+        if(TurnManager.Instance != null && TurnManager.Instance.CurrnetTurnState != TurnState.PlayerTurn)
+        {
+            return;
+        }
+
         //マウス操作を検知（左クリック2025 / 06）
         if (Input.GetMouseButtonDown(0))
         {

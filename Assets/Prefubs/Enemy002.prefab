@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6657592962306079967}
   - component: {fileID: -3626944775743022083}
   m_Layer: 0
-  m_Name: Enemy001
+  m_Name: Enemy002
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -159,7 +159,7 @@ MonoBehaviour:
   <DefensePower>k__BackingField: 0
   <Skill>k__BackingField: 0
   <Speed>k__BackingField: 0
-  <unitData>k__BackingField: {fileID: 11400000, guid: 9c202155d3bb75f43a16799af3014842, type: 2}
+  <unitData>k__BackingField: {fileID: 11400000, guid: 7f3c6db2292e66d4cba6ccfb455a10ef, type: 2}
   <EquippedWeapon>k__BackingField:
     <WeaponId>k__BackingField: 
     <WeaponName>k__BackingField: 
@@ -176,4 +176,4 @@ MonoBehaviour:
   _defaultColor: {r: 1, g: 1, b: 1, a: 1}
   _aiType: 0
   _minAttackRange: 1
-  _maxAttackRange: 2
+  _maxAttackRange: 1
