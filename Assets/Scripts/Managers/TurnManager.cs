@@ -113,6 +113,37 @@ public class TurnManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 全てのプレイヤーユニットが行動済みかチェックし、行動済みならターンを終了する
+    /// </summary>
+    public void CheckAllPlayerUnitActed()
+    {
+        //プレイヤーユニットが全滅の場合
+        if(_playerUnits == null || _playerUnits.Count == 0)
+        {
+            Debug.Log("プレイヤーユニットがいません。ゲームオーバー。");
+            //仮として敵ターンへ移行（ゲームオーバー関連未実装2025/07）
+            EndPlayerTurn();
+            return;
+        }
+
+        bool allActed = true;
+        foreach(PlayerUnit playerUnit in _playerUnits)
+        {
+            if (!playerUnit.HasActedThisTurn)
+            {
+                allActed = false;
+                break;
+            }
+        }
+
+        if (allActed)
+        {
+            Debug.Log("全てのプレイヤーユニットが行動を完了しました。敵ターンへ移行します。");
+            EndPlayerTurn();
+        }
+    }
+
+    /// <summary>
     /// 敵のターンを開始する
     /// </summary>
     private void StartEnemyTurn()
@@ -150,6 +181,12 @@ public class TurnManager : MonoBehaviour
         while (_currentEnemyUnitIndex < _enemyUnits.Count)
         {
             EnemyUnit currentEnemy = _enemyUnits[_currentEnemyUnitIndex];
+
+            //倒された敵ユニットはスキップ
+            if(currentEnemy == null || currentEnemy.CurrentHP <= 0)
+            {
+                continue;
+            }
 
             //行動済みの敵ユニットはスキップ
             if (currentEnemy.HasActedThisTurn)

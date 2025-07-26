@@ -43,13 +43,13 @@ public partial class Unit : MonoBehaviour
     [field:SerializeField]public int CurrentLevel { get; private set; }//現在のレベル
 
     public Tile OccupyingTile { get; protected set; }
-    
 
     //ユニットの選択状態を管理
     private SpriteRenderer _spriteRenderer;
     //ユニットの選択状態と非選択状態(デバッグ用)
     [SerializeField] private Color _selectedColor = Color.blue;//選択状態の色
     [SerializeField] private Color _defaultColor = Color.white;//非選択状態の色
+    [SerializeField] private Color _actedColor = Color.gray;//行動済みの状態の色
 
     protected virtual void Awake()
     {
@@ -242,7 +242,20 @@ public partial class Unit : MonoBehaviour
     public void ResetAction()
     {
         HasActedThisTurn = false;
-        //CurrentMovementPoints = BaseMovement;
+        CurrentMovementPoints = BaseMovement;
+        SetSelected(false);
+
+    }
+
+    /// <summary>
+    /// ユニットが行動を完了したことを設定する
+    /// </summary>
+    public void SetActedThisTrun()
+    {
+        HasActedThisTurn |= true;
+        CurrentMovementPoints = 0;
+        SetSelected(false );
+        UpdateVisualColor();
     }
 
     /// <summary>
@@ -272,6 +285,7 @@ public partial class Unit : MonoBehaviour
             {
                 OccupyingTile.OccupyingUnit = null;
             }
+
             //新しいタイルを設定し、ユニットを占有
             OccupyingTile = MapManager.Instance.GetTileAt(CurrentGridPosition);
             if (OccupyingTile != null)
@@ -280,6 +294,27 @@ public partial class Unit : MonoBehaviour
             }
         }
     }
+
+    //ユニットが移動を完了した際に、新しいタイルを占有し、古いタイルから解放する
+    public void MoveToGridPosition(Vector2Int newGridPos, Tile newTile)
+    {
+        //古いタイルから参照を解除
+        if(OccupyingTile != null && OccupyingTile.OccupyingUnit == this)
+        {
+            OccupyingTile.OccupyingUnit = null;
+        }
+
+        CurrentGridPosition = newGridPos;
+        transform.position = MapManager.Instance.GetWorldPositionFromGrid(newGridPos);
+
+        //新しいタイルを設定し、占有する
+        OccupyingTile = newTile;
+        if(OccupyingTile != null)
+        {
+            OccupyingTile.OccupyingUnit = this;
+        }
+    }
+
 
     /// <summary>
     /// ユニットの現在のグリッド座標を更新する
@@ -307,12 +342,39 @@ public partial class Unit : MonoBehaviour
         return CurrentMovementPoints;
     }
 
-    //ユニットの選択状態を設定する
+    //ユニットの行動状態の色を設定する
     public void SetSelected(bool isSelected)
     {
         if (_spriteRenderer != null)
         {
-            _spriteRenderer.color = isSelected ? _selectedColor : _defaultColor;
+            //_spriteRenderer.color = isSelected ? _selectedColor : _defaultColor;
+
+            if (isSelected)
+            {
+                _spriteRenderer.color = _selectedColor;
+            }
+            else if (HasActedThisTurn)
+            {
+                _spriteRenderer.color = _actedColor;
+            }
+            else
+            {
+                _spriteRenderer.color = _defaultColor;
+            }
+        }
+    }
+
+    //ユニットの色を更新する
+    private void UpdateVisualColor()
+    {
+        if(_spriteRenderer != null)
+        {
+            if(HasActedThisTurn)
+                _spriteRenderer.color = _actedColor;
+        }
+        else
+        {
+            _spriteRenderer.color= _defaultColor;
         }
     }
 

@@ -129,6 +129,8 @@ public class MapManager : MonoBehaviour
     private Dictionary<Vector2Int,GameObject> _activeHighlights = new Dictionary<Vector2Int,GameObject>();
     [SerializeField] private LineRenderer _pathLinePrefab;//経路表示用のプレハブ
     private LineRenderer _currentPathLine;//現在表示されている経路ライン
+    //確認用ハイライト
+    [SerializeField] private GameObject _occupiedHighlightPrefab;//ユニット占有用のハイライト
 
     //ユニットの移動状態を管理するための変数
     private Vector2Int _originalUnitPositon = Vector2Int.zero;//移動前のグリッド座標
@@ -184,10 +186,13 @@ public class MapManager : MonoBehaviour
     //初期化処理
     public void Initialize()
     {
+        //タイルリストとユニットリストのクリア
+        ClaerExistingUnits();
+
         GenerateMap(_mapSequence[0]);
 
-        _allPlayerUnits.Clear();
-        _allEnemyUnits.Clear();
+        //_allPlayerUnits.Clear();
+        //_allEnemyUnits.Clear();
 
         //複数のユニット配置2025/07
 
@@ -204,7 +209,8 @@ public class MapManager : MonoBehaviour
         //    Debug.LogError("Player1プレハブにPlayerUnitコンポーネントが見つかりません！");
         //}
 
-        if(_player001Prefab != null)
+
+        if (_player001Prefab != null)
         {
             PlayerUnit player001 = Instantiate(_player001Prefab,transform);
             PlaceUnit(player001, new Vector2Int(0, 0));
@@ -571,6 +577,25 @@ public class MapManager : MonoBehaviour
         return _allEnemyUnits.OfType<EnemyUnit>().ToList();
     }
 
+    /// <summary>
+    /// 全てのシーン内のユニットのクリア
+    /// </summary>
+    private void ClaerExistingUnits()
+    {
+        //現在シーンにある全てのユニットオブジェクトを削除
+        foreach(var tileEntry in _tiles)
+        {
+            if(tileEntry.Value.OccupyingUnit != null)
+            {
+                Destroy(tileEntry.Value.OccupyingUnit.gameObject);
+                tileEntry.Value.OccupyingUnit = null;
+            }
+        }
+        _allUnit.Clear();
+        _allPlayerUnits.Clear();
+        _allPlayerUnits.Clear();
+    }
+
 
     /// <summary>
     /// プレイヤーユニットを初期位置に配置する
@@ -685,9 +710,28 @@ public class MapManager : MonoBehaviour
     /// </summary>
     public void PlaceUnit(Unit unit, Vector2Int gridPos)
     {
+        if (!_tiles.ContainsKey(gridPos))
+        {
+            Debug.LogError($"MapManager: グリッド座標 {gridPos} にタイルが存在しません。");
+            return;
+        }
+
+        Tile targetTile = _tiles[gridPos];
+
+        //配置先のタイルがすでに他のユニットに占有されていないかチェックし、すでに存在する場合は破棄
+        if (targetTile.OccupyingUnit != null)
+        {
+            Debug.LogWarning($"MapManager: グリッド座標 {gridPos} は既にユニット {targetTile.OccupyingUnit.UnitName} によって占有されています。");
+            Destroy(unit.gameObject);
+            return;
+        }
+
         unit.SetGridPosition(gridPos);
         GetTileAt(gridPos).OccupyingUnit = unit;
         unit.transform.position = GetWorldPositionFromGrid(gridPos);
+
+        unit.MoveToGridPosition(gridPos,targetTile);
+
 
         if (unit is PlayerUnit playerUnit)
         {
@@ -732,66 +776,133 @@ public class MapManager : MonoBehaviour
         //Ryacastを使ってクリックされたオブジェクトを検出
         RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
 
-        if(hit.collider != null)
+        Tile _clickedTile = GetTileAt(clickedGridPos);
+        //マップ範囲外の場合
+        if(_clickedTile == null)
         {
-            //クリックされたのがプレイヤーユニットか確認
-            PlayerUnit clickedUnit = hit.collider.GetComponent<PlayerUnit>();
-            if(clickedUnit != null)
+            Debug.Log("マップ範囲外です");
+            return;
+        }
+
+        //ユニットが未選択の場合
+        if (_selectedUnit == null)
+        {
+            //クリックされたタイルにユニットがいるか、かつプレイヤーユニットか、かつ未行動か
+            if (_clickedTile.OccupyingUnit != null &&
+                _clickedTile.OccupyingUnit.Faction == FactionType.Player &&
+                !_clickedTile.OccupyingUnit.HasActedThisTurn)
             {
-                //ユニットがクリックされた場合はタイルクリック処理を行わない
-                HandleUnitClick(clickedUnit);
-                return;
+                SelectUnit(_clickedTile.OccupyingUnit);
             }
-
-            //クリックされたのがタイルか確認
-            //Tile clickedTile = hit.collider.GetComponent<Tile>();
-            //if (clickedTile != null)
-            //{
-            //    HandleTileClick(clickedTile);
-            //    return;
-            //}
-
-            Tile clickedTile = hit.collider.GetComponent<Tile>();
-
-
-            if (clickedTile != null && _selectedUnit != null)
+            //敵ユニットの場合行動範囲予測を表示（未実装2025/07）
+            else if(_clickedTile.OccupyingUnit != null &&
+                _clickedTile.OccupyingUnit.Faction == FactionType.Enemy &&
+                !_clickedTile.OccupyingUnit.HasActedThisTurn)
             {
-                
-
-                //元の位置と移動先を記録
-                _originalUnitPositon = _selectedUnit.GetCurrentGridPostion();
-                _currentPlannedMovePositon = clickedGridPos;
-
-                //移動が計画されたので、フラグをtrueに設定
-                _isMovingOrPlanning = true;
-
-                //ユニットを移動先のタイルに一時的に移動させる
-                //_selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
-
-                Debug.Log($"Moved unit to temporary position({_currentPlannedMovePositon.x},{_currentPlannedMovePositon.y}).Press Space to confirm, Q to cancel.");
-            }
-
-            //クリックされたのがタイルか確認
-            //Tile clickedTile = hit.collider.GetComponent<Tile>();
-            if (clickedTile != null)
-            {
-                HandleTileClick(clickedTile);
+                SelectUnit(_clickedTile.OccupyingUnit);
+                Debug.Log("敵ユニットです");
                 return;
             }
         }
+        //ユニットが選択済みの場合
         else
         {
-            //何もクリックされなかった場合（マップ外など）
-            Debug.Log("何もクリックされませんでした");
-            //選択中のユニットがいれば非選択状態にする
-            if(_selectedUnit != null)
+           //選択中のユニットと同じユニットがクリックされたら選択解除
+           if(_clickedTile.OccupyingUnit == _selectedUnit)
             {
-                _selectedUnit.SetSelected(false);
-                _selectedUnit = null;
-                _isMovingOrPlanning = false;
-                Debug.Log("ユニットの選択を解除しました。");
+                CancelMove();
+            }
+           //移動可能なタイルがクリックされたら移動計画
+           else if (_currentHighlights.ContainsKey(clickedGridPos) && clickedGridPos != _selectedUnit.CurrentGridPosition)
+            {
+                if (!IsTileOccupied(clickedGridPos))
+                {
+                    PlanMove(_clickedTile, clickedGridPos);
+                }
+                else
+                {
+                    Debug.Log("MapManager: そのマスは他のユニットに占有されているため移動できません");
+                    //CancelMove();
+                    return;
+                }
+            }
+           //他のユニットがクリックされたら、現在の選択を解除し。新しいユニットを選択
+           else if(_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
+            {
+                CancelMove();//現在の選択を解除
+                SelectUnit(_clickedTile.OccupyingUnit);//新しいユニットを選択
+            }
+           //移動範囲外の空のタイルや敵ユニットをクリックしたらキャンセル
+            else
+            {
+                CancelMove();
             }
         }
+        
+
+        //処理を変更2025/07
+        //if (hit.collider != null)
+        //{
+        //    //クリックされたのがプレイヤーユニットか確認
+        //    PlayerUnit clickedUnit = hit.collider.GetComponent<PlayerUnit>();
+        //    if(clickedUnit != null)
+        //    {
+        //        //ユニットがクリックされた場合はタイルクリック処理を行わない
+        //        HandleUnitClick(clickedUnit);
+        //        return;
+        //    }
+
+        //    //クリックされたのがタイルか確認
+        //    //Tile clickedTile = hit.collider.GetComponent<Tile>();
+        //    //if (clickedTile != null)
+        //    //{
+        //    //    HandleTileClick(clickedTile);
+        //    //    return;
+        //    //}
+
+        //    Tile clickedTile = hit.collider.GetComponent<Tile>();
+
+
+        //    if (clickedTile != null && _selectedUnit != null)
+        //    {
+                
+
+        //        //元の位置と移動先を記録
+        //        _originalUnitPositon = _selectedUnit.GetCurrentGridPostion();
+        //        _currentPlannedMovePositon = clickedGridPos;
+
+        //        //移動が計画されたので、フラグをtrueに設定
+        //        _isMovingOrPlanning = true;
+
+        //        //ユニットを移動先のタイルに一時的に移動させる
+        //        //_selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
+
+        //        Debug.Log($"Moved unit to temporary position({_currentPlannedMovePositon.x},{_currentPlannedMovePositon.y}).Press Space to confirm, Q to cancel.");
+        //    }
+
+        //    //クリックされたのがタイルか確認
+        //    //Tile clickedTile = hit.collider.GetComponent<Tile>();
+        //    if (clickedTile != null)
+        //    {
+        //        HandleTileClick(clickedTile);
+        //        return;
+        //    }
+        //}
+        //else
+        //{
+        //    //何もクリックされなかった場合（マップ外など）
+        //    Debug.Log("何もクリックされませんでした");
+        //    //選択中のユニットがいれば非選択状態にする
+        //    if(_selectedUnit != null)
+        //    {
+        //        _selectedUnit.SetSelected(false);
+        //        _selectedUnit = null;
+        //        _isMovingOrPlanning = false;
+        //        Debug.Log("ユニットの選択を解除しました。");
+        //    }
+        //}
+
+
 
         ////クリックされたグリッド座標がマップ範囲内かチェック
         //if(_currentMapData == null || clickedGridPos.x < 0 || clickedGridPos.x >= _currentMapData.Width ||
@@ -822,6 +933,80 @@ public class MapManager : MonoBehaviour
         //{
         //    Debug.LogWarning($"グリッド座標{clickedGridPos}に対応するタイルが見つかりません");
         //}
+    }
+
+
+    /// <summary>
+    /// 選択中のユニット取得用
+    /// </summary>
+    /// <param name="unit"></param>
+    private void SelectUnit(Unit unit)
+    {
+        _selectedUnit = unit;
+        _selectedUnit.SetSelected(true);
+
+        //確認用
+        Debug.Log($"選択中のユニット情報:名前{_selectedUnit.name}");
+        CalculateAndShowMovableRange(_selectedUnit);
+    }
+
+    /// <summary>
+    /// 経路計算から移動処理
+    /// </summary>
+    /// <param name="targetTile"></param>
+    /// <param name="clickedPos"></param>
+    private void PlanMove(Tile targetTile ,Vector2Int clickedPos)
+    {
+        //クリックされたタイルが移動可能範囲内にあるかチェック
+        if (_currentHighlights.ContainsKey(targetTile.GridPosition))
+        {
+            Debug.Log($"移動可能なタイル {targetTile.GridPosition} がクリックされました。");
+
+            //経路を計算する
+            List<Vector2Int> path = DijkstraPathfinder.GetPathToTarget(
+                _selectedUnit.CurrentGridPosition,
+                targetTile.GridPosition,
+                _selectedUnit);
+
+            if (path != null && path.Count > 0)
+            {
+                ShowPathLine(path);
+                StartCoroutine(MoveUnitAlogPath(_selectedUnit, path));
+            }
+            else
+            {
+                Debug.LogWarning("経路が見つからないか、計算された経路が空です。");
+            }
+        }
+        else
+        {
+            _isMovingOrPlanning = false;
+            Debug.Log("移動不可能なタイルがクリックされました。");
+        }
+
+        _originalUnitPositon = _selectedUnit.GetCurrentGridPostion();
+        _currentPlannedMovePositon = clickedPos;
+
+        Debug.Log($"ここここ{_originalUnitPositon}");
+
+        _isMovingOrPlanning = true;
+
+        //_selectedUnit.SetSelected(false);
+        //ClearAllHighlights();
+        //ClearMovableRangeDisplay();
+        //ClearPathLine();
+        //_selectedUnit = null;
+    }
+
+    /// <summary>
+    /// タイルが他のユニットに占有されているかチェック
+    /// </summary>
+    /// <param name=""></param>
+    /// <returns></returns>
+    public bool IsTileOccupied(Vector2Int gridPos)
+    {
+        Tile tile = GetTileAt(gridPos);
+        return tile != null && tile.OccupyingUnit != null;
     }
 
     //ユニットがクリックされた時の処理
@@ -1078,8 +1263,20 @@ public class MapManager : MonoBehaviour
         {
             Vector2Int highlightPos = entry.Key;
 
-            GameObject highlightGO = Instantiate(_movableHighlightPrefab, GetWorldPositionFromGrid(highlightPos), Quaternion.identity, transform);
-            _currentHighlights.Add(highlightPos,highlightGO);
+            if(highlightPos == unit.CurrentGridPosition)
+            {
+                GameObject highlightGO = Instantiate(_movableHighlightPrefab, GetWorldPositionFromGrid(highlightPos), Quaternion.identity, transform);
+                _currentHighlights.Add(highlightPos, highlightGO);
+            }
+            else
+            {
+                //デバッグ用
+                if (_occupiedHighlightPrefab != null)
+                {
+                    GameObject occupiedHighlightGO = Instantiate(_occupiedHighlightPrefab, GetWorldPositionFromGrid(highlightPos), Quaternion.identity, transform);
+                    _currentHighlights.Add(highlightPos, occupiedHighlightGO);
+                }
+            }
         }
         ShowAttackRangeHighlight(reachableNodes.Keys.ToList(), unit);
 
@@ -1229,6 +1426,7 @@ public class MapManager : MonoBehaviour
             yield break;
         }
 
+
         // 経路の各ポイントを辿って移動
         // 最初の要素は現在の位置なのでスキップ (path.Count > 1 を確認)
         for (int i = 1; i < path.Count; i++) // 最初の地点は既にいる場所なので、2番目の地点から移動を開始
@@ -1246,7 +1444,9 @@ public class MapManager : MonoBehaviour
                 yield return null;
             }
             unit.transform.position = endWorldPos; // 各タイルの中心に正確にスナップ
+
         }
+
 
         // 全ての移動が完了したら、最終的な状態を確定
         // ユニットのグリッド座標を更新
@@ -1276,30 +1476,57 @@ public class MapManager : MonoBehaviour
     /// </summary>
     private void ConfirmMove()
     {
-        if(_selectedUnit != null && _currentPlannedMovePositon != Vector2Int.zero)
+        //if(_selectedUnit == null || _currentPlannedMovePositon == Vector2Int.zero)
+        //{
+        //    return;
+        //}
+
+        if(_selectedUnit == null)
         {
-            //ユニットのグリッド座標とワールド座標を更新
-            //_selectedUnit.SetGridPosition(_currentPlannedMovePositon);
-            //_selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
+            return;
+        }
+
+
+        Tile newTile = GetTileAt(_currentPlannedMovePositon);
+        if(newTile != null)
+        {
+            _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
+        }
+
+        //_selectedUnit.SetActedThisTrun();
+        _isMovingOrPlanning = false;
+        _selectedUnit = null;
+        ClearAllHighlights();
+        ClearMovableRangeDisplay();
+        ClearPathLine();
+
+        TurnManager.Instance.CheckAllPlayerUnitActed();
+
+        //処理を変更するためコメントアウト2025/07
+        //if(_selectedUnit != null && _currentPlannedMovePositon != Vector2Int.zero)
+        //{
+        //    //ユニットのグリッド座標とワールド座標を更新
+        //    //_selectedUnit.SetGridPosition(_currentPlannedMovePositon);
+        //    //_selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
 
             
-            //ユニットの行動を完了状態にする
-            _selectedUnit.SetActionTaken(true);
+        //    //ユニットの行動を完了状態にする
+        //    _selectedUnit.SetActionTaken(true);
 
-            //ハイライトをクリアし、選択状態を解除
-            ClearAllHighlights();
-            ClearMovableRangeDisplay();
-            _selectedUnit.SetSelected(false);
-            _selectedUnit.SetActionTaken(true);
-            _selectedUnit = null;
+        //    //ハイライトをクリアし、選択状態を解除
+        //    ClearAllHighlights();
+        //    ClearMovableRangeDisplay();
+        //    _selectedUnit.SetSelected(false);
+        //    _selectedUnit.SetActionTaken(true);
+        //    _selectedUnit = null;
 
-            //状態をリセット
-            _currentPlannedMovePositon = Vector2Int.zero;
-            _originalUnitPositon = Vector2Int.zero;
-            _isMovingOrPlanning = false;
+        //    //状態をリセット
+        //    _currentPlannedMovePositon = Vector2Int.zero;
+        //    _originalUnitPositon = Vector2Int.zero;
+        //    _isMovingOrPlanning = false;
 
-            Debug.Log("ユニットの移動と状態クリアを完了しました");
-        }
+        //    Debug.Log("ユニットの移動と状態クリアを完了しました");
+        //}
     }
 
     /// <summary>
@@ -1307,24 +1534,66 @@ public class MapManager : MonoBehaviour
     /// </summary>
     private void CancelMove()
     {
-        if(_selectedUnit != null && _currentPlannedMovePositon != Vector2Int.zero)
+        if(_selectedUnit != null)
+        {
+            _selectedUnit.SetSelected(false);
+        }
+
+        if (_isMovingOrPlanning == true)
+        {
+            Tile newTile = GetTileAt(_originalUnitPositon);
+            Debug.Log($"Trueのとき{_originalUnitPositon}");
+            if (newTile != null)
+            {
+                _selectedUnit.MoveToGridPosition(_originalUnitPositon, newTile);
+            }
+        }
+        else if (_isMovingOrPlanning == false)
         {
             //ユニットを元のグリッド座標とワールド座標に戻す
-            _selectedUnit.SetGridPosition(_originalUnitPositon);
-            _selectedUnit.transform.position = GetWorldPositionFromGrid(_originalUnitPositon);
+            Tile newTile = GetTileAt(_currentPlannedMovePositon);
+            Debug.Log($"Falseのとき{_currentPlannedMovePositon}");
+            if (newTile != null)
+            {
+                _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
+            }
 
-            //ハイライトをクリアし、選択状態を解除
-            ClearAllHighlights();
-            ClearMovableRangeDisplay();
-            _selectedUnit = null;
-
-            //状態をリセット
-            _currentPlannedMovePositon = Vector2Int.zero;
-            _originalUnitPositon= Vector2Int.zero;
-            _isMovingOrPlanning= false;
-
-            Debug.Log("ユニットの移動がキャンセルされたので元の場所に戻します");
         }
+
+        //_selectedUnit.SetGridPosition(_originalUnitPositon);
+        //_selectedUnit.transform.position = GetWorldPositionFromGrid(_originalUnitPositon);
+
+        _isMovingOrPlanning = false;
+
+        _selectedUnit = null;
+        //_originalUnitPositon= Vector2Int.zero;
+        //_currentPlannedMovePositon = Vector2Int.zero;
+        ClearAllHighlights();
+        ClearMovableRangeDisplay();
+        ClearPathLine();
+
+        
+        Debug.Log("キャンセルされたので元の場所に戻します");
+
+
+        //if (_selectedUnit != null && _currentPlannedMovePositon != Vector2Int.zero)
+        //{
+        //    //ユニットを元のグリッド座標とワールド座標に戻す
+        //    _selectedUnit.SetGridPosition(_originalUnitPositon);
+        //    _selectedUnit.transform.position = GetWorldPositionFromGrid(_originalUnitPositon);
+
+        //    //ハイライトをクリアし、選択状態を解除
+        //    ClearAllHighlights();
+        //    ClearMovableRangeDisplay();
+        //    _selectedUnit = null;
+
+        //    //状態をリセット
+        //    _currentPlannedMovePositon = Vector2Int.zero;
+        //    _originalUnitPositon= Vector2Int.zero;
+        //    _isMovingOrPlanning= false;
+
+        //    Debug.Log("ユニットの移動がキャンセルされたので元の場所に戻します");
+        //}
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -1333,7 +1602,7 @@ public class MapManager : MonoBehaviour
         if(_mapSequence.Length > 0)
         {
             Initialize();
-
+            //TurnManager.Instance.InitializeTurnManager();
             //GenerateMap(_mapSequence[_currentMapIndex]);
             //GenerateMap(_mapSequence[0]);
             //PlacePlayerUnitAtInitialPostiton();
@@ -1363,7 +1632,9 @@ public class MapManager : MonoBehaviour
             HandleMouseClick();
         }
 
-        if(_selectedUnit != null && _currentPlannedMovePositon != Vector2Int.zero)
+        
+        //if(_selectedUnit != null && _currentPlannedMovePositon != Vector2Int.zero)
+        if(_selectedUnit != null)
         {
             //仮：スペースキーで移動確定
             if (Input.GetKeyDown(KeyCode.Space))
