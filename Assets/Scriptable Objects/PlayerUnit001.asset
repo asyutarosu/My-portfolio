@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: PlayerUnit001
   m_EditorClassIdentifier: 
   <UnitId>k__BackingField: P001
-  <UnitName>k__BackingField: 
+  <UnitName>k__BackingField: P001
   <Type>k__BackingField: 0
   <FactionType>k__BackingField: 0
   <MaxHP>k__BackingField: 0
-  <BaseMovement>k__BackingField: 3
+  <BaseMovement>k__BackingField: 5
   <BaseAttackPower>k__BackingField: 0
   <BaseDefensePower>k__BackingField: 0
   <BaseSkill>k__BackingField: 0

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 /// <summary>
 /// ユニットの特性を定義する列挙型
@@ -50,6 +51,11 @@ public partial class Unit : MonoBehaviour
     [SerializeField] private Color _selectedColor = Color.blue;//選択状態の色
     [SerializeField] private Color _defaultColor = Color.white;//非選択状態の色
     [SerializeField] private Color _actedColor = Color.gray;//行動済みの状態の色
+
+    //ユニットの視覚的情報のための要素
+    [SerializeField] private float _visualMoveSpeed = 5.0f;//視覚的移動速度
+    
+
 
     protected virtual void Awake()
     {
@@ -295,6 +301,8 @@ public partial class Unit : MonoBehaviour
         }
     }
 
+    //データ更新ように変更2025/07
+    //プレイヤーが移動を確定した時のみ呼び出される
     //ユニットが移動を完了した際に、新しいタイルを占有し、古いタイルから解放する
     public void MoveToGridPosition(Vector2Int newGridPos, Tile newTile)
     {
@@ -305,7 +313,8 @@ public partial class Unit : MonoBehaviour
         }
 
         CurrentGridPosition = newGridPos;
-        transform.position = MapManager.Instance.GetWorldPositionFromGrid(newGridPos);
+        //視覚的情報の更新は別のメソッドで対応
+        //transform.position = MapManager.Instance.GetWorldPositionFromGrid(newGridPos);
 
         //新しいタイルを設定し、占有する
         OccupyingTile = newTile;
@@ -314,6 +323,41 @@ public partial class Unit : MonoBehaviour
             OccupyingTile.OccupyingUnit = this;
         }
     }
+
+    //視覚的情報を担当するメソッド
+    /// <summary>
+    /// ユニットを視覚的にパスに沿って移動させる。データ上の位置は変更しない
+    /// </summary>
+    /// <param name="path">移動経路のグリッド座標リスト</param>
+    public IEnumerator AnimateMove(List<Vector2Int> path)
+    {
+        if(path == null || path.Count == 0)
+        {
+            yield break;
+        }
+
+        // ユニットの現在の視覚的な位置を、パスの開始点に設定
+        transform.position = MapManager.Instance.GetWorldPositionFromGrid(path[0]);
+
+        for(int i = 1; i < path.Count; i++)
+        {
+            Vector3 startPos = MapManager.Instance.GetWorldPositionFromGrid(path[i - 1]);
+            Vector3 targetPos = MapManager.Instance.GetWorldPositionFromGrid(path[i]);
+            float journeyLength = Vector3.Distance(startPos, targetPos);
+            float startTime = Time.time;
+
+            while(Vector3.Distance(transform.position, targetPos)> 0.01f)
+            {
+                float distCovered = (Time.time - startTime) * _visualMoveSpeed;
+                float fractionOfJourney = distCovered / journeyLength;
+                transform.position = Vector3.Lerp(startPos, targetPos, fractionOfJourney);
+                yield return null;
+            }
+            transform.position = targetPos;
+        }
+        Debug.Log($"{UnitName} の視覚的な移動が完了しました。");
+    }
+
 
 
     /// <summary>

@@ -6,7 +6,27 @@ public partial class Tile : MonoBehaviour
 
     [field: SerializeField] public Vector2Int GridPosition { get; private set; }//グリッドの座標
     [field: SerializeField] public TerrainType TerrainType { get; private set; }//地形の種類
-    [field: SerializeField] public Unit OccupyingUnit { get; set; }//そのグリッドに存在するユニット種族
+
+    //[field: SerializeField] public Unit OccupyingUnit { get; set; }//そのグリッドに存在するユニット種族
+    //確認用として一部宣言の追加及びログの追加
+    private Unit _occupyingUnit;
+    public Unit OccupyingUnit//プロパティにログを追加
+    {
+        get { return _occupyingUnit; }
+        set
+        {
+            //値が実際に変更される場合のみログを出力
+            if(_occupyingUnit != value)
+            {
+                Debug.Log($"Tile {GridPosition}: OccupyingUnit changed from " +
+                          $"{(_occupyingUnit != null ? _occupyingUnit.UnitName : "None")} to " +
+                          $"{(value != null ? value.UnitName : "None")}");
+                _occupyingUnit = value;
+            }
+        }
+    }
+
+
     [field:SerializeField] public bool IsGool { get; private set; }
 
     private SpriteRenderer _spriteRenderer;

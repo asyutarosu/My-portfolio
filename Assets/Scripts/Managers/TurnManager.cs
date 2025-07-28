@@ -176,6 +176,8 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     private IEnumerator EnemyTurnRoutine()
     {
+        Debug.Log("敵ターン開始(コルーチン処理)");
+
         yield return new WaitForSeconds(_enemyTurnDelay);
 
         while (_currentEnemyUnitIndex < _enemyUnits.Count)
@@ -183,10 +185,10 @@ public class TurnManager : MonoBehaviour
             EnemyUnit currentEnemy = _enemyUnits[_currentEnemyUnitIndex];
 
             //倒された敵ユニットはスキップ
-            if(currentEnemy == null || currentEnemy.CurrentHP <= 0)
-            {
-                continue;
-            }
+            //if(currentEnemy == null || currentEnemy.CurrentHP <= 0)
+            //{
+            //    continue;
+            //}
 
             //行動済みの敵ユニットはスキップ
             if (currentEnemy.HasActedThisTurn)
