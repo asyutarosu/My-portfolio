@@ -193,7 +193,12 @@ public class MapManager : MonoBehaviour
         //タイルリストとユニットリストのクリア
         ClaerExistingUnits();
         ClearMap();
-        GenerateMap(_mapSequence[0]);
+
+
+        string currentMapId = _mapSequence[_currentMapIndex];
+        GenerateMap(currentMapId);
+
+        PlaceEnemiesForCurrentMap(currentMapId);
 
         //_allPlayerUnits.Clear();
         //_allEnemyUnits.Clear();
@@ -247,25 +252,27 @@ public class MapManager : MonoBehaviour
         //    Debug.LogError("Enemy001プレハブにPlayerUnitコンポーネントが見つかりません！");
         //}
 
-        if(_enemy001Prefab != null)
-        {
-            EnemyUnit enemy001 = Instantiate(_enemy001Prefab, transform);
-            PlaceUnit(enemy001, new Vector2Int(5, 0));
-        }
-        else
-        {
-            Debug.LogError("MapManager: _enemy001Prefabが割り当てられていません！");
-        }
 
-        if(_enemy002Prefab != null)
-        {
-            EnemyUnit enemy002 = Instantiate(_enemy002Prefab, transform);
-            PlaceUnit(enemy002, new Vector2Int(4, 4));
-        }
-        else
-        {
-            Debug.LogError("MapManager: _enemy002Prefabが割り当てられていません！");
-        }
+        //敵ユニットの生成処理を変更2025/07
+        //if(_enemy001Prefab != null)
+        //{
+        //    EnemyUnit enemy001 = Instantiate(_enemy001Prefab, transform);
+        //    PlaceUnit(enemy001, new Vector2Int(5, 0));
+        //}
+        //else
+        //{
+        //    Debug.LogError("MapManager: _enemy001Prefabが割り当てられていません！");
+        //}
+
+        //if(_enemy002Prefab != null)
+        //{
+        //    EnemyUnit enemy002 = Instantiate(_enemy002Prefab, transform);
+        //    PlaceUnit(enemy002, new Vector2Int(4, 4));
+        //}
+        //else
+        //{
+        //    Debug.LogError("MapManager: _enemy002Prefabが割り当てられていません！");
+        //}
 
         TurnManager.Instance.InitializeTurnManager();
     }
@@ -307,20 +314,25 @@ public class MapManager : MonoBehaviour
     /// <summary>
     /// マップデータに基づいてマップを生成する
     /// </summary>
-    public void GenerateMap(string mapPath)
+    public void GenerateMap(string mapId)
     {
         ClearMap();//既にマップが生成されている可能性を考慮して、一度クリアする
 
         //MapDataLoaderでCSVファイルからマップデータを読み込む
-        _currentMapData = MapDataLoader.LoadMapDataFromCSV(mapPath);
+        MapData mapData = MapDataLoader.LoadMapDataFromCSV(mapId);
 
-        if(_currentMapData == null)
+        //_currentMapData = MapDataLoader.LoadMapDataFromCSV(mapId);
+
+        if(mapData == null)
         {
             Debug.LogError("MapManager:マップデータの読み込みに失敗しました。マップ生成できません");
             return;
         }
 
-        for(int y = 0; y < _currentMapData.Height; y++)
+        _currentMapData = mapData;
+        
+
+        for (int y = 0; y < _currentMapData.Height; y++)
         {
             for(int x = 0; x < _currentMapData.Width; x++)
             {
@@ -747,6 +759,34 @@ public class MapManager : MonoBehaviour
         {
             _allEnemyUnits.Add(enemyUnit);
         }
+    }
+    
+    /// <summary>
+    /// 敵ユニットうぃマップに配置する（マップデータを参照）
+    /// </summary>
+    /// <param name="mapId"></param>
+    public void PlaceEnemiesForCurrentMap(string mapId)
+    {
+        EnemyEncounterData encounterData = EnemyEncounterManager.Instance.GetEnemyEncounterData(mapId);
+        if(encounterData == null)
+        {
+            Debug.LogWarning($"MapManager: マップ '{mapId}' の敵データが見つかりません。敵は配置されません。");
+            return;
+        }
+
+        foreach(EnemyPlacement placement in encounterData.enemyPlacements)
+        {
+            if(placement.enemyPrefab != null)
+            {
+                EnemyUnit enemyInstance = Instantiate(placement.enemyPrefab,transform);
+                PlaceUnit(enemyInstance,placement.gridPosition);
+            }
+            else
+            {
+                Debug.LogWarning($"MapManager: マップ '{mapId}' の敵配置で、Prefabがnullのものが含まれています。");
+            }
+        }
+        Debug.Log($"MapManager:マップ'{mapId}'に敵ユニットを配置しました");
     }
 
     /// <summary>
