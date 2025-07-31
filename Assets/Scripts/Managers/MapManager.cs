@@ -744,11 +744,12 @@ public class MapManager : MonoBehaviour
             return;
         }
 
-        unit.SetGridPosition(gridPos);
-        GetTileAt(gridPos).OccupyingUnit = unit;
-        unit.transform.position = GetWorldPositionFromGrid(gridPos);
+        //unit.SetGridPosition(gridPos);
+        //GetTileAt(gridPos).OccupyingUnit = unit;
+
 
         unit.MoveToGridPosition(gridPos,targetTile);
+        unit.transform.position = GetWorldPositionFromGrid(gridPos);
 
 
         if (unit is PlayerUnit playerUnit)
@@ -762,7 +763,7 @@ public class MapManager : MonoBehaviour
     }
     
     /// <summary>
-    /// 敵ユニットうぃマップに配置する（マップデータを参照）
+    /// 敵ユニット上マップに配置する（マップデータを参照）
     /// </summary>
     /// <param name="mapId"></param>
     public void PlaceEnemiesForCurrentMap(string mapId)
@@ -853,7 +854,7 @@ public class MapManager : MonoBehaviour
             {
                 //ユニットが未選択の状態でハイライトが出ないように
                 ClearAllHighlights();
-                ClearMovableRangeDisplay();
+                //////ClearMovableRangeDisplay();
             }
         }
         //ユニットが選択済みの場合
@@ -1288,6 +1289,14 @@ public class MapManager : MonoBehaviour
         {
             Destroy(highlightGo);
         }
+
+        foreach (var highlight in _currentHighlights.Values)
+        {
+            Destroy(highlight);
+        }
+
+        _currentHighlights.Clear();
+
         _activeHighlights.Clear();
     }
 
@@ -1401,7 +1410,8 @@ public class MapManager : MonoBehaviour
     /// <param name="unit">移動するユニット</param>
     private void CalculateAndShowMovableRange(Unit unit)
     {
-        ClearMovableRangeDisplay();
+        //ClearMovableRangeDisplay();
+        ClearAllHighlights();
         ClearPathLine();
 
         if (unit == null || _movableHighlightPrefab == null)
@@ -1455,7 +1465,7 @@ public class MapManager : MonoBehaviour
     /// <param name="moveableTiles">移動可能なタイルリスト</param>
     private void ShowAttackRangeHighlight(List<Vector2Int> moveableTiles, Unit currentUnit)
     {
-        ClearAllHighlights();
+        //ClearAllHighlights();
 
         HashSet<Vector2Int> attackableTiles = new HashSet<Vector2Int>();
         Vector2Int[] directions = { new Vector2Int(0, 1), new Vector2Int(1, 0), new Vector2Int(0, -1), new Vector2Int(1, 0), new Vector2Int(-1, 0), };
@@ -1642,15 +1652,20 @@ public class MapManager : MonoBehaviour
     /// </summary>
     private void ConfirmMove()
     {
-        if (_selectedUnit == null || _currentPlannedMovePositon == Vector2Int.zero || !_isMovingOrPlanning)
-        {
-            return;
-        }
+        //if (_selectedUnit == null || _currentPlannedMovePositon == Vector2Int.zero || !_isMovingOrPlanning)
+        //{
+        //    return;
+        //}
 
         //if (_selectedUnit == null)
         //{
         //    return;
         //}
+
+        if(_selectedUnit == null || !_isMovingOrPlanning)
+        {
+            return;
+        }
 
 
         Tile newTile = GetTileAt(_currentPlannedMovePositon);
@@ -1804,7 +1819,7 @@ public class MapManager : MonoBehaviour
 
 
         ClearAllHighlights();
-        ClearMovableRangeDisplay();
+        //////ClearMovableRangeDisplay();
         ClearPathLine();
     }
 

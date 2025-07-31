@@ -85,6 +85,11 @@ public class TurnManager : MonoBehaviour
             {
                 unit.ResetAction();
             }
+
+            if(unit.Faction == FactionType.Enemy)
+            {
+                unit.ResetAction();
+            }
         }
 
         foreach(var unit in _playerUnits)
@@ -106,6 +111,10 @@ public class TurnManager : MonoBehaviour
             return;
         }
         //全てのプレイヤーユニットが行動済み、またはプレイヤー操作による終了のチェックを追加2025/07
+
+        //ターン終了時に表示されているハイライトをクリアする
+        MapManager.Instance.ClearAllHighlights();
+
 
         //仮：ターンシステムの確認のためターン終了のみ
         Debug.Log("プレイヤーターン終了");
