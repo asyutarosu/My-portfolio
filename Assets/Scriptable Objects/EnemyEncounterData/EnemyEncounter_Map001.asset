@@ -12,17 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f9e3c9bb0b6ef945a31a5edc6c591ee, type: 3}
   m_Name: EnemyEncounter_Map001
   m_EditorClassIdentifier: 
-  mapId: Maps/map_00
-  enemyPlacements:
-  - enemyPrefab: {fileID: -3626944775743022083, guid: 67a72ccbf1e1b174eb14f41f3bfb6a67, type: 3}
-    gridPosition: {x: 5, y: 0}
-    overrideHP: 0
-    overrideMovement: 0
-  - enemyPrefab: {fileID: -3626944775743022083, guid: d55497484f5907d40bf241ffbd86cad6, type: 3}
-    gridPosition: {x: 4, y: 4}
-    overrideHP: 0
-    overrideMovement: 0
-  - enemyPrefab: {fileID: -3626944775743022083, guid: d55497484f5907d40bf241ffbd86cad6, type: 3}
-    gridPosition: {x: 6, y: 4}
-    overrideHP: 0
-    overrideMovement: 0
+  mapId: Maps/map_01
+  enemyPlacements: []

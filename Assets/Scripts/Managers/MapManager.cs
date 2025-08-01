@@ -168,6 +168,26 @@ public class MapManager : MonoBehaviour
     [SerializeField] private EnemyUnit _enemy001Prefab;
     [SerializeField] private EnemyUnit _enemy002Prefab;
 
+
+    //カメラ設定関連
+    [SerializeField] private Camera _mainCamera;//メインカメラへの参照用
+    [SerializeField] private float _cameraMoveSpeed = 5.0f;//カメラの追従速度
+
+    //１タイルのワールド座標上のサイズ（カメラ移動の仮仕様2025/07）
+    [SerializeField] private float _tileWorldSize = 1.0f;
+
+    //ゲーム画面に固定表示するグリッド範囲
+    private const int _visibleGridWidth = 16;//横16マス
+    private const int _visibleGridHeight = 10;//縦9マス
+
+    private Vector3 _cameraTargetPosition;//カメラの目標位置
+    private const float _cameraFixedZPosition = -10f;//2DなのでZ軸は固定
+
+    //[SerializeField]
+    private Grid _tilemapGrid;//カメラ移動処理のために基準点グリッド座標(0,0)のワールド座標の取得用
+    Vector2Int tileBasePos = new Vector2Int(-4, -3);
+
+
     [System.Serializable]public class TerrainCost
     {
         public TerrainType terrainType;
@@ -187,6 +207,257 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// マップのサイズに合わせてカメラの表示範囲を初期設定する
+    /// </summary>
+    private void InitializeCamera()
+    {
+        if(_mainCamera == null)
+        {
+            _mainCamera = Camera.main;
+            if(_mainCamera == null)
+            {
+                Debug.LogError("メインカメラが見つかりません。");
+                return;
+            }
+        }
+
+        // 表示するグリッドの横幅と縦幅を、固定値と実際のマップサイズの大きい方を参照する
+        //float targetWidth = Mathf.Max(_visibleGridWidth, _currentMapData.Width);
+        //float targetHeight = Mathf.Max(_visibleGridHeight, _currentMapData.Height);
+
+        //_mainCamera.orthographicSize = (float)_visibleGridHeight / 2.0f;
+        
+        
+        _mainCamera.orthographicSize = (_visibleGridWidth * _tileWorldSize) / (16f / 9f * 2f);
+
+
+
+        //_mainCamera.orthographicSize = (_visibleGridWidth * _tileWorldSize) / (_mainCamera.aspect * 2.0f);
+
+
+
+        ////float fixedZPosition = -10;
+        //float cameraPosRevise = 0.5f;
+
+        //// マップが固定表示範囲より小さい場合、カメラをマップの中央に設定
+        //if (_currentMapData.Width <= _visibleGridWidth && _currentMapData.Height <= _visibleGridHeight)
+        //{
+        //    _cameraTargetGridPosition = new Vector2Int(_currentMapData.Width / 2,_currentMapData.Height / 2);
+        //}
+        //else // マップが固定表示範囲より大きい場合
+        //{
+        //    Debug.LogWarning("大きい");
+
+        //    _cameraTargetGridPosition = new Vector2Int(_visibleGridWidth / 2, _visibleGridHeight / 2); // マップの(0,0)グリッドが画面の左下隅に表示されるように
+        //}
+
+        //Vector3 targetWorldPosition = GetWorldPositionFromGrid(_cameraTargetGridPosition);
+        //_mainCamera.transform.position = new Vector3(targetWorldPosition.x,targetWorldPosition.y,-10);
+        //Debug.LogWarning($"{_cameraTargetGridPosition.x},{_cameraTargetGridPosition.y}");
+
+        //ワールド座標とグリッド座標とのすり合わせ
+        //Vector3 tileBaseWorldPos = GetTileWorldPosition(Vector2Int.zero);
+        //Vector2Int tileBasePos =  new Vector2Int(-4, -3);
+
+
+        //float cameraCenterX = tileBaseWorldPos.x + ((float)_visibleGridWidth * _tileWorldSize) / 2.0f;
+        //float cameraCenterY = tileBaseWorldPos.y + ((float)_visibleGridHeight * _tileWorldSize) / 2.0f;
+
+
+
+        float camHalfWidth = _mainCamera.orthographicSize * _mainCamera.aspect; 
+
+        float camHalfHeight = _mainCamera.orthographicSize;
+        _cameraTargetPosition = new Vector3(
+            camHalfWidth + tileBasePos.x,
+            camHalfHeight + tileBasePos.y,
+            _cameraFixedZPosition
+        );
+
+        //_cameraTargetPosition = new Vector3(
+        //    cameraCenterX,
+        //    cameraCenterY,
+        //    _cameraFixedZPosition
+        //);
+
+
+
+        //// マップが固定表示範囲より小さい場合、カメラをマップの中央に設定
+        //if (_currentMapData.Width <= _visibleGridWidth && _currentMapData.Height <= _visibleGridHeight)
+        //{
+        //    _cameraTargetPosition = new Vector3(
+        //       ((float)_currentMapData.Width * _tileWorldSize) / 2.0f,
+        //       ((float)_currentMapData.Height * _tileWorldSize) / 2.0f,
+        //       _cameraFixedZPosition
+        //   );
+        //}
+        //else // マップが固定表示範囲より大きい場合
+        //{
+        //    _cameraTargetPosition = new Vector3(
+        //       camHalfWidth,  // カメラの中心を、画面の左端がワールド座標の0になる位置に設定
+        //       camHalfHeight, // カメラの中心を、画面の下端がワールド座標の0になる位置に設定
+        //       _cameraFixedZPosition
+        //   );
+        //}
+
+
+
+        _mainCamera.transform.position = _cameraTargetPosition;
+
+
+
+
+
+
+        //カメラの位置をマップの中心に設定
+        //if (targetWidth > targetHeight)
+        //{
+        //    cameraTargetPosition = new Vector3(
+        //        targetWidth / 2.0f * _tileWorldSize,
+        //        targetHeight / 2.0f * _tileWorldSize,
+        //        _mainCamera.transform.position.z);
+
+        //    float mapCenterX = ((float)_currentMapData.Width * _tileWorldSize) / 2.0f - _tileWorldSize;
+        //    float mapCenterY = ((float)_currentMapData.Height * _tileWorldSize) / 2.0f - _tileWorldSize;
+
+        //    float camHalfWidth = _mainCamera.orthographicSize * _mainCamera.aspect;
+        //    float camHalfHeight = _mainCamera.orthographicSize;
+
+        //    float clampedX = Mathf.Clamp(mapCenterX, camHalfWidth, (_currentMapData.Width * _tileWorldSize) - camHalfWidth);
+        //    float clampedY = Mathf.Clamp(mapCenterY, camHalfHeight, (_currentMapData.Height * _tileWorldSize) - camHalfHeight);
+        //}
+
+        //Vector3 _cameraTargetPosition = new Vector3(clampedX - 1, clampedY - 1, _cameraFixedZPosition);
+
+        //確認用
+        //Debug.LogWarning($"メインカメラの初期座標は。X{_cameraTargetPosition.x},Y{_cameraTargetPosition.y},Z{_cameraTargetPosition.z}");
+        //Debug.LogWarning($"マップの大きさ。X{_currentMapData.Width},Y{_currentMapData.Height}");
+
+
+        // マップが固定表示範囲より小さい場合、カメラをマップの中央に配置
+        //_mainCamera.transform.position = _cameraTargetPosition;
+
+    }
+
+
+    //仮仕様2025/07
+    /// <summary>
+    /// キーボード入力に応じてカメラの目標位置を更新する
+    /// </summary>
+    private void HandleCameraInput()
+    {
+        // マップが固定表示範囲より大きい場合のみ、カメラを移動させる
+        if (_currentMapData.Width <= _visibleGridWidth && _currentMapData.Height <= _visibleGridHeight)
+        {
+            return;
+        }
+
+        Vector3 moveDirection = Vector3.zero;
+        if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            moveDirection.x += 1;
+        }
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            moveDirection.x -= 1;
+        }
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            moveDirection.y += 1;
+        }
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            moveDirection.y -= 1;
+        }
+
+        if(moveDirection != Vector3.zero)
+        {
+            _cameraTargetPosition += moveDirection * _tileWorldSize;
+
+            _cameraTargetPosition.z = _cameraFixedZPosition;
+
+            //カメラの追従範囲を計算
+            float camHalfHeight = _mainCamera.orthographicSize;
+            float camHalfWidth = _mainCamera.orthographicSize * _mainCamera.aspect;
+
+            Vector3 mapMinWorldPos = GetWorldPositionFromGrid(Vector2Int.zero);
+            Vector3 mapMaxWorldPos = GetWorldPositionFromGrid(new Vector2Int(_currentMapData.Width - 1, _currentMapData.Height - 1));
+
+
+            float minX = camHalfWidth + tileBasePos.x;
+            float maxX = (_currentMapData.Width * _tileWorldSize) - camHalfWidth + tileBasePos.x;
+            float minY = camHalfHeight + tileBasePos.y;
+            float maxY = (_currentMapData.Height * _tileWorldSize) - camHalfHeight + tileBasePos.y;
+
+            //float minX = mapMinWorldPos.x + camHalfWidth;
+            //float maxX = mapMaxWorldPos.x + camHalfWidth;
+            //float minY = mapMinWorldPos.y + camHalfHeight;
+            //float maxY = mapMaxWorldPos.y + camHalfHeight;
+
+            // マップが固定表示範囲より大きい場合、 maxX, maxYの計算はマップのワールド座標の右端を基準とする
+            //if (_currentMapData.Width > _visibleGridWidth)
+            //{
+            //    maxX = mapMinWorldPos.x + (_currentMapData.Width * _tileWorldSize) - camHalfWidth;
+            //}
+            //if (_currentMapData.Height > _visibleGridHeight)
+            //{
+            //    maxY = mapMinWorldPos.y + (_currentMapData.Height * _tileWorldSize) - camHalfHeight;
+            //}
+
+            //目標位置をマップの端にクランプ
+            _cameraTargetPosition.x = Mathf.Clamp(_cameraTargetPosition.x,minX, maxX);
+            _cameraTargetPosition.y = Mathf.Clamp(_cameraTargetPosition.y,minY, maxY);
+
+            Vector3 newPos = new Vector3(_cameraTargetPosition.x,_cameraTargetPosition.y, _cameraTargetPosition.z);
+
+
+            //確認用
+            //Debug.LogWarning($"現在のカメラの位置：X{_cameraTargetPosition.x},Y{_cameraTargetPosition.y}");
+            //Debug.LogWarning($"newPos：X{newPos.x},Y{newPos.y}");
+
+            _mainCamera.transform.position = newPos;
+        }
+    }
+
+    /// <summary>
+    /// カメラを目標位置まで移動させる
+    /// </summary>
+    private void MoveCameraToTarget()
+    {
+        Vector3 newPos = Vector3.Lerp(
+            _mainCamera.transform.position,
+            _cameraTargetPosition,
+            _cameraMoveSpeed * Time.deltaTime
+            );
+
+        newPos.z = _cameraFixedZPosition;
+        _mainCamera.transform.position = newPos;
+    }
+
+
+    /// <summary>
+    /// グリッド座標からワールド座標を取得するヘルパーメソッド
+    /// タイルの左下隅を基準にする
+    /// </summary>
+    /// <param name="gridPosition">グリッド座標</param>
+    /// <returns>タイルの左下隅のワールド座標</returns>
+    private Vector3 GetTileWorldPosition(Vector2Int gridPosition)
+    {
+        if (_tilemapGrid == null)
+        {
+            Debug.LogError("Tilemap Gridが設定されていません。");
+            return Vector3.zero;
+        }
+
+        // CellToWorldメソッドはタイルの左下隅を返すため、そのまま使用する
+        Vector3 worldPos = _tilemapGrid.CellToWorld(new Vector3Int(gridPosition.x, gridPosition.y, 0));
+
+        return worldPos;
+    }
+
+
+
     //初期化処理
     public void Initialize()
     {
@@ -194,6 +465,8 @@ public class MapManager : MonoBehaviour
         ClaerExistingUnits();
         ClearMap();
 
+        //デバッグ用
+        _currentMapIndex = 2;
 
         string currentMapId = _mapSequence[_currentMapIndex];
         GenerateMap(currentMapId);
@@ -1829,6 +2102,7 @@ public class MapManager : MonoBehaviour
         if(_mapSequence.Length > 0)
         {
             Initialize();
+            InitializeCamera();
             //TurnManager.Instance.InitializeTurnManager();
             //GenerateMap(_mapSequence[_currentMapIndex]);
             //GenerateMap(_mapSequence[0]);
@@ -1846,9 +2120,13 @@ public class MapManager : MonoBehaviour
     {
         //Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         //Vector2Int clickedGridPos = GetGridPositionFromWorld(mouseWorldPos);
-        
+
+        HandleCameraInput();
+        //MoveCameraToTarget();
+
+
         //プレイヤーターン中のみ入力を受け付ける
-        if(TurnManager.Instance != null && TurnManager.Instance.CurrnetTurnState != TurnState.PlayerTurn)
+        if (TurnManager.Instance != null && TurnManager.Instance.CurrnetTurnState != TurnState.PlayerTurn)
         {
             return;
         }
