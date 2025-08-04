@@ -19,6 +19,14 @@ public class EnemyUnit : Unit
     //攻撃範囲
     [SerializeField] private int _minAttackRange = 1;//最小攻撃射程
     [SerializeField] private int _maxAttackRange = 2;//最大攻撃射程
+
+
+    //デバッグ用
+    //public Vector2Int EnemyCurrentGridPosition => MapManager.Instance.GetGridPositionFromWorld(transform.position);
+    //private List<Vector2Int> currentAttackableTiles = new List<Vector2Int>(); // ★修正: ここでリストを初期化する
+
+
+
     public override void Initialize(UnitData data)
     {
         //_currentPosition = initialGridPos;
@@ -87,35 +95,67 @@ public class EnemyUnit : Unit
         //プレイヤーユニットの検索
         List<PlayerUnit> playerUnits = MapManager.Instance.GetAllPlayerUnits();
 
-        if(playerUnits == null || playerUnits.Count == 0)
+        if (playerUnits == null || playerUnits.Count == 0)
         {
             Debug.Log($"{name}:プレイヤーユニットが見つかりません");
             yield break;
         }
 
+
         //現在の攻撃範囲内にプレイヤーユニットがいるかチェック
         //現在位置からの攻撃範囲を計算
-        HashSet<Vector2Int> currentAttackableTiles = CalculateAttackRange(GetCurrentGridPostion());
-        bool playerInAttackRange = false;
-        PlayerUnit targetPlayerInAttackRange = null;
+        //HashSet<Vector2Int> currentAttackableTiles = CalculateAttackRange(GetCurrentGridPostion());
+        //bool playerInAttackRange = false;
+        //PlayerUnit targetPlayerInAttackRange = null;
 
-        foreach(PlayerUnit player in playerUnits)
-        {
-            if (currentAttackableTiles.Contains(player.GetCurrentGridPostion()))
-            {
-                playerInAttackRange = true;
-                targetPlayerInAttackRange = player;
-                break;//誰か1人でもいれば良い
-            }
-        }
+        //Vector2Int originalCurrentGridPosition2 = CurrentGridPosition;
 
-        if (playerInAttackRange)
-        {
-            Debug.Log($"{name}:プレイヤーユニット({targetPlayerInAttackRange.name})が攻撃範囲にいます。攻撃します");
-            //攻撃ロジックを追加
-            yield return new WaitForSeconds(0.5f);
-            yield break;//攻撃したら移動しない
-        }
+        //Dictionary<Vector2Int, PathNodes> reachableNodes2 = DijkstraPathfinder.FindReachableNodes(originalCurrentGridPosition2, this);
+
+
+        //foreach (PlayerUnit players in playerUnits)
+        //{
+        //    HashSet<Vector2Int> potentialEnemyMoveToAttackPositions2 = CalculateEnemyMoveToAttackPositions(players.GetCurrentGridPostion());
+
+
+        //    foreach (Vector2Int attackPosCandidate in potentialEnemyMoveToAttackPositions2)
+        //    {
+        //        if (reachableNodes2.ContainsKey(attackPosCandidate) && !MapManager.Instance.IsTileOccupiedForStooping(attackPosCandidate, this))
+        //        {
+        //            Debug.LogWarning($"{name}: 攻撃範囲にいます");
+
+        //            playerInAttackRange = true;
+        //            targetPlayerInAttackRange = players;
+        //            //break;//誰か1人でもいれば良い
+        //        }
+
+        //        if (currentAttackableTiles.Contains(players.GetCurrentGridPostion()))
+        //        {
+        //            Debug.LogWarning($"{name}: 攻撃範囲");
+
+        //            playerInAttackRange = true;
+        //            targetPlayerInAttackRange = players;
+        //            //break;//誰か1人でもいれば良い
+        //        }
+        //    }
+
+        //}
+
+        
+
+
+        //if (playerInAttackRange)
+        //{
+        //    //Debug.LogWarning($"{name}:プレイヤーユニット({targetPlayerInAttackRange.name})が攻撃範囲にいます。攻撃します");
+
+        //    Debug.LogWarning($"{name}:プレイヤーユニット({targetPlayerInAttackRange.name})が攻撃範囲にいます。攻撃します");
+        //    //攻撃ロジックを追加
+        //    Debug.LogWarning($"{name}: 攻撃攻撃攻撃攻撃");
+
+
+        //    yield return new WaitForSeconds(0.5f);
+        //    yield break;//攻撃したら移動しない
+        //}
 
         Debug.Log($"{name}: 攻撃範囲内にプレイヤーユニットがいません。最も近いプレイヤーユニットに向かって移動します。");
 
@@ -224,10 +264,21 @@ public class EnemyUnit : Unit
                     Debug.Log($"{name}: ({originalCurrentGridPosition.x},{originalCurrentGridPosition.y}) から ({bestMoveTargetPos.x},{bestMoveTargetPos.y}) へ移動します（対象プレイヤー: {targetedPlayer.name}）。");
                     // ★アニメーションは Unit.AnimateMove を使用しているはずなので、以下に修正
                     yield return StartCoroutine(AnimateMove(pathForAnimation));
+
+                    //確認用
+                    Debug.LogWarning($"{name}: 攻撃攻撃攻撃攻撃");
+
+                    //ここに攻撃処理
+
                 }
                 else
                 {
                     Debug.Log($"{name}: 経路計算に失敗したか、既に最適な位置にいます。目標位置: {bestMoveTargetPos} (経路なし)");
+                    
+                    //確認用
+                    Debug.LogWarning($"{name}: ここで攻撃ここで攻撃");
+
+
                     yield return null; // 移動しないが行動は完了
                 }
             }
@@ -458,7 +509,7 @@ public class EnemyUnit : Unit
 
         if (attackableTiles.Contains(targetPlayer.CurrentGridPosition))
         {
-            Debug.Log($"{UnitName}: ターゲット ({targetPlayer.UnitName}) が攻撃範囲内にいます、攻撃します");
+            Debug.LogWarning($"{UnitName}: ターゲット ({targetPlayer.UnitName}) が攻撃範囲内にいます、攻撃します");
             yield return StartCoroutine(PerformAttack(targetPlayer));
         }
         else

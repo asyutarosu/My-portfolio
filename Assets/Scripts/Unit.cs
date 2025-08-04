@@ -188,6 +188,7 @@ public partial class Unit : MonoBehaviour
         Debug.Log($"{UnitId}{UnitName}‚Í“|‚ê‚½");
 
         //BattleManager‚ÖŽwŽ¦‚ð‚·‚é—\’è
+        OnDestroy();
         gameObject.SetActive(false);
     }
 

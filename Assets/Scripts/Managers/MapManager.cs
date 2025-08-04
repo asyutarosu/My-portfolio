@@ -466,7 +466,7 @@ public class MapManager : MonoBehaviour
         ClearMap();
 
         //デバッグ用
-        _currentMapIndex = 2;
+        _currentMapIndex = 0;
 
         string currentMapId = _mapSequence[_currentMapIndex];
         GenerateMap(currentMapId);
