@@ -204,6 +204,76 @@ public class PlayerUnit : Unit
     }
 
 
+    /// <summary>
+    /// 攻撃可能範囲をハイライト表示する
+    /// </summary>
+    /// <param name="moveableTiles">移動可能なタイルリスト</param>
+    public void AttackRangeHighlight(Vector2Int currentPos, Unit currentUnit)
+    {
+        //ClearAllHighlights();
+
+        HashSet<Vector2Int> attackableTiles = new HashSet<Vector2Int>();
+        Vector2Int[] directions = { new Vector2Int(0, 1), new Vector2Int(1, 0), new Vector2Int(0, -1), new Vector2Int(1, 0), new Vector2Int(-1, 0), };
+
+        //攻撃範囲指定のマンハッタン距離方での実装(まだ各typeとの連携は未実装)
+        //一部数値を仮として実装2025/06
+        int minAttackRange = 2;//最小射程
+        int maxAttackRange = 2;//最大射程
+
+
+        for (int x = -maxAttackRange; x <= maxAttackRange; x++)
+        {
+            for (int y = -maxAttackRange; y <= maxAttackRange; y++)
+            {
+                //現在の移動可能タイル(movePos)からの相対座標
+                Vector2Int potentialAttackPos = currentPos + new Vector2Int(x, y);
+
+                //マンハッタン距離計算
+                int distance = Mathf.Abs(x) + Mathf.Abs(y);
+
+                if (distance >= minAttackRange && distance <= maxAttackRange)
+                {
+                    if (MapManager.Instance.IsValidGridPosition(potentialAttackPos))
+                    {
+                        attackableTiles.Add(potentialAttackPos);
+                        Debug.LogWarning($"テスト用{potentialAttackPos}");
+                    }
+                }
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// 最も近い敵ユニットを取得する
+    /// </summary>
+    /// <returns></returns>
+    private EnemyUnit GetClosestEnemyUnit()
+    {
+        EnemyUnit closesetEnemy = null;
+        int minDistance = int.MaxValue;
+
+        foreach (EnemyUnit enemy in MapManager.Instance.GetAllEnemyUnits())
+        {
+            if (enemy == null)
+            {
+                continue;
+            }
+
+            int dist = Mathf.Abs(CurrentGridPosition.x - enemy.CurrentGridPosition.x) +
+                Mathf.Abs(CurrentGridPosition.y - enemy.CurrentGridPosition.y);
+
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+                closesetEnemy = enemy;
+            }
+        }
+        return closesetEnemy;
+    }
+
+
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()

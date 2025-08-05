@@ -34,6 +34,12 @@ public partial class Unit : MonoBehaviour
 
     [field: SerializeField]public int Speed { get; private set; }//速さ
 
+
+    //攻撃範囲:仮実装
+    [SerializeField] public int _minAttackRange = 1;//最小攻撃射程
+    [SerializeField] public int _maxAttackRange = 2;//最大攻撃射程
+
+
     [field:SerializeField]protected UnitData unitData { get; private set; }//ユニットデータ取得用
 
     [field:SerializeField]public Weapon EquippedWeapon { get; private set; }//装備中の武器
@@ -179,6 +185,7 @@ public partial class Unit : MonoBehaviour
             Die();
         }
     }
+
 
     /// <summary>
     /// ユニットの死亡処理

@@ -16,9 +16,9 @@ public class EnemyUnit : Unit
 
     [SerializeField] private EnemyAIType _aiType = EnemyAIType.Aggreeive;//デフォルトのAIタイプ
 
-    //攻撃範囲
-    [SerializeField] private int _minAttackRange = 1;//最小攻撃射程
-    [SerializeField] private int _maxAttackRange = 2;//最大攻撃射程
+    //攻撃範囲:Unit.csに移行2025/07
+    //[SerializeField] private int _minAttackRange = 1;//最小攻撃射程
+    //[SerializeField] private int _maxAttackRange = 2;//最大攻撃射程
 
 
     //デバッグ用
@@ -100,6 +100,7 @@ public class EnemyUnit : Unit
             Debug.Log($"{name}:プレイヤーユニットが見つかりません");
             yield break;
         }
+        Debug.LogWarning($"ユニット名{this.name}");
 
 
         //現在の攻撃範囲内にプレイヤーユニットがいるかチェック
@@ -141,7 +142,7 @@ public class EnemyUnit : Unit
 
         //}
 
-        
+
 
 
         //if (playerInAttackRange)
@@ -172,19 +173,20 @@ public class EnemyUnit : Unit
 
         Vector2Int originalCurrentGridPosition = CurrentGridPosition;
 
-
+        //一部の経路計算時に不具合があったため変更2025/07
         //Dictionary<Vector2Int, PathNodes> reachableNodes = DijkstraPathfinder.FindReachableNodes(GetCurrentGridPostion(), this);
-        Dictionary<Vector2Int, PathNodes> reachableNodes = DijkstraPathfinder.FindReachableNodes(originalCurrentGridPosition, this);
+        //Dictionary<Vector2Int, PathNodes> reachableNodes = DijkstraPathfinder.FindReachableNodes(originalCurrentGridPosition, this);
 
-
+        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> TestreachableNodes =
+            DijkstraPathfinder.FindReachableTiles(this.CurrentGridPosition, this);
 
         //確認用
-        Debug.Log($"{name}: DijkstraPathfinderが計算した到達可能マス数: {reachableNodes.Count}"); // 到達可能なマスの総数
+        Debug.Log($"{name}: DijkstraPathfinderが計算した到達可能マス数: {TestreachableNodes.Count}"); // 到達可能なマスの総数
 
 
         // 到達可能なマスとそのコストを全てログ出力
         Debug.Log($"{name}: --- 到達可能マス詳細 ---");
-        foreach (var entry in reachableNodes.OrderBy(e => e.Value.Cost)) // コスト順にソートして見やすく
+        foreach (var entry in TestreachableNodes.OrderBy(e => e.Value.Cost)) // コスト順にソートして見やすく
         {
             Debug.Log($"  Reachable Node: {entry.Key} (Cost: {entry.Value.Cost})");
         }
@@ -203,8 +205,8 @@ public class EnemyUnit : Unit
             foreach(Vector2Int attackPosCandidate in potentialEnemyMoveToAttackPositions)
             {
                 // 候補の攻撃位置が、敵の移動可能範囲内にあり、かつ空きマスであるかチェック
-                if (reachableNodes.ContainsKey(attackPosCandidate) && !MapManager.Instance.IsTileOccupiedForStooping(attackPosCandidate, this)){
-                    int costToMoveToAttackPos = reachableNodes[attackPosCandidate].Cost;
+                if (TestreachableNodes.ContainsKey(attackPosCandidate) && !MapManager.Instance.IsTileOccupiedForStooping(attackPosCandidate, this)){
+                    int costToMoveToAttackPos = TestreachableNodes[attackPosCandidate].Cost;
 
                     int currentManhattanDistanceToPlayer =
                         Mathf.Abs(attackPosCandidate.x - player.GetCurrentGridPostion().x) + Mathf.Abs(attackPosCandidate.y - player.GetCurrentGridPostion().y);
@@ -239,8 +241,9 @@ public class EnemyUnit : Unit
         }
 
         // 最適な移動目標位置が見つかった場合
-        if(targetedPlayer != null && bestMoveTargetPos != Vector2Int.zero && minCostToAttackPos != int.MaxValue)
-        {
+        //if(targetedPlayer != null && bestMoveTargetPos != Vector2Int.zero && minCostToAttackPos != int.MaxValue)
+        if(targetedPlayer != null && minCostToAttackPos != int.MaxValue)
+            {
             // 移動コストが現在の移動力以下であることを確認
             if(minCostToAttackPos <= CurrentMovementPoints)
             {
@@ -252,24 +255,52 @@ public class EnemyUnit : Unit
                 }
 
                 // 最短経路を計算 (アニメーション用)
-                List<Vector2Int> pathForAnimation = DijkstraPathfinder.FindPath(originalCurrentGridPosition, bestMoveTargetPos, this);
+                //List<Vector2Int> pathForAnimation = DijkstraPathfinder.FindPath(originalCurrentGridPosition, bestMoveTargetPos, this);
 
+                List<Vector2Int> AnimationPath = DijkstraPathfinder.GetPathToTarget(
+                originalCurrentGridPosition,
+                bestMoveTargetPos,
+                this);
 
-                if (pathForAnimation != null && pathForAnimation.Count > 1)
+                foreach (Vector2Int animation in AnimationPath)
                 {
-                    string pathString = string.Join(" -> ", pathForAnimation.Select(p => $"({p.x},{p.y})"));
+                    Debug.LogWarning(animation);
+                }
+
+                
+                //if (pathForAnimation != null && pathForAnimation.Count > 1)
+                //{
+                //    string pathString = string.Join(" -> ", pathForAnimation.Select(p => $"({p.x},{p.y})"));
+                //    Debug.Log($"{name}: 最終決定目標位置: {bestMoveTargetPos}");
+                //    Debug.Log($"{name}: 最終決定経路: {pathString}");
+
+                //    Debug.Log($"{name}: ({originalCurrentGridPosition.x},{originalCurrentGridPosition.y}) から ({bestMoveTargetPos.x},{bestMoveTargetPos.y}) へ移動します（対象プレイヤー: {targetedPlayer.name}）。");
+                //    // ★アニメーションは Unit.AnimateMove を使用しているはずなので、以下に修正
+                //    yield return StartCoroutine(AnimateMove(pathForAnimation));
+
+                //    //確認用
+                //    Debug.LogWarning($"{name}: 攻撃攻撃攻撃攻撃");
+
+                //    //ここに攻撃処理
+                //    BattleManager.Instance.ResolveBattle_ShogiBase(this, targetedPlayer);
+                //}
+
+                if (AnimationPath != null && AnimationPath.Count > 0)
+                {
+                    string pathString = string.Join(" -> ", AnimationPath.Select(p => $"({p.x},{p.y})"));
                     Debug.Log($"{name}: 最終決定目標位置: {bestMoveTargetPos}");
                     Debug.Log($"{name}: 最終決定経路: {pathString}");
 
                     Debug.Log($"{name}: ({originalCurrentGridPosition.x},{originalCurrentGridPosition.y}) から ({bestMoveTargetPos.x},{bestMoveTargetPos.y}) へ移動します（対象プレイヤー: {targetedPlayer.name}）。");
                     // ★アニメーションは Unit.AnimateMove を使用しているはずなので、以下に修正
-                    yield return StartCoroutine(AnimateMove(pathForAnimation));
+                    yield return StartCoroutine(AnimateMove(AnimationPath));
+
 
                     //確認用
                     Debug.LogWarning($"{name}: 攻撃攻撃攻撃攻撃");
 
                     //ここに攻撃処理
-
+                    BattleManager.Instance.ResolveBattle_ShogiBase(this, targetedPlayer);
                 }
                 else
                 {
@@ -277,7 +308,7 @@ public class EnemyUnit : Unit
                     
                     //確認用
                     Debug.LogWarning($"{name}: ここで攻撃ここで攻撃");
-
+                    targetedPlayer.Die();
 
                     yield return null; // 移動しないが行動は完了
                 }
@@ -575,7 +606,7 @@ public class EnemyUnit : Unit
                 bestMovePos = moveCandidate;
             }
         }
-
+        
         targetPos = bestMovePos;
         Debug.Log($"{UnitName}: 移動型AIが目標地点を {targetPos} に決定しました");
 

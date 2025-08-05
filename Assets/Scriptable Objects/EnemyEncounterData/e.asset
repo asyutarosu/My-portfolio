@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f9e3c9bb0b6ef945a31a5edc6c591ee, type: 3}
-  m_Name: EnemyEncounter_Map000
+  m_Name: e
   m_EditorClassIdentifier: 
   mapId: Maps/map_00
   enemyPlacements:
   - enemyPrefab: {fileID: -3626944775743022083, guid: 67a72ccbf1e1b174eb14f41f3bfb6a67, type: 3}
-    gridPosition: {x: 5, y: 0}
+    gridPosition: {x: 0, y: 2}
     overrideHP: 0
     overrideMovement: 0
