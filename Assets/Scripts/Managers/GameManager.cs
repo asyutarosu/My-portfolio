@@ -3,10 +3,10 @@ using UnityEngine.SceneManagement;//シーン管理のため導入
 using System.Collections.Generic;//リストを使うため導入
 
 /// <summary>
-/// ゲームの各フェイズを定義する列挙型
+/// ゲームの各シーンを定義する列挙型
 /// </summary>
-public enum GamePhase
-{
+public enum GameState 
+{ 
     Title,          //タイトル画面
     StageSelect,    //ステージ選択
     Deployment,     //出撃フェイズ
@@ -14,6 +14,14 @@ public enum GamePhase
     StageClear,     //ステージクリア
     GameOver,       //ゲームオーバー
     Loading         //ロード中
+}
+
+//戦闘シーンのフェイズ
+//戦闘シーンをフェイズ化して（出撃フェイズと戦闘フェイズ）統合2025/07
+public enum BattlePhase
+{
+    BattleDeployment,     //戦略準備フェイズ
+    BattleMain,         //戦闘メインフェイズ
 }
 
 public partial class GameManager : MonoBehaviour
@@ -37,8 +45,10 @@ public partial class GameManager : MonoBehaviour
         }
     }
 
-    [SerializeField] private GamePhase _currentPhase;//現在のゲームフェイズ(Inspectorで確認用)
-    public GamePhase CurrentPhase => _currentPhase;
+    [SerializeField] private GameState _currentState;//現在のゲームフェイズ(Inspectorで確認用)
+    public GameState CurrentState => _currentState;
+    [SerializeField] private BattlePhase _currentBattlePhase;
+    public BattlePhase CurrentBattlePhase => _currentBattlePhase;
     [SerializeField] private int _currentStageId;//現在のステージID(Inspectorで確認用)
     public int CurrentStageId => _currentStageId;
 
@@ -73,55 +83,110 @@ public partial class GameManager : MonoBehaviour
         //各Managerクラスの初期化を指示
 
 
-        ChangePhase(GamePhase.Title);//タイトル画面へ
+        //ChangeState(GameState.Title);//タイトル画面へ
     }
+
 
     /// <summary>
     /// フェイズを切り替える
     /// </summary>
-    /// <param name="newPahse">新しいゲームフェイズ</param>
-    public void ChangePhase(GamePhase newPhase)
+    /// <param name="battlePhase">新しいゲームフェイズ</param>
+    public void ChangePhase(BattlePhase battlePhase)
     {
-        Debug.Log($"GameManager:フェイズを{CurrentPhase}から{newPhase}へ変更します");
+        PhaseExit(_currentBattlePhase);
 
-        //現在のフェイズの終了処理
-        PhaseExit(_currentPhase);
+        _currentBattlePhase = battlePhase;
 
-        _currentPhase = newPhase;//フェイズを更新        
+        PhaseEnter(_currentBattlePhase);
 
-        //次のフェイズの開始処理
-        PhaseEnter(_currentPhase);
-
-
-        //各フェイズに応じた処理を記載する2025/06
-        switch (newPhase)
+        //各フェイズに応じた処理を記載する2025/07
+        switch (battlePhase)
         {
-            case GamePhase.Title:
-                LoadScene("Title");
+            case BattlePhase.BattleDeployment:
                 break;
-            case GamePhase.StageSelect:
-                LoadScene("StageSelect");
-                break;
-            case GamePhase.Deployment:
-                LoadScene("Deployment");
-                break;
-            case GamePhase.Battle:
-                LoadScene("Battle");
-                break;
-            case GamePhase.StageClear:
-                LoadScene("StageClear");
-                break;
-            case GamePhase.GameOver:
-                LoadScene("GameOver");
-                break;
-            case GamePhase.Loading:
-                LoadScene("Loading");
+            case BattlePhase.BattleMain:
                 break;
             default:
-                Debug.Log($"GameManager:未定義のゲームフェイズです{newPhase}");
+                Debug.Log($"GameManager:未定義のゲームフェイズです{battlePhase}");
                 break;
         }
     }
+
+    /// <summary>
+    /// 現在のフェイズが終了する直前の処理
+    /// </summary>
+    private void PhaseExit(BattlePhase phase)
+    {
+        switch (phase)
+        {
+            case BattlePhase.BattleMain:
+                break;
+                //他のフェイズ終了時の処理を記載2025/06
+        }
+    }
+
+    /// <summary>
+    /// 新しいフェイズが開始する直後の処理
+    /// </summary>
+    /// <param name="phase ">開始するフェイズ</param>
+    private void PhaseEnter(BattlePhase phase)
+    {
+        switch (phase)
+        {
+            case BattlePhase.BattleMain:
+                break;
+                //他のフェイズ終了時の処理
+        }
+    }
+
+    /// <summary>
+    /// シーンを切り替える
+    /// </summary>
+    /// <param name="newPahse">新しいゲームシーン</param>
+    public void ChangeState(GameState newPhase)
+    {
+        Debug.Log($"GameManager:シーンを{CurrentState}から{newPhase}へ変更します");
+
+        //現在のシーンの終了処理
+        StateExit(_currentState);
+
+        _currentState = newPhase;//シーンを更新        
+
+        //次のシーンの開始処理
+        SceneEnter(_currentState);
+
+
+        //各シーンに応じた処理を記載する2025/06
+        switch (newPhase)
+        {
+            case GameState.Title:
+                LoadScene("Title");
+                break;
+            case GameState.StageSelect:
+                LoadScene("StageSelect");
+                break;
+            case GameState.Deployment:
+                LoadScene("Deployment");
+                break;
+            case GameState.Battle:
+                LoadScene("Battle");
+                break;
+            case GameState.StageClear:
+                LoadScene("StageClear");
+                break;
+            case GameState.GameOver:
+                LoadScene("GameOver");
+                break;
+            case GameState.Loading:
+                LoadScene("Loading");
+                break;
+            default:
+                Debug.Log($"GameManager:未定義のゲームシーンです{newPhase}");
+                break;
+        }
+    }
+
+    
 
     /// <summary>
     /// シーンをロードする
@@ -155,30 +220,32 @@ public partial class GameManager : MonoBehaviour
         Debug.Log("現在ロード機能は未実装です");
     }
 
+   
+
     /// <summary>
-    /// 現在のフェイズが終了する直前の処理
+    /// 現在のシーンが終了する直前の処理
     /// </summary>
-    private void PhaseExit(GamePhase phase)
+    private void StateExit(GameState phase)
     {
         switch (phase)
         {
-            case GamePhase.Title:
+            case GameState.Title:
                 break;
-            //他のフェイズ終了時の処理を記載2025/06
+                //他のシーン終了時の処理を記載2025/06
         }
     }
 
     /// <summary>
-    /// 新しいフェイズが開始する直後の処理
+    /// 新しいシーンが開始する直後の処理
     /// </summary>
-    /// <param name="phase ">開始するフェイズ</param>
-    private void PhaseEnter(GamePhase phase)
+    /// <param name="phase ">開始するシーン</param>
+    private void SceneEnter(GameState phase)
     {
         switch (phase)
         {
-            case GamePhase.Title:
+            case GameState.Title:
                 break;
-                //他のフェイズ終了時の処理
+                //他のシーン終了時の処理
         }
     }
 

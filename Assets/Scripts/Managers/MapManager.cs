@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
+using UnityEngine.Tilemaps;
 
 /// Tiles.csへ移行（済み）2025/06
 /// < summary >
@@ -77,6 +78,14 @@ using System.Collections;
 //    }
 //}
 
+////
+[System.Serializable]
+public class TileMapping
+{
+    public TerrainType terrainType;
+    public TileBase tileBase;
+}
+
 
 /// <summary>
 /// ゲームマップの生成、管理、地形効果などを扱うシングルトンクラス
@@ -106,6 +115,7 @@ public class MapManager : MonoBehaviour
 
     [field: SerializeField] private Vector2Int _gridSize;//マップのグリッドサイズ
     public Vector2Int GridSize => _gridSize;
+
     [SerializeField] private Tile[,] _tileGrid;//各グリッドの情報を格納する2次元配列(Inspector表示不可のため[SerializeField]は無効)
 
     //マップ作成用
@@ -119,7 +129,13 @@ public class MapManager : MonoBehaviour
     private int _currentMapIndex = 0;//現在ロードしているマップのインデックス
     private MapData _currentMapData;//MapDtaLoaderによって読み込まれるマップデータ
 
-    private Dictionary<Vector2Int, Tile> _tiles = new Dictionary<Vector2Int, Tile>();//生成された全てのTileオブジェクトとグリッド座標を管理する
+    private Dictionary<Vector2Int, Tile> _tileData = new Dictionary<Vector2Int, Tile>();//生成された全てのTileオブジェクトとグリッド座標を管理する
+
+    //天地鳴動システムの地形変化関連
+    [SerializeField] private List<TileMapping> _terrainTileList;
+    [SerializeField] private Dictionary<TerrainType, TileBase> _terrainTiles = new Dictionary<TerrainType, TileBase>();
+    [SerializeField] private Tilemap _groundTilemap;
+
 
     //移動関連
     //ハイライト表示関連
@@ -192,6 +208,12 @@ public class MapManager : MonoBehaviour
     Vector2Int tileBasePos = new Vector2Int(-4, -3);
 
 
+    //戦闘フェイズ管理
+    [SerializeField] private GameManager _gameManager;
+    private bool _isInBattleDeployment = true;// 戦闘準備フェイズかどうかのフラグ→以降準備フェイズとする
+
+
+
     [System.Serializable] public class TerrainCost
     {
         public TerrainType terrainType;
@@ -209,7 +231,87 @@ public class MapManager : MonoBehaviour
         {
             _instance = this;
         }
+
+        foreach(var mapping in _terrainTileList)
+        {
+            if (!_terrainTiles.ContainsKey(mapping.terrainType))
+            {
+                _terrainTiles.Add(mapping.terrainType, mapping.tileBase);
+            }
+        }
     }
+
+
+    //準備フェイズ用のメソッド
+    // マウス入力でタイル情報を取得するための処理
+    private void HandleMouseInputInBattlePreparation()
+    {
+            // ワールド座標からグリッド座標を取得
+            Vector3 mouseworldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mouseworldPos.z = 0;
+            Vector2Int clickedgridPos = GetGridPositionFromWorld(mouseworldPos);
+
+            //グリッド座標のタイル情報を取得
+             Tile _clickedTile = GetTileAt(clickedgridPos);
+            if (_clickedTile != null)
+            {
+                Debug.Log($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイルをクリックしました。");
+            }
+            else if (_clickedTile == null)
+            {
+                Debug.Log("マップ範囲外です");
+                return;
+            }
+
+            //ユニットが未選択の場合
+            if (_selectedUnit == null)
+            {
+                //クリックされたタイルにユニットがいるか、かつプレイヤーユニットか、かつ未行動か
+                if (_clickedTile.OccupyingUnit != null &&
+                    _clickedTile.OccupyingUnit.Faction == FactionType.Player &&
+                    !_clickedTile.OccupyingUnit.HasActedThisTurn)
+                {
+                    SelectUnit(_clickedTile.OccupyingUnit);
+                    _originalTile = _clickedTile;
+                }
+                //敵ユニットの場合行動範囲予測を表示（未実装2025 / 07）
+                else if (_clickedTile.OccupyingUnit != null &&
+                    _clickedTile.OccupyingUnit.Faction == FactionType.Enemy &&
+                    !_clickedTile.OccupyingUnit.HasActedThisTurn)
+                {
+                    Debug.Log("敵ユニットです");
+                    SelectUnit(_clickedTile.OccupyingUnit);
+                }
+                else
+                {
+                    //ユニットが未選択の状態でハイライトが出ないように
+                    ClearAllHighlights();
+                    //////ClearMovableRangeDisplay();
+                }
+            }
+            else
+            {
+                //選択中のユニットと同じユニットがクリックされたら選択解除
+                if (_clickedTile.OccupyingUnit == _selectedUnit)
+                {
+                    CancelMove();
+                }
+                //他のプレイヤーユニットがクリックされたら、現在の選択を解除し。新しいユニットを選択
+                else if (_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
+                {
+                    CancelMove();//現在の選択を解除
+                    SelectUnit(_clickedTile.OccupyingUnit);//新しいユニットを選択
+                }
+
+                //移動範囲外の空のタイルや敵ユニットをクリックしたらキャンセル
+                else
+                {
+                    CancelMove();
+                }
+            }
+        
+    }
+
 
     /// <summary>
     /// マップのサイズに合わせてカメラの表示範囲を初期設定する
@@ -465,6 +567,9 @@ public class MapManager : MonoBehaviour
     //初期化処理
     public void Initialize()
     {
+        Debug.LogWarning("準備フェイズから始まります");
+
+
         //タイルリストとユニットリストのクリア
         ClaerExistingUnits();
         ClearMap();
@@ -608,6 +713,8 @@ public class MapManager : MonoBehaviour
 
         _currentMapData = mapData;
 
+        _gridSize = new Vector2Int(_currentMapData.Width,_currentMapData.Height);
+
 
         for (int y = 0; y < _currentMapData.Height; y++)
         {
@@ -637,7 +744,7 @@ public class MapManager : MonoBehaviour
                 SetTileSprite(tile, terrainType);
 
                 //生成・初期化が完了したTileオブジェクトを後で検索できるように
-                _tiles.Add(gridPos, tile);
+                _tileData.Add(gridPos, tile);
             }
         }
         Debug.Log($"MapManager:マップを生成しました({_currentMapData.Width}x{_currentMapData.Height})");
@@ -654,7 +761,7 @@ public class MapManager : MonoBehaviour
     /// <return>Tileオブジェクト、範囲外ならnull</return>
     public Tile GetTileAt(Vector2Int position)
     {
-        if (_tiles.TryGetValue(position, out Tile tile))
+        if (_tileData.TryGetValue(position, out Tile tile))
         {
             return tile;
         }
@@ -719,15 +826,51 @@ public class MapManager : MonoBehaviour
     /// </summary>
     /// <param name="postion">グリッド座標</param>
     /// <param name="newType">新しい地形タイプ</param>
-    public void ChangeTerrain(Vector2Int position, TerrainType newType)
+    public void ChangeEventTerrain(Vector2Int gridPosition, TerrainType newType)
     {
-        Tile tile = GetTileAt(position);
-        if (tile == null)
+        Tile tile = GetTileAt(gridPosition);
+        if (tile != null)
         {
-            Debug.Log($"MapManager:{position}の地形を{tile.TerrainType}から{newType}変化しました");
             //見た目の変化のため視覚的処理を指示
+            tile.SetType(newType);
+            SetTileSprite(tile, newType);
+            Debug.Log($"MapManager:{gridPosition}の地形を{tile.TerrainType}から{newType}変化しました");
+
+            //実行時DictionaryからTileBaseを取得
+            //if (_terrainTiles.TryGetValue(newType, out TileBase tileBase))
+            //{
+            //    _groundTilemap.SetTile(new Vector3Int(gridPosition.x, gridPosition.y, 0), tileBase);
+            //}
         }
     }
+
+    /// <summary>
+    /// 複数のグリッド座標の地形を一度に変更する
+    /// </summary>
+    /// <param name="gridPosition">変更するタイルのグリッド座標リスト</param>
+    /// <param name="newType">変更後の地形タイプ</param>
+    public void ChangeMultipleTerrains(List<Vector2Int> gridPositions,TerrainType newType)
+    {
+        foreach(Vector2Int gridPos in gridPositions)
+        {
+            ChangeEventTerrain(gridPos, newType);
+        }
+        Debug.Log($"{gridPositions.Count}マスの地形変更が完了しました。");
+    }
+
+
+    
+
+    /// <summary>
+    /// マップ上のタイルのグリッド座標を取得する
+    /// </summary>
+    /// <returns></returns>
+    public List<Vector2Int> GetAllGridPosition()
+    {
+        return new List<Vector2Int>(_tileData.Keys);
+    }
+
+
 
     /// <summary>
     /// 指定された座標がマップの有効な範囲内にあるかチェックする
@@ -772,7 +915,7 @@ public class MapManager : MonoBehaviour
         //地形のEnumの値をキャストして、_terrainSprites配列のインデックスとして使用
         int typeIndex = (int)type;
 
-        //配列の範囲チェックとスプライトがIns@ectorで設定されているかの確認
+        //配列の範囲チェックとスプライトがInspectorで設定されているかの確認
         if (typeIndex >= 0 && typeIndex < _terrainSprite.Length && _terrainSprite[typeIndex] != null)
         {
             //TileクラスのSpriteメソッドを呼び出して、スプライトを設定
@@ -839,11 +982,11 @@ public class MapManager : MonoBehaviour
     /// </summary>
     private void ClearMap()
     {
-        foreach (var tileEntry in _tiles)
+        foreach (var tileEntry in _tileData)
         {
             Destroy(tileEntry.Value.gameObject);//TileオブジェクトがアタッチされているGameObjectを破棄
         }
-        _tiles.Clear();         //Dictionaryの中身をクリア
+        _tileData.Clear();         //Dictionaryの中身をクリア
         _currentMapData = null; //読み込んだマップデータをクリア
         Debug.Log("MapManager:既存のマップをクリアしました");
     }
@@ -878,7 +1021,7 @@ public class MapManager : MonoBehaviour
     private void ClaerExistingUnits()
     {
         //現在シーンにある全てのユニットオブジェクトを削除
-        foreach (var tileEntry in _tiles)
+        foreach (var tileEntry in _tileData)
         {
             if (tileEntry.Value.OccupyingUnit != null)
             {
@@ -1005,13 +1148,13 @@ public class MapManager : MonoBehaviour
     /// </summary>
     public void PlaceUnit(Unit unit, Vector2Int gridPos)
     {
-        if (!_tiles.ContainsKey(gridPos))
+        if (!_tileData.ContainsKey(gridPos))
         {
             Debug.LogError($"MapManager: グリッド座標 {gridPos} にタイルが存在しません。");
             return;
         }
 
-        Tile targetTile = _tiles[gridPos];
+        Tile targetTile = _tileData[gridPos];
 
         //配置先のタイルがすでに他のユニットに占有されていないかチェックし、すでに存在する場合は破棄
         if (targetTile.OccupyingUnit != null)
@@ -1314,7 +1457,10 @@ public class MapManager : MonoBehaviour
         {
             Debug.Log($"選択中の敵ユニット情報:名前{_selectedUnit.name}");
             CalculateAndShowMovableRange(_selectedUnit);
-            _selectedUnit = null;
+            if(_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
+            {
+                _selectedUnit = null;
+            }
             return;
         }
 
@@ -2301,64 +2447,117 @@ public class MapManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        HandleCameraInput();
+
+        //各フェイズに応じて入力処理を切り替える
+        if (_gameManager.CurrentBattlePhase == BattlePhase.BattleDeployment)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                HandleMouseInputInBattlePreparation();
+            }
+            if (Input.GetKeyDown(KeyCode.B))
+            {
+                Debug.LogWarning("戦闘フェイズへ移行");
+                ResetMoveState();
+                _gameManager.ChangePhase(BattlePhase.BattleMain);
+            }
+
+        }
+        else if(_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
+        {
+            //プレイヤーターン中のみ入力を受け付ける
+            if (TurnManager.Instance != null && TurnManager.Instance.CurrnetTurnState != TurnState.PlayerTurn)
+            {
+                return;
+            }
+
+            //マウス操作を検知（左クリック2025 / 06）
+            if (Input.GetMouseButtonDown(0))
+            {
+                HandleMouseClick();
+            }
+
+            if (_selectedUnit != null)
+            {
+                if (Input.GetKeyDown(KeyCode.Q))
+                {
+                    CancelMove();
+                }
+            }
+            if (_isConfirmingMove)
+            {
+                if (_selectedUnit != null)
+                {
+                    ConfirmUnit();
+                    return;
+                }
+            }
+        }
+
+
+
+
+
+
         //Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         //Vector2Int clickedGridPos = GetGridPositionFromWorld(mouseWorldPos);
 
-        HandleCameraInput();
+        //HandleCameraInput();
         //MoveCameraToTarget();
 
 
         //プレイヤーターン中のみ入力を受け付ける
-        if (TurnManager.Instance != null && TurnManager.Instance.CurrnetTurnState != TurnState.PlayerTurn)
-        {
-            return;
-        }
+        //if (TurnManager.Instance != null && TurnManager.Instance.CurrnetTurnState != TurnState.PlayerTurn)
+        //{
+        //    return;
+        //}
 
-        //マウス操作を検知（左クリック2025 / 06）
-        if (Input.GetMouseButtonDown(0))
-        {
-            HandleMouseClick();
-        }
+        ////マウス操作を検知（左クリック2025 / 06）
+        //if (Input.GetMouseButtonDown(0))
+        //{
+        //    HandleMouseClick();
+        //}
 
-        if(_selectedUnit != null)
-        {
-            if (Input.GetKeyDown(KeyCode.Q))
-            {
-                CancelMove();
-            }
-        }
+        //if(_selectedUnit != null)
+        //{
+        //    if (Input.GetKeyDown(KeyCode.Q))
+        //    {
+        //        CancelMove();
+        //    }
+        //}
 
 
         //if(_selectedUnit != null && _currentPlannedMovePositon != Vector2Int.zero)
         // 移動確定待ち状態の場合は、入力処理を制限する
-        if (_isConfirmingMove)
-        {
-            if (_selectedUnit != null)
-            {
-                ConfirmUnit();
+        //if (_isConfirmingMove)
+        //{
+        //    if (_selectedUnit != null)
+        //    {
+        //        ConfirmUnit();
 
-                //仮：スペースキーで移動確定
-                //if (Input.GetKeyDown(KeyCode.Space))
-                //{
-                //    //ConfirmMove();
-                //}
-                ////仮：Qキーでキャンセル
-                //else if (Input.GetKeyDown(KeyCode.Q))
-                //{
-                //    //CancelMove();
-                //}
-                //現在は以上の入力処理以外は受け付けない2025/07
-                //if (_isAttacking)
-                //{
-                //    if (Input.GetMouseButtonDown(0))
-                //    {
-                //        //HandleMouseClick();
-                //    }
-                //}
-                return;
-            }
+        //        //仮：スペースキーで移動確定
+        //        //if (Input.GetKeyDown(KeyCode.Space))
+        //        //{
+        //        //    //ConfirmMove();
+        //        //}
+        //        ////仮：Qキーでキャンセル
+        //        //else if (Input.GetKeyDown(KeyCode.Q))
+        //        //{
+        //        //    //CancelMove();
+        //        //}
+        //        //現在は以上の入力処理以外は受け付けない2025/07
+        //        //if (_isAttacking)
+        //        //{
+        //        //    if (Input.GetMouseButtonDown(0))
+        //        //    {
+        //        //        //HandleMouseClick();
+        //        //    }
+        //        //}
+        //        return;
+        //    }
             
-        }
+        //}
         //Tile clickedTile = GetTileAt(clickedGridPos);
         //if(clickedTile == null)
         //{

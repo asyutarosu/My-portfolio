@@ -293,13 +293,13 @@ public partial class BattleManager : MonoBehaviour
         if (CheckWinConditon())
         {
             Debug.Log("BattleManager:Ÿ—˜ğŒ’B¬");
-            GameManager.Instance.ChangePhase(GamePhase.StageClear);
+            GameManager.Instance.ChangeState(GameState.StageClear);
             return;
         }
         if (CheckLoseCondition())
         {
             Debug.Log("BattleManager:”s–kğŒ’B¬");
-            GameManager.Instance.ChangePhase(GamePhase.GameOver);
+            GameManager.Instance.ChangeState(GameState.GameOver);
             return;
         }
 

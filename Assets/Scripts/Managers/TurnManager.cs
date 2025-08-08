@@ -7,6 +7,8 @@ public class TurnManager : MonoBehaviour
 {
     public static TurnManager Instance { get; private set; }
 
+    [SerializeField]private MapManager _mapManager;
+
     [SerializeField] private float _enemyTurnDelay = 1.0f;//敵のターン処理開始までの遅延時間
 
     //現在のターン状態
@@ -20,6 +22,12 @@ public class TurnManager : MonoBehaviour
 
     //現在行動中の敵ユニットのインデックス
     private int _currentEnemyUnitIndex = 0;
+
+
+    //天地鳴動メインシステム：地形
+    [SerializeField] private float _terrainChangeChance = 1.0f;//地形変化が発生する確率（仮実装は100％）
+    [SerializeField]private float _tentimeidouChance = 1.0f;//大規模な地形変化が発生する確率（仮実装は100％）
+
 
     private void Awake()
     {
@@ -252,6 +260,13 @@ public class TurnManager : MonoBehaviour
         Debug.Log("敵ターン終了");
         CurrentTurnNumber++;//ターン経過（プレイヤーターン→敵ターン終了で１サイクル）
 
+        if(Random.value <= _terrainChangeChance)
+        {
+            Debug.LogWarning("地形変化が発生しました");
+            TriggerTerrainChangeEvent();
+        }
+
+
         //次のプレイヤーターンを開始
         StartPlayerTurn();
     }
@@ -269,7 +284,67 @@ public class TurnManager : MonoBehaviour
         CurrnetTurnState = newState;
     }
 
-    
+
+    /// <summary>
+    /// 地形変更イベントをトリガーする
+    /// </summary>
+    private void TriggerTerrainChangeEvent()
+    {
+        TerrainType newTerrainType = GetRandomTerrainType();
+
+        int numTilesToChange = 0;
+        if(Random.value < _tentimeidouChance)
+        {
+            //10マス以上の大規模な地形変化
+            numTilesToChange = Random.Range(10, _mapManager.GridSize.x * _mapManager.GridSize.y);
+            Debug.Log($"大規模な地形変化が発生{ numTilesToChange}マスを{ newTerrainType}に変化させます");
+            //Debug.LogWarning($"{ _mapManager.GridSize}");
+        }
+        else
+        {
+            //4～7マスの小規模な地形変化
+            numTilesToChange = Random.Range(4, 8);
+            Debug.Log($"小規模な地形変更イベントが発生{numTilesToChange}マスを {newTerrainType} に変化させます");
+        }
+
+        //変更するタイルのグリッド座標をランダムに選ぶ
+        List<Vector2Int> tileToChange = GetRandomGridPosition(numTilesToChange);
+
+        _mapManager.ChangeMultipleTerrains(tileToChange,newTerrainType);
+    }
+
+
+    /// <summary>
+    /// 複数のランダムなグリッド座標を取得するヘルパーメソッド
+    /// </summary>
+    /// <param name="count"></param>
+    /// <returns></returns>
+    private List<Vector2Int> GetRandomGridPosition(int count)
+    {
+        List<Vector2Int> selectedTiles = new List<Vector2Int>();
+        List<Vector2Int> allTiles = MapManager.Instance.GetAllGridPosition();
+
+        //
+        while(selectedTiles.Count < count && allTiles.Count > 0)
+        {
+            int randomIndex = Random.Range(0,allTiles.Count);
+            Vector2Int randomPos = allTiles[randomIndex];
+
+            selectedTiles.Add(randomPos);
+            allTiles.RemoveAt(randomIndex);
+        }
+        return selectedTiles;
+    }
+
+    //ランダムな地形タイプを取得するヘルパーメソッド
+    private TerrainType GetRandomTerrainType()
+    {
+        TerrainType[] types = (TerrainType[])System.Enum.GetValues(typeof(TerrainType));
+        //デバッグ用
+        return types[4];
+        //return types[Random.Range(0, types.Length)];
+    }
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()

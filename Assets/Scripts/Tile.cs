@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public partial class Tile : MonoBehaviour
 {
@@ -6,6 +7,8 @@ public partial class Tile : MonoBehaviour
 
     [field: SerializeField] public Vector2Int GridPosition { get; private set; }//グリッドの座標
     [field: SerializeField] public TerrainType TerrainType { get; private set; }//地形の種類
+
+    [field: SerializeField] public TileBase tileBase { get; private set; }
 
     //[field: SerializeField] public Unit OccupyingUnit { get; set; }//そのグリッドに存在するユニット種族
     //確認用として一部宣言の追加及びログの追加
