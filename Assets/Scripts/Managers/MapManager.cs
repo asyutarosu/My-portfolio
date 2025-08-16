@@ -134,8 +134,15 @@ public class MapManager : MonoBehaviour
     //天地鳴動システムの地形変化関連
     [SerializeField] private List<TileMapping> _terrainTileList;
     [SerializeField] private Dictionary<TerrainType, TileBase> _terrainTiles = new Dictionary<TerrainType, TileBase>();
-    [SerializeField] private Tilemap _groundTilemap;
+    //一時的にコメントアウト
+    //[SerializeField] private Tilemap _groundTilemap;
 
+
+    //Tilemap関連
+    [SerializeField] private Tilemap _generateTilemap;
+    private Vector2Int _tilemapGridSize;
+    private BoundsInt _tilemapBounds;
+    private Dictionary<Vector2Int, Tile> _tileDataFromTilemap = new Dictionary<Vector2Int, Tile>();
 
     //移動関連
     //ハイライト表示関連
@@ -327,6 +334,8 @@ public class MapManager : MonoBehaviour
                 return;
             }
         }
+
+        GenerateMapFromTilemap();
 
         // 表示するグリッドの横幅と縦幅を、固定値と実際のマップサイズの大きい方を参照する
         //float targetWidth = Mathf.Max(_visibleGridWidth, _currentMapData.Width);
@@ -2512,6 +2521,95 @@ public class MapManager : MonoBehaviour
         //////ClearMovableRangeDisplay();
         ClearPathLine();
     }
+
+
+    //////TIlemapを使ったメソッド群
+    
+    public void GenerateMapFromTilemap()
+    {
+        if(_generateTilemap == null)
+        {
+            Debug.LogError("Tilemapが設定されていません");
+            return;
+        }
+
+        _tileDataFromTilemap.Clear();
+
+        //Tilemapの境界情報を取得(情報の取得に難ありのため変更)
+        //BoundsInt bounds = _generateTilemap.cellBounds;
+
+        // 手動で描画したマップの境界を正確に取得
+        BoundsInt bounds = GetMapBoundsFromTilemap();
+
+        //境界のサイズからグリッドのマス数を取得
+        _tilemapGridSize = new Vector2Int(bounds.size.x, bounds.size.y);
+
+        Debug.LogWarning($"Tilemap生成によるマップのサイズ：{_tilemapGridSize.x},{_tilemapGridSize.y}");
+
+        foreach(var pos in bounds.allPositionsWithin)
+        {
+            //GetTile()でタイルを取得
+            TileBase tileBase = _generateTilemap.GetTile(pos);
+
+
+            //TileBaseが存在すれば、そのタイル情報を_tileDataFromTilemapに格納
+            if (tileBase != null)
+            {
+                //TileBaseをCustomTile型にキャスト
+                CustomTile customTIle = tileBase as CustomTile;
+
+                //キャストが成功した場合（CustomTileであれば）
+                if (customTIle != null)
+                {
+                    //CustomTileが持つterrainType情報を取得
+                    TerrainType terrainType = customTIle.terrainType;
+
+                    //_tileDataFromTilemapに格納するためのTileオブジェクトを作成
+                    Tile tile = new Tile(new Vector2Int(pos.x, pos.y), terrainType);
+
+                    //_tileDataFromTilemapに座標をキーとして情報を追加
+                    _tileDataFromTilemap.Add(tile.GridPosition, tile);
+                }
+            }
+        }
+
+        Debug.LogWarning($"_tileDataFromTilemapに格納されたタイルの数: {_tileDataFromTilemap.Count}");
+    }
+
+    private BoundsInt GetMapBoundsFromTilemap()
+    {
+        //タイルが存在するセルの最小・最大座標を格納する
+        Vector3Int min = new Vector3Int(int.MaxValue, int.MaxValue, 0);
+        Vector3Int max = new Vector3Int(int.MinValue, int.MinValue, 0);
+        bool foundTile = false;
+
+        //Tilemapの描画可能な全範囲を走査する
+        foreach (var pos in _generateTilemap.cellBounds.allPositionsWithin)
+        {
+            //指定したセルにタイルが存在するか確認
+            if (_generateTilemap.GetTile(pos) != null)
+            {
+                //タイルが見つかったら、最小・最大座標を更新
+                min.x = Mathf.Min(min.x, pos.x);
+                min.y = Mathf.Min(min.y, pos.y);
+                max.x = Mathf.Max(max.x, pos.x);
+                max.y = Mathf.Max(max.y, pos.y);
+                foundTile = true;
+            }
+        }
+
+        if (foundTile)
+        {
+            //実際の境界を計算して返す
+            return new BoundsInt(min.x, min.y, 0, max.x - min.x + 1, max.y - min.y + 1, 1);
+        }
+        else
+        {
+            //タイルが見つからない場合は空のBoundsを返す
+            return new BoundsInt();
+        }
+    }
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
