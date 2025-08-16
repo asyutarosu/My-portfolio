@@ -255,7 +255,7 @@ public class MapManager : MonoBehaviour
              Tile _clickedTile = GetTileAt(clickedgridPos);
             if (_clickedTile != null)
             {
-                Debug.Log($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイルをクリックしました。");
+                Debug.Log($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTile.TerrainType}をクリックしました。");
             }
             else if (_clickedTile == null)
             {
@@ -858,7 +858,95 @@ public class MapManager : MonoBehaviour
         Debug.Log($"{gridPositions.Count}マスの地形変更が完了しました。");
     }
 
+    /// <summary>
+    /// 指定したTerrainTypeを持つタイルのみを、別の地形タイプに変化させる
+    /// </summary>
+    /// <param name="targetType"></param>
+    /// <param name="newType"></param>
+    /// <param name="changeCount"></param>
+    public void ChangeSpecificTerrain(TerrainType targetType, TerrainType newType,int changeCount)
+    {
+        List<Vector2Int> targetTiles = new List<Vector2Int>();
 
+        //マップ上の全タイルをスキャンして、条件に合うタイルを探す
+        foreach (var tilePair in _tileData)
+        {
+            if(tilePair.Value.TerrainType == targetType)
+            {
+                targetTiles.Add(tilePair.Key);
+            }
+        }
+
+        //ランダムに変化させるタイルを選ぶ
+        List<Vector2Int> tilesToChange = new List<Vector2Int>();
+        if(targetTiles.Count > 0)
+        {
+            for(int i = 0;i < changeCount && targetTiles.Count > 0; i++)
+            {
+                int randomIndex = Random.Range(0, targetTiles.Count);
+                tilesToChange.Add(targetTiles[randomIndex]);
+                targetTiles.RemoveAt(randomIndex);
+            }
+        }
+
+        ChangeMultipleTerrains(tilesToChange, newType);
+    }
+
+    /// <summary>
+    /// 指定したTerrainTypeを持つタイルの周囲1マスを変化させる
+    /// </summary>
+    /// <param name="centerType"></param>
+    /// <param name="newType"></param>
+    public void ChangeAroundTerrain(TerrainType centerType,TerrainType newType)
+    {
+        List<Vector2Int> tileToChange = new List<Vector2Int>();
+
+        //中心となるタイルをすべて見つける
+        List<Vector2Int> centerTile = new List<Vector2Int>();
+        foreach(var tilePair in _tileData)
+        {
+            if(tilePair.Value.TerrainType == centerType)
+            {
+                centerTile.Add(tilePair.Key);
+            }
+        }
+
+        //見つけた中心タイルの周囲1マスを探索
+        foreach (Vector2Int centerPos in centerTile)
+        {
+            //周囲の8マスをチェック
+            for (int y = -1;y <= 1; y++)
+            {
+                for(int x = -1;x <= 1; x++)
+                {
+                    // 中心タイルはスキップ
+                    if (x == 0 && y == 0)
+                    {
+                        continue;
+                    }
+
+                    Vector2Int surroundingPos = new Vector2Int(centerPos.x + x, centerPos.y + y);
+
+                    //マップの範囲内かチェック
+                    if (IsValidGridPosition(surroundingPos))
+                    {
+                        Tile surroundingTile = GetTileAt(surroundingPos);
+                        //中心タイルと同じTerrainTypeではない場合のみ追加
+                        if (surroundingTile != null && surroundingTile.TerrainType != centerType)
+                        {
+                            //重複を避ける
+                            if (!tileToChange.Contains(surroundingPos))
+                            {
+                                tileToChange.Add(surroundingPos);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ChangeMultipleTerrains(tileToChange,newType);
+    }
     
 
     /// <summary>

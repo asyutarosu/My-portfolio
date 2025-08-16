@@ -266,6 +266,9 @@ public class TurnManager : MonoBehaviour
             TriggerTerrainChangeEvent();
         }
 
+        //確認用
+        _mapManager.ChangeSpecificTerrain(TerrainType.Mountain, TerrainType.Water, 4);
+        _mapManager.ChangeAroundTerrain(TerrainType.Forest, TerrainType.Desert);
 
         //次のプレイヤーターンを開始
         StartPlayerTurn();
