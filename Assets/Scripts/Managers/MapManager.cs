@@ -116,11 +116,11 @@ public class MapManager : MonoBehaviour
     [field: SerializeField] private Vector2Int _gridSize;//マップのグリッドサイズ
     public Vector2Int GridSize => _gridSize;
 
-    [SerializeField] private Tile[,] _tileGrid;//各グリッドの情報を格納する2次元配列(Inspector表示不可のため[SerializeField]は無効)
+    [SerializeField] private MyTile[,] _tileGrid;//各グリッドの情報を格納する2次元配列(Inspector表示不可のため[SerializeField]は無効)
 
     //マップ作成用
     [SerializeField] private string[] _mapSequence;//Resoucesフォルダ以下のCSVファイルのパス
-    [SerializeField] private GameObject _tilePrefab;//各タイル生成に使用するTileコンポーネントが付いたPrefab
+    [SerializeField] private GameObject _tilePrefab;//各タイル生成に使用するMyTileコンポーネントが付いたPrefab
     [SerializeField] private float _tileSize = 1.0f;//グリッドの1マスあたりのワールド座標でのサイズ
     [SerializeField] private Sprite[] _terrainSprite;//地形タイプに対応するスプライトを設定するための配列
 
@@ -129,7 +129,7 @@ public class MapManager : MonoBehaviour
     private int _currentMapIndex = 0;//現在ロードしているマップのインデックス
     private MapData _currentMapData;//MapDtaLoaderによって読み込まれるマップデータ
 
-    private Dictionary<Vector2Int, Tile> _tileData = new Dictionary<Vector2Int, Tile>();//生成された全てのTileオブジェクトとグリッド座標を管理する
+    private Dictionary<Vector2Int, MyTile> _tileData = new Dictionary<Vector2Int, MyTile>();//生成された全てのTileオブジェクトとグリッド座標を管理する
 
     //天地鳴動システムの地形変化関連
     [SerializeField] private List<TileMapping> _terrainTileList;
@@ -160,7 +160,7 @@ public class MapManager : MonoBehaviour
     private Vector2Int _currentPlannedMovePositon = Vector2Int.zero;//移動先のグリッド座標
     private bool _isMovingOrPlanning = false;//移動計画中または移動中かを示すフラグ
     private bool _isConfirmingMove = false;//移動確定待ち状態かどうかを示すフラグ
-    private Tile _originalTile;
+    private MyTile _originalTile;
 
     //ユニットの移動キャンセルを管理する
     private bool _canceled = false;//一度でもキャンセルしたかを示すフラグ
@@ -259,7 +259,7 @@ public class MapManager : MonoBehaviour
             Vector2Int clickedgridPos = GetGridPositionFromWorld(mouseworldPos);
 
             //グリッド座標のタイル情報を取得
-             Tile _clickedTile = GetTileAt(clickedgridPos);
+             MyTile _clickedTile = GetTileAt(clickedgridPos);
             if (_clickedTile != null)
             {
                 Debug.Log($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTile.TerrainType}をクリックしました。");
@@ -738,7 +738,7 @@ public class MapManager : MonoBehaviour
                 GameObject tileGO = Instantiate(_tilePrefab, worldPos, Quaternion.identity, transform);
 
                 //生成したGameObjectからTileコンポーネントを取得する
-                Tile tile = tileGO.GetComponent<Tile>();
+                MyTile tile = tileGO.GetComponent<MyTile>();
                 if (tile == null)
                 {
                     Debug.LogError($"TilePrefabにTileコンポーネントがアタッチされいません{_tilePrefab.name}");
@@ -768,9 +768,9 @@ public class MapManager : MonoBehaviour
     /// </summary>
     /// <param name="position">グリッド座標</param>
     /// <return>Tileオブジェクト、範囲外ならnull</return>
-    public Tile GetTileAt(Vector2Int position)
+    public MyTile GetTileAt(Vector2Int position)
     {
-        if (_tileData.TryGetValue(position, out Tile tile))
+        if (_tileData.TryGetValue(position, out MyTile tile))
         {
             return tile;
         }
@@ -785,7 +785,7 @@ public class MapManager : MonoBehaviour
     /// <return>移動コスト</return>
     public int GetMovementCost(Vector2Int position, UnitType unitType)
     {
-        Tile tile = GetTileAt(position);
+        MyTile tile = GetTileAt(position);
         if (tile == null)
         {
             return int.MaxValue; //範囲外は移動不可
@@ -837,7 +837,7 @@ public class MapManager : MonoBehaviour
     /// <param name="newType">新しい地形タイプ</param>
     public void ChangeEventTerrain(Vector2Int gridPosition, TerrainType newType)
     {
-        Tile tile = GetTileAt(gridPosition);
+        MyTile tile = GetTileAt(gridPosition);
         if (tile != null)
         {
             //見た目の変化のため視覚的処理を指示
@@ -939,7 +939,7 @@ public class MapManager : MonoBehaviour
                     //マップの範囲内かチェック
                     if (IsValidGridPosition(surroundingPos))
                     {
-                        Tile surroundingTile = GetTileAt(surroundingPos);
+                        MyTile surroundingTile = GetTileAt(surroundingPos);
                         //中心タイルと同じTerrainTypeではない場合のみ追加
                         if (surroundingTile != null && surroundingTile.TerrainType != centerType)
                         {
@@ -995,7 +995,7 @@ public class MapManager : MonoBehaviour
     /// <param name="newType"></param>
     public void SetTileType(Vector2Int positon, TerrainType newType)
     {
-        Tile tile = GetTileAt(positon);
+        MyTile tile = GetTileAt(positon);
         if (tile != null)
         {
             tile.SetType(newType);
@@ -1007,7 +1007,7 @@ public class MapManager : MonoBehaviour
     /// </summary>
     /// <param name="tile">スプライトを設定したいTileオブジェクト</param>
     /// <param name="type">そのタイルの地形タイプ</param>
-    private void SetTileSprite(Tile tile, TerrainType type)
+    private void SetTileSprite(MyTile tile, TerrainType type)
     {
         //地形のEnumの値をキャストして、_terrainSprites配列のインデックスとして使用
         int typeIndex = (int)type;
@@ -1251,7 +1251,7 @@ public class MapManager : MonoBehaviour
             return;
         }
 
-        Tile targetTile = _tileData[gridPos];
+        MyTile targetTile = _tileData[gridPos];
 
         //配置先のタイルがすでに他のユニットに占有されていないかチェックし、すでに存在する場合は破棄
         if (targetTile.OccupyingUnit != null)
@@ -1346,7 +1346,7 @@ public class MapManager : MonoBehaviour
         //Ryacastを使ってクリックされたオブジェクトを検出
         RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
 
-        Tile _clickedTile = GetTileAt(clickedGridPos);
+        MyTile _clickedTile = GetTileAt(clickedGridPos);
         //マップ範囲外の場合
         if (_clickedTile == null)
         {
@@ -1572,7 +1572,7 @@ public class MapManager : MonoBehaviour
     /// <param name="targetTile"></param>
     /// <param name="clickedPos"></param>
     /// 
-    private void PlanMove(Tile targetTile, Vector2Int clickedPos)
+    private void PlanMove(MyTile targetTile, Vector2Int clickedPos)
     {
         //クリックされたタイルが移動可能範囲内にあるかチェック
         if (_currentHighlights.ContainsKey(targetTile.GridPosition))
@@ -1627,7 +1627,7 @@ public class MapManager : MonoBehaviour
 
 
     ///PlanMove処理の変更に伴い名前変更2025/07
-    private IEnumerator InitiateVisualMove(Vector2Int targetGridPos,Tile targetTile)
+    private IEnumerator InitiateVisualMove(Vector2Int targetGridPos,MyTile targetTile)
     {
         _currentPlannedMovePositon = targetGridPos;
         _isMovingOrPlanning = true;
@@ -1698,7 +1698,7 @@ public class MapManager : MonoBehaviour
     //タイルが他のユニットに占有されているかチェック (停止地点の判定用)
     public bool IsTileOccupiedForStooping(Vector2Int gridPos, Unit selectedUnit)
     {
-        Tile tile = GetTileAt(gridPos);
+        MyTile tile = GetTileAt(gridPos);
 
         //確認用のため処理を追加
         if (tile == null)
@@ -1726,7 +1726,7 @@ public class MapManager : MonoBehaviour
     public bool IsTilePassableForUnit(Vector2Int gridPos, Unit unitToCheck)
     {
         //範囲外及び無効なタイルは通過不可
-        Tile tile = GetTileAt(gridPos);
+        MyTile tile = GetTileAt(gridPos);
         if (tile == null)
         {
             return false;
@@ -1788,7 +1788,7 @@ public class MapManager : MonoBehaviour
     }
 
     //タイルがクリックされた時の処理
-    private void HandleTileClick(Tile clickedTile)
+    private void HandleTileClick(MyTile clickedTile)
     {
         Debug.Log($"クリックされたタイル：{clickedTile.GridPosition},地形：{clickedTile.TerrainType}");
 
@@ -2122,7 +2122,7 @@ public class MapManager : MonoBehaviour
             if (!moveableTiles.Contains(targetPos))
             {
                 //敵の有無を問わずハイライト
-                Tile targetTile = GetTileAt(targetPos);
+                MyTile targetTile = GetTileAt(targetPos);
                 if (targetTile != null)
                 {
                     HighlightTile(targetPos, HighlightType.Attack);
@@ -2223,10 +2223,10 @@ public class MapManager : MonoBehaviour
         unit.SetGridPosition(endGridPos);
 
         // ユニットの占有タイルを更新 (MapManagerのGetTileAtとOccupyingUnitプロパティを使用)
-        Tile oldTile = GetTileAt(startGridPos);
+        MyTile oldTile = GetTileAt(startGridPos);
         if (oldTile != null) oldTile.OccupyingUnit = null; // 元のタイルからユニットを解除
 
-        Tile newTile = GetTileAt(endGridPos);
+        MyTile newTile = GetTileAt(endGridPos);
         if (newTile != null) newTile.OccupyingUnit = unit; // 新しいタイルにユニットを設定
 
         // プレイヤーユニットの場合のみFinalizeMoveStateを呼び出す
@@ -2290,7 +2290,7 @@ public class MapManager : MonoBehaviour
 
 
 
-        Tile newTile = GetTileAt(_currentPlannedMovePositon);
+        MyTile newTile = GetTileAt(_currentPlannedMovePositon);
         if (newTile != null)
         {
             _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
@@ -2324,7 +2324,7 @@ public class MapManager : MonoBehaviour
             if (attackableTiles.Contains(targetPos))
             {
                 //敵の有無を問わずハイライト
-                Tile targetTile = GetTileAt(targetPos);
+                MyTile targetTile = GetTileAt(targetPos);
                 if (targetTile != null)
                 {
                     HighlightTile(targetPos, HighlightType.Attack);
@@ -2362,7 +2362,7 @@ public class MapManager : MonoBehaviour
         }
 
 
-        Tile newTile = GetTileAt(_currentPlannedMovePositon);
+        MyTile newTile = GetTileAt(_currentPlannedMovePositon);
         if(newTile != null)
         {
             _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
@@ -2523,8 +2523,21 @@ public class MapManager : MonoBehaviour
     }
 
 
-    //////TIlemapを使ったメソッド群
-    
+    //////////TIlemapを使ったメソッド群
+
+    public class Tile
+    {
+        public Vector2Int GridPosition { get; private set; }
+        public TerrainType TerrainType { get; private set; }
+
+        public Tile(Vector2Int gridPosition, TerrainType terrainType)
+        {
+            GridPosition = gridPosition;
+            TerrainType = terrainType;
+        }
+    }
+
+
     public void GenerateMapFromTilemap()
     {
         if(_generateTilemap == null)
