@@ -260,21 +260,21 @@ public class MapManager : MonoBehaviour
         mouseworldPos.z = 0;
         Vector2Int clickedgridPos = GetGridPositionFromWorld(mouseworldPos);
 
+        //ToDo->GetTileAt----GetTileFromTIlemap
         //確認のため一時的に移動
         MyTile _clickedTile = GetTileAt(clickedgridPos);
 
         //Tilemap
-        MyTile _clickedTileTilemap = GetTileAtFromTilemap(clickedgridPos);
-        if (_clickedTileTilemap != null)
-        {
-            Debug.LogWarning($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTileTilemap.TerrainType}をクリックしました。");
-            if (_clickedTile == null)
-            {
-                Debug.LogWarning("ya!");
-                return;
-            }
-        }
-
+        //MyTile _clickedTileTilemap = GetTileAtFromTilemap(clickedgridPos);
+        //if (_clickedTileTilemap != null)
+        //{
+        //    Debug.LogWarning($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTileTilemap.TerrainType}をクリックしました。");
+        //}
+        //else if (_clickedTile == null)
+        //{
+        //    Debug.Log("マップ範囲外です");
+        //    return;
+        //}
 
 
         //グリッド座標のタイル情報を取得
@@ -289,7 +289,7 @@ public class MapManager : MonoBehaviour
             return;
         }
 
-        
+
 
         //ユニットが未選択の場合
         if (_selectedUnit == null)
@@ -315,6 +315,7 @@ public class MapManager : MonoBehaviour
                 //ユニットが未選択の状態でハイライトが出ないように
                 ClearAllHighlights();
                 //////ClearMovableRangeDisplay();
+                Debug.LogWarning("!!!");
             }
         }
         else
@@ -609,7 +610,8 @@ public class MapManager : MonoBehaviour
         string currentMapId = _mapSequence[_currentMapIndex];
         GenerateMap(currentMapId);
 
-        PlaceEnemiesForCurrentMap(currentMapId);
+        //ToDo->一時的にコメントアウト
+        //PlaceEnemiesForCurrentMap(currentMapId);
 
         GenerateMapFromTilemap();
 
@@ -786,19 +788,21 @@ public class MapManager : MonoBehaviour
     }
 
 
+
+    //////ToDo->GetTileAtを名前変更し、Tilemap用のメソッドに変更
     /// <summary>
     /// 指定されたグリッド座標のタイル情報を取得する
     /// </summary>
     /// <param name="position">グリッド座標</param>
     /// <return>Tileオブジェクト、範囲外ならnull</return>
-    public MyTile GetTileAt(Vector2Int position)
-    {
-        if (_tileData.TryGetValue(position, out MyTile tile))
-        {
-            return tile;
-        }
-        return null;
-    }
+    //public MyTile GetTileAt(Vector2Int position)
+    //{
+    //    if (_tileData.TryGetValue(position, out MyTile tile))
+    //    {
+    //        return tile;
+    //    }
+    //    return null;
+    //}
 
     /// <summary>
     /// 指定グリッドとユニットタイプに応じた移動コストを返す
@@ -1005,8 +1009,12 @@ public class MapManager : MonoBehaviour
             return false;
         }
 
-        return gridPosition.x >= 0 && gridPosition.x < _currentMapData.Width &&
-            gridPosition.y >= 0 && gridPosition.y < _currentMapData.Height;
+        //return gridPosition.x >= 0 && gridPosition.x < _currentMapData.Width &&
+        //    gridPosition.y >= 0 && gridPosition.y < _currentMapData.Height;
+
+        //ToDo->_currentMapDataからTilemapのサイズを使用する
+        return gridPosition.x >= 0 && gridPosition.x < _tilemapGridSize.x &&
+            gridPosition.y >= 0 && gridPosition.y < _tilemapGridSize.y;
     }
 
 
@@ -1140,8 +1148,10 @@ public class MapManager : MonoBehaviour
     /// </summary>
     private void ClaerExistingUnits()
     {
+
+        //ToDo->_tileData---_tileDataTilemapTest
         //現在シーンにある全てのユニットオブジェクトを削除
-        foreach (var tileEntry in _tileData)
+        foreach (var tileEntry in _tileDataFromTilemapTest)
         {
             if (tileEntry.Value.OccupyingUnit != null)
             {
@@ -1268,13 +1278,16 @@ public class MapManager : MonoBehaviour
     /// </summary>
     public void PlaceUnit(Unit unit, Vector2Int gridPos)
     {
-        if (!_tileData.ContainsKey(gridPos))
+
+        //ToDo->_tileData----_tileDataTilemapTest
+        if (!_tileDataFromTilemapTest.ContainsKey(gridPos))
         {
             Debug.LogError($"MapManager: グリッド座標 {gridPos} にタイルが存在しません。");
             return;
         }
 
-        MyTile targetTile = _tileData[gridPos];
+        //ToDo->_tileData----_tileDataTilemapTest
+        MyTile targetTile = _tileDataFromTilemapTest[gridPos];
 
         //配置先のタイルがすでに他のユニットに占有されていないかチェックし、すでに存在する場合は破棄
         if (targetTile.OccupyingUnit != null)
@@ -1721,6 +1734,7 @@ public class MapManager : MonoBehaviour
     //タイルが他のユニットに占有されているかチェック (停止地点の判定用)
     public bool IsTileOccupiedForStooping(Vector2Int gridPos, Unit selectedUnit)
     {
+        //ToDo->GetTileAt---GetTileAtFromTilemap
         MyTile tile = GetTileAt(gridPos);
 
         //確認用のため処理を追加
@@ -2696,7 +2710,7 @@ public class MapManager : MonoBehaviour
     }
 
 
-    public MyTile GetTileAtFromTilemap (Vector2Int position)
+    public MyTile GetTileAt (Vector2Int position)
     {
         if (_tileDataFromTilemapTest.TryGetValue(position, out MyTile tile))
         {
