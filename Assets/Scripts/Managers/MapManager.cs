@@ -143,6 +143,8 @@ public class MapManager : MonoBehaviour
     private Vector2Int _tilemapGridSize;
     private BoundsInt _tilemapBounds;
     private Dictionary<Vector2Int, Tile> _tileDataFromTilemap = new Dictionary<Vector2Int, Tile>();
+    private Dictionary<Vector2Int, MyTile> _tileDataFromTilemapTest = new Dictionary<Vector2Int, MyTile>();
+    [SerializeField] private GameObject _tilePrefabTilemap;//各タイル生成に使用するMyTileコンポーネントが付いたPrefab
 
     //移動関連
     //ハイライト表示関連
@@ -253,69 +255,88 @@ public class MapManager : MonoBehaviour
     // マウス入力でタイル情報を取得するための処理
     private void HandleMouseInputInBattlePreparation()
     {
-            // ワールド座標からグリッド座標を取得
-            Vector3 mouseworldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            mouseworldPos.z = 0;
-            Vector2Int clickedgridPos = GetGridPositionFromWorld(mouseworldPos);
+        // ワールド座標からグリッド座標を取得
+        Vector3 mouseworldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseworldPos.z = 0;
+        Vector2Int clickedgridPos = GetGridPositionFromWorld(mouseworldPos);
 
-            //グリッド座標のタイル情報を取得
-             MyTile _clickedTile = GetTileAt(clickedgridPos);
-            if (_clickedTile != null)
+        //確認のため一時的に移動
+        MyTile _clickedTile = GetTileAt(clickedgridPos);
+
+        //Tilemap
+        MyTile _clickedTileTilemap = GetTileAtFromTilemap(clickedgridPos);
+        if (_clickedTileTilemap != null)
+        {
+            Debug.LogWarning($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTileTilemap.TerrainType}をクリックしました。");
+            if (_clickedTile == null)
             {
-                Debug.Log($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTile.TerrainType}をクリックしました。");
-            }
-            else if (_clickedTile == null)
-            {
-                Debug.Log("マップ範囲外です");
+                Debug.LogWarning("ya!");
                 return;
             }
+        }
 
-            //ユニットが未選択の場合
-            if (_selectedUnit == null)
+
+
+        //グリッド座標のタイル情報を取得
+        //MyTile _clickedTile = GetTileAt(clickedgridPos);
+        if (_clickedTile != null)
+        {
+            Debug.Log($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTile.TerrainType}をクリックしました。");
+        }
+        else if (_clickedTile == null)
+        {
+            Debug.Log("マップ範囲外です");
+            return;
+        }
+
+        
+
+        //ユニットが未選択の場合
+        if (_selectedUnit == null)
+        {
+            //クリックされたタイルにユニットがいるか、かつプレイヤーユニットか、かつ未行動か
+            if (_clickedTile.OccupyingUnit != null &&
+                _clickedTile.OccupyingUnit.Faction == FactionType.Player &&
+                !_clickedTile.OccupyingUnit.HasActedThisTurn)
             {
-                //クリックされたタイルにユニットがいるか、かつプレイヤーユニットか、かつ未行動か
-                if (_clickedTile.OccupyingUnit != null &&
-                    _clickedTile.OccupyingUnit.Faction == FactionType.Player &&
-                    !_clickedTile.OccupyingUnit.HasActedThisTurn)
-                {
-                    SelectUnit(_clickedTile.OccupyingUnit);
-                    _originalTile = _clickedTile;
-                }
-                //敵ユニットの場合行動範囲予測を表示（未実装2025 / 07）
-                else if (_clickedTile.OccupyingUnit != null &&
-                    _clickedTile.OccupyingUnit.Faction == FactionType.Enemy &&
-                    !_clickedTile.OccupyingUnit.HasActedThisTurn)
-                {
-                    Debug.Log("敵ユニットです");
-                    SelectUnit(_clickedTile.OccupyingUnit);
-                }
-                else
-                {
-                    //ユニットが未選択の状態でハイライトが出ないように
-                    ClearAllHighlights();
-                    //////ClearMovableRangeDisplay();
-                }
+                SelectUnit(_clickedTile.OccupyingUnit);
+                _originalTile = _clickedTile;
+            }
+            //敵ユニットの場合行動範囲予測を表示（未実装2025 / 07）
+            else if (_clickedTile.OccupyingUnit != null &&
+                _clickedTile.OccupyingUnit.Faction == FactionType.Enemy &&
+                !_clickedTile.OccupyingUnit.HasActedThisTurn)
+            {
+                Debug.Log("敵ユニットです");
+                SelectUnit(_clickedTile.OccupyingUnit);
             }
             else
             {
-                //選択中のユニットと同じユニットがクリックされたら選択解除
-                if (_clickedTile.OccupyingUnit == _selectedUnit)
-                {
-                    CancelMove();
-                }
-                //他のプレイヤーユニットがクリックされたら、現在の選択を解除し。新しいユニットを選択
-                else if (_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
-                {
-                    CancelMove();//現在の選択を解除
-                    SelectUnit(_clickedTile.OccupyingUnit);//新しいユニットを選択
-                }
-
-                //移動範囲外の空のタイルや敵ユニットをクリックしたらキャンセル
-                else
-                {
-                    CancelMove();
-                }
+                //ユニットが未選択の状態でハイライトが出ないように
+                ClearAllHighlights();
+                //////ClearMovableRangeDisplay();
             }
+        }
+        else
+        {
+            //選択中のユニットと同じユニットがクリックされたら選択解除
+            if (_clickedTile.OccupyingUnit == _selectedUnit)
+            {
+                CancelMove();
+            }
+            //他のプレイヤーユニットがクリックされたら、現在の選択を解除し。新しいユニットを選択
+            else if (_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
+            {
+                CancelMove();//現在の選択を解除
+                SelectUnit(_clickedTile.OccupyingUnit);//新しいユニットを選択
+            }
+
+            //移動範囲外の空のタイルや敵ユニットをクリックしたらキャンセル
+            else
+            {
+                CancelMove();
+            }
+        }
         
     }
 
@@ -335,7 +356,6 @@ public class MapManager : MonoBehaviour
             }
         }
 
-        GenerateMapFromTilemap();
 
         // 表示するグリッドの横幅と縦幅を、固定値と実際のマップサイズの大きい方を参照する
         //float targetWidth = Mathf.Max(_visibleGridWidth, _currentMapData.Width);
@@ -590,6 +610,9 @@ public class MapManager : MonoBehaviour
         GenerateMap(currentMapId);
 
         PlaceEnemiesForCurrentMap(currentMapId);
+
+        GenerateMapFromTilemap();
+
 
         //_allPlayerUnits.Clear();
         //_allEnemyUnits.Clear();
@@ -2540,13 +2563,15 @@ public class MapManager : MonoBehaviour
 
     public void GenerateMapFromTilemap()
     {
+        ClearMapFromTilemap();
+
         if(_generateTilemap == null)
         {
             Debug.LogError("Tilemapが設定されていません");
             return;
         }
 
-        _tileDataFromTilemap.Clear();
+        _tileDataFromTilemapTest.Clear();
 
         //Tilemapの境界情報を取得(情報の取得に難ありのため変更)
         //BoundsInt bounds = _generateTilemap.cellBounds;
@@ -2559,34 +2584,81 @@ public class MapManager : MonoBehaviour
 
         Debug.LogWarning($"Tilemap生成によるマップのサイズ：{_tilemapGridSize.x},{_tilemapGridSize.y}");
 
-        foreach(var pos in bounds.allPositionsWithin)
+        for (int y = 0; y < _tilemapGridSize.y; y++)
         {
-            //GetTile()でタイルを取得
-            TileBase tileBase = _generateTilemap.GetTile(pos);
-
-
-            //TileBaseが存在すれば、そのタイル情報を_tileDataFromTilemapに格納
-            if (tileBase != null)
+            for (int x = 0; x < _tilemapGridSize.x; x++)
             {
-                //TileBaseをCustomTile型にキャスト
-                CustomTile customTIle = tileBase as CustomTile;
+                Vector3Int Pos = new Vector3Int(x, y, 0);//現在のグリッド座標
+                Vector2Int gridPos = new Vector2Int(x, y);
 
-                //キャストが成功した場合（CustomTileであれば）
-                if (customTIle != null)
+                TileBase tileBase = _generateTilemap.GetTile(Pos);
+                if (tileBase != null)
                 {
-                    //CustomTileが持つterrainType情報を取得
-                    TerrainType terrainType = customTIle.terrainType;
+                    CustomTile customTile = tileBase as CustomTile;
+                    if (customTile != null)
+                    {
+                        TerrainType terrainType = customTile.terrainType;
 
-                    //_tileDataFromTilemapに格納するためのTileオブジェクトを作成
-                    Tile tile = new Tile(new Vector2Int(pos.x, pos.y), terrainType);
 
-                    //_tileDataFromTilemapに座標をキーとして情報を追加
-                    _tileDataFromTilemap.Add(tile.GridPosition, tile);
+                        Vector3 worldPos = GetWorldPositionFromGrid(gridPos);//グリッド座標をワールド座標に変換
+
+                        GameObject tileGO = Instantiate(_tilePrefabTilemap, worldPos, Quaternion.identity, transform);
+
+                        //生成したGameObjectからTileコンポーネントを取得する
+                        MyTile tile = tileGO.GetComponent<MyTile>();
+                        if (tile == null)
+                        {
+                            Debug.LogError($"TilePrefabにTileコンポーネントがアタッチされいません{_tilePrefabTilemap.name}");
+                            Destroy(tileGO);
+                            continue;
+                        }
+
+                        //取得したTileコンポーネントを初期化
+                        tile.Initialize(gridPos, terrainType, false);
+
+                        //生成・初期化が完了したTileオブジェクトを後で検索できるように
+                        _tileDataFromTilemapTest.Add(gridPos, tile);
+                        Debug.LogWarning($"GridPos{gridPos}:tileType{tile.TerrainType}");
+                    }
                 }
             }
         }
 
+
+
+
+
+
+
+        //foreach (var pos in bounds.allPositionsWithin)
+        //{
+        //    //GetTile()でタイルを取得
+        //    TileBase tileBase = _generateTilemap.GetTile(pos);
+
+
+        //    //TileBaseが存在すれば、そのタイル情報を_tileDataFromTilemapに格納
+        //    if (tileBase != null)
+        //    {
+        //        //TileBaseをCustomTile型にキャスト
+        //        CustomTile customTIle = tileBase as CustomTile;
+
+        //        //キャストが成功した場合（CustomTileであれば）
+        //        if (customTIle != null)
+        //        {
+        //            //CustomTileが持つterrainType情報を取得
+        //            TerrainType terrainType = customTIle.terrainType;
+
+        //            //_tileDataFromTilemapに格納するためのTileオブジェクトを作成
+        //            Tile tile = new Tile(new Vector2Int(pos.x, pos.y), terrainType);
+
+        //            //_tileDataFromTilemapに座標をキーとして情報を追加
+        //            _tileDataFromTilemap.Add(tile.GridPosition, tile);
+        //        }
+        //    }
+        //}
+
         Debug.LogWarning($"_tileDataFromTilemapに格納されたタイルの数: {_tileDataFromTilemap.Count}");
+        Debug.LogWarning($"_tileDataFromTilemapに格納されたタイルの数: {_tileDataFromTilemapTest.Count}");
     }
 
     private BoundsInt GetMapBoundsFromTilemap()
@@ -2622,6 +2694,96 @@ public class MapManager : MonoBehaviour
             return new BoundsInt();
         }
     }
+
+
+    public MyTile GetTileAtFromTilemap (Vector2Int position)
+    {
+        if (_tileDataFromTilemapTest.TryGetValue(position, out MyTile tile))
+        {
+            return tile;
+        }
+        return null;
+    }
+
+    private void ClearMapFromTilemap()
+    {
+        foreach (var tileEntry in _tileDataFromTilemapTest)
+        {
+            Destroy(tileEntry.Value.gameObject);//TileオブジェクトがアタッチされているGameObjectを破棄
+        }
+        _tileDataFromTilemapTest.Clear();         //Dictionaryの中身をクリア
+        //_currentMapData = null; //読み込んだマップデータをクリア
+        Debug.Log("MapManager:既存のマップをクリアしました");
+    }
+
+
+    //public void GenerateMap(string mapId)
+    //{
+    //    ClearMap();//既にマップが生成されている可能性を考慮して、一度クリアする
+
+    //    //MapDataLoaderでCSVファイルからマップデータを読み込む
+    //    MapData mapData = MapDataLoader.LoadMapDataFromCSV(mapId);
+
+    //    //_currentMapData = MapDataLoader.LoadMapDataFromCSV(mapId);
+
+    //    if (mapData == null)
+    //    {
+    //        Debug.LogError("MapManager:マップデータの読み込みに失敗しました。マップ生成できません");
+    //        return;
+    //    }
+
+    //    _currentMapData = mapData;
+
+    //    _gridSize = new Vector2Int(_currentMapData.Width, _currentMapData.Height);
+
+
+    //    for (int y = 0; y < _currentMapData.Height; y++)
+    //    {
+    //        for (int x = 0; x < _currentMapData.Width; x++)
+    //        {
+    //            Vector2Int gridPos = new Vector2Int(x, y);//現在のグリッド座標
+    //            TerrainType terrainType = _currentMapData.GetTerrainType(gridPos);//その座標の地形タイプを取得
+
+
+    //            Vector3 worldPos = GetWorldPositionFromGrid(gridPos);//グリッド座標をワールド座標に変換
+
+    //            GameObject tileGO = Instantiate(_tilePrefab, worldPos, Quaternion.identity, transform);
+
+    //            //生成したGameObjectからTileコンポーネントを取得する
+    //            MyTile tile = tileGO.GetComponent<MyTile>();
+    //            if (tile == null)
+    //            {
+    //                Debug.LogError($"TilePrefabにTileコンポーネントがアタッチされいません{_tilePrefab.name}");
+    //                Destroy(tileGO);
+    //                continue;
+    //            }
+
+    //            //取得したTileコンポーネントを初期化
+    //            tile.Initialize(gridPos, terrainType, false);
+
+    //            //地形タイプに応じたスプライトをTileに設定
+    //            SetTileSprite(tile, terrainType);
+
+    //            //生成・初期化が完了したTileオブジェクトを後で検索できるように
+    //            _tileData.Add(gridPos, tile);
+    //        }
+    //    }
+    //    Debug.Log($"MapManager:マップを生成しました({_currentMapData.Width}x{_currentMapData.Height})");
+
+    //    //PlayerUnitの初期配置
+    //    //PlacePlayerUnitAtInitialPostiton();
+    //}
+
+
+
+
+
+
+
+
+
+
+
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
