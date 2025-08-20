@@ -129,7 +129,7 @@ public static class DijkstraPathfinder
                     continue;
                 }
 
-                Tile neighborTile = MapManager.Instance.GetTileAt(neighborPos);
+                MyTile neighborTile = MapManager.Instance.GetTileAt(neighborPos);
                 if (neighborTile == null)
                 {
                     continue;
@@ -348,7 +348,7 @@ public static class DijkstraPathfinder
             foreach(var dir in _directions)
             {
                 Vector2Int nextPos = current.Position + dir;
-                Tile nextTile = MapManager.Instance.GetTileAt(nextPos);
+                MyTile nextTile = MapManager.Instance.GetTileAt(nextPos);
 
                 //範囲外またはユニットが占有しているマス
                 if(nextTile == null || (nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != unit.Faction))

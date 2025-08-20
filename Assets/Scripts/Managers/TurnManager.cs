@@ -263,11 +263,11 @@ public class TurnManager : MonoBehaviour
         if(Random.value <= _terrainChangeChance)
         {
             Debug.LogWarning("地形変化が発生しました");
-            TriggerTerrainChangeEvent();
+            //TriggerTerrainChangeEvent();
         }
 
         //確認用
-        _mapManager.ChangeSpecificTerrain(TerrainType.Mountain, TerrainType.Water, 4);
+        _mapManager.ChangeSpecificTerrain(TerrainType.Mountain, TerrainType.River, 4);
         _mapManager.ChangeAroundTerrain(TerrainType.Forest, TerrainType.Desert);
 
         //次のプレイヤーターンを開始

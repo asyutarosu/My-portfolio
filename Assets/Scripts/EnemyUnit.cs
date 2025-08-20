@@ -248,7 +248,7 @@ public class EnemyUnit : Unit
             if(minCostToAttackPos <= CurrentMovementPoints)
             {
                 //座標データの移動処理
-                Tile newTile = MapManager.Instance.GetTileAt(bestMoveTargetPos);
+                MyTile newTile = MapManager.Instance.GetTileAt(bestMoveTargetPos);
                 if (newTile != null)
                 {
                     MoveToGridPosition(bestMoveTargetPos, newTile); // 占有情報更新
@@ -610,7 +610,7 @@ public class EnemyUnit : Unit
         targetPos = bestMovePos;
         Debug.Log($"{UnitName}: 移動型AIが目標地点を {targetPos} に決定しました");
 
-        Tile targetTile = MapManager.Instance.GetTileAt(targetPos);
+        MyTile targetTile = MapManager.Instance.GetTileAt(targetPos);
         if(targetTile != null)
         {
             MoveToGridPosition(targetPos,targetTile);

@@ -49,7 +49,7 @@ public partial class Unit : MonoBehaviour
     [field: SerializeField] public int CurrentExperience { get; private set; }//現在の経験値
     [field:SerializeField]public int CurrentLevel { get; private set; }//現在のレベル
 
-    public Tile OccupyingTile { get; protected set; }
+    public MyTile OccupyingTile { get; protected set; }
 
     //ユニットの選択状態を管理
     private SpriteRenderer _spriteRenderer;
@@ -312,7 +312,7 @@ public partial class Unit : MonoBehaviour
     //データ更新ように変更2025/07
     //プレイヤーが移動を確定した時のみ呼び出される
     //ユニットが移動を完了した際に、新しいタイルを占有し、古いタイルから解放する
-    public void MoveToGridPosition(Vector2Int newGridPos, Tile newTile)
+    public void MoveToGridPosition(Vector2Int newGridPos, MyTile newTile)
     {
         //古いタイルから参照を解除
         if(OccupyingTile != null && OccupyingTile.OccupyingUnit == this)

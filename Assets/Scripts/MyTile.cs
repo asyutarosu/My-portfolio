@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public partial class Tile : MonoBehaviour
+public partial class MyTile : MonoBehaviour
 {
 
 
@@ -36,7 +36,7 @@ public partial class Tile : MonoBehaviour
     private BoxCollider2D _boxCollider;
 
     //コンストラクタ
-    public Tile(Vector2Int position, TerrainType terrainType)
+    public MyTile(Vector2Int position, TerrainType terrainType)
     {
         GridPosition = position;
         TerrainType = terrainType;

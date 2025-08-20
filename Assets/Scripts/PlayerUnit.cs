@@ -191,7 +191,7 @@ public class PlayerUnit : Unit
         //敵ユニットが存在するタイルのみを赤色ハイライト
         foreach(Vector2Int targetPos in attackableTiles)
         {
-            Tile targetTile = MapManager.Instance.GetTileAt(targetPos);
+            MyTile targetTile = MapManager.Instance.GetTileAt(targetPos);
             if(targetTile != null && targetTile.OccupyingUnit != null)
             {
                 //ユニットが敵factionTypeであるか確認
