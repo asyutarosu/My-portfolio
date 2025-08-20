@@ -483,8 +483,10 @@ public class MapManager : MonoBehaviour
     /// </summary>
     private void HandleCameraInput()
     {
+        //ToDo->GetTileAt----GetTileFromTIlemap
+        if (_tilemapGridSize.x <= _visibleGridWidth && _tilemapGridSize.y <= _visibleGridHeight)
         // マップが固定表示範囲より大きい場合のみ、カメラを移動させる
-        if (_currentMapData.Width <= _visibleGridWidth && _currentMapData.Height <= _visibleGridHeight)
+        // if (_currentMapData.Width <= _visibleGridWidth && _currentMapData.Height <= _visibleGridHeight)
         {
             return;
         }
@@ -522,9 +524,13 @@ public class MapManager : MonoBehaviour
 
 
             float minX = camHalfWidth + tileBasePos.x;
-            float maxX = (_currentMapData.Width * _tileWorldSize) - camHalfWidth + tileBasePos.x;
+            //ToDo->GetTileAt----GetTileFromTIlemap
+            //float maxX = (_currentMapData.Width * _tileWorldSize) - camHalfWidth + tileBasePos.x;
+            float maxX = (_tilemapGridSize.x * _tileWorldSize) - camHalfWidth + tileBasePos.x;
             float minY = camHalfHeight + tileBasePos.y;
-            float maxY = (_currentMapData.Height * _tileWorldSize) - camHalfHeight + tileBasePos.y;
+            //ToDo->GetTileAt----GetTileFromTIlemap
+            //float maxY = (_currentMapData.Height * _tileWorldSize) - camHalfHeight + tileBasePos.y;
+            float maxY = (_tilemapGridSize.y * _tileWorldSize) - camHalfHeight + tileBasePos.y;
 
             //float minX = mapMinWorldPos.x + camHalfWidth;
             //float maxX = mapMaxWorldPos.x + camHalfWidth;
@@ -607,13 +613,16 @@ public class MapManager : MonoBehaviour
         //デバッグ用
         _currentMapIndex = 0;
 
-        string currentMapId = _mapSequence[_currentMapIndex];
-        GenerateMap(currentMapId);
+        //string currentMapId = _mapSequence[_currentMapIndex];
+        //GenerateMap(currentMapId);
 
-        //ToDo->一時的にコメントアウト
-        //PlaceEnemiesForCurrentMap(currentMapId);
 
         GenerateMapFromTilemap();
+
+
+        //ToDo->一時的にコメントアウト
+        PlaceEnemiesForCurrentMap("Maps/map_00");
+
 
 
         //_allPlayerUnits.Clear();
@@ -788,7 +797,6 @@ public class MapManager : MonoBehaviour
     }
 
 
-
     //////ToDo->GetTileAtを名前変更し、Tilemap用のメソッドに変更
     /// <summary>
     /// 指定されたグリッド座標のタイル情報を取得する
@@ -868,15 +876,15 @@ public class MapManager : MonoBehaviour
         if (tile != null)
         {
             //見た目の変化のため視覚的処理を指示
-            tile.SetType(newType);
-            SetTileSprite(tile, newType);
-            Debug.Log($"MapManager:{gridPosition}の地形を{tile.TerrainType}から{newType}変化しました");
+            //tile.SetType(newType);
+            //SetTileSprite(tile, newType);
+            //Debug.Log($"MapManager:{gridPosition}の地形を{tile.TerrainType}から{newType}変化しました");
 
             //実行時DictionaryからTileBaseを取得
-            //if (_terrainTiles.TryGetValue(newType, out TileBase tileBase))
-            //{
-            //    _groundTilemap.SetTile(new Vector3Int(gridPosition.x, gridPosition.y, 0), tileBase);
-            //}
+            if (_terrainTiles.TryGetValue(newType, out TileBase tileBase))
+            {
+                _generateTilemap.SetTile(new Vector3Int(gridPosition.x, gridPosition.y, 0), tileBase);
+            }
         }
     }
 
@@ -905,7 +913,8 @@ public class MapManager : MonoBehaviour
         List<Vector2Int> targetTiles = new List<Vector2Int>();
 
         //マップ上の全タイルをスキャンして、条件に合うタイルを探す
-        foreach (var tilePair in _tileData)
+        //ToDo->_tileData---_tileDataTilemapTest
+        foreach (var tilePair in _tileDataFromTilemapTest)
         {
             if(tilePair.Value.TerrainType == targetType)
             {
@@ -939,7 +948,8 @@ public class MapManager : MonoBehaviour
 
         //中心となるタイルをすべて見つける
         List<Vector2Int> centerTile = new List<Vector2Int>();
-        foreach(var tilePair in _tileData)
+        //ToDo->_tileData---_tileDataTilemapTest
+        foreach (var tilePair in _tileDataFromTilemapTest)
         {
             if(tilePair.Value.TerrainType == centerType)
             {
@@ -991,7 +1001,8 @@ public class MapManager : MonoBehaviour
     /// <returns></returns>
     public List<Vector2Int> GetAllGridPosition()
     {
-        return new List<Vector2Int>(_tileData.Keys);
+        //ToDo->_tileData---_tileDataTilemapTest
+        return new List<Vector2Int>(_tileDataFromTilemapTest.Keys);
     }
 
 
@@ -1003,11 +1014,12 @@ public class MapManager : MonoBehaviour
     /// <return>有効な範囲内であればtrue、そうでなければfalse</return>
     public bool IsValidGridPosition(Vector2Int gridPosition)
     {
-        if (_currentMapData == null)
-        {
-            Debug.LogError("MapDataがロードされていません。IsValidGridPositionを呼び出す前にMapDataを初期化してください。");
-            return false;
-        }
+        //ToDo->_currentMapData----排除
+        //if (_currentMapData == null)
+        //{
+        //    Debug.LogError("MapDataがロードされていません。IsValidGridPositionを呼び出す前にMapDataを初期化してください。");
+        //    return false;
+        //}
 
         //return gridPosition.x >= 0 && gridPosition.x < _currentMapData.Width &&
         //    gridPosition.y >= 0 && gridPosition.y < _currentMapData.Height;

@@ -13,4 +13,12 @@ MonoBehaviour:
   m_Name: EnemyEncounter_Map001
   m_EditorClassIdentifier: 
   mapId: Maps/map_01
-  enemyPlacements: []
+  enemyPlacements:
+  - enemyPrefab: {fileID: 0}
+    gridPosition: {x: 2, y: 0}
+    overrideHP: 0
+    overrideMovement: 0
+  - enemyPrefab: {fileID: 0}
+    gridPosition: {x: 0, y: 2}
+    overrideHP: 0
+    overrideMovement: 0

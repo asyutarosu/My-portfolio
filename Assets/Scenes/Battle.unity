@@ -247,15 +247,15 @@ MonoBehaviour:
   - terrainType: 0
     tileBase: {fileID: 0}
   - terrainType: 1
-    tileBase: {fileID: 11400000, guid: 9b72339ae3c983648b2a2e27f260f618, type: 2}
+    tileBase: {fileID: 11400000, guid: a25d395aaae516a459ed9239638c4c8f, type: 2}
   - terrainType: 2
-    tileBase: {fileID: 11400000, guid: 0e343f79126e85448a5b3236abe8aa6b, type: 2}
+    tileBase: {fileID: 11400000, guid: 9b52b543e140a314c90d4b8a18c7d736, type: 2}
   - terrainType: 3
-    tileBase: {fileID: 11400000, guid: cb27ea339a56efb4f8ec1dd9a5b282bb, type: 2}
+    tileBase: {fileID: 11400000, guid: 9a6e2d995a48eb1459803ba8fd1a8da1, type: 2}
   - terrainType: 4
-    tileBase: {fileID: 11400000, guid: ca057f32d8db3174cb3219a09869581e, type: 2}
+    tileBase: {fileID: 11400000, guid: fcb80afdc1e4a894694e7267cbab53b1, type: 2}
   - terrainType: 6
-    tileBase: {fileID: 11400000, guid: 6c512c55d3fa8cc4c91325460fa5181a, type: 2}
+    tileBase: {fileID: 11400000, guid: d1d6815b442139f4eb1bd7e357feb7b6, type: 2}
   _generateTilemap: {fileID: 743278602}
   _tilePrefabTilemap: {fileID: 8064885473826341948, guid: 1b7bfcc6ad0cb98468bc9cca708812f2, type: 3}
   _movableHighlightPrefab: {fileID: 2112004532673721051, guid: c33f3a646dfa4534997e8c03ff0e326f, type: 3}
