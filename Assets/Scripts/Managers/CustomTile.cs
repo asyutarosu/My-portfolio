@@ -9,6 +9,8 @@ public class CustomTile : TileBase
 
     public TerrainType terrainType;
 
+    [field: SerializeField]public int MovementCost { get;private set; }
+
     public override void GetTileData(Vector3Int position, ITilemap tilemap, ref TileData tileData)
     {
         tileData.sprite = this.sprite;

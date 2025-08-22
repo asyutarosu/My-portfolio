@@ -7,7 +7,7 @@ public partial class MyTile : MonoBehaviour
 
     [field: SerializeField] public Vector2Int GridPosition { get; private set; }//グリッドの座標
     [field: SerializeField] public TerrainType TerrainType { get; private set; }//地形の種類
-
+    [field: SerializeField] public int MovementCost { get; private set; }//地形の移動コスト
     [field: SerializeField] public TileBase tileBase { get; private set; }
 
     //[field: SerializeField] public Unit OccupyingUnit { get; set; }//そのグリッドに存在するユニット種族
@@ -51,6 +51,14 @@ public partial class MyTile : MonoBehaviour
     public void SetType(TerrainType newTerrainType)
     {
         TerrainType = newTerrainType;
+    }
+
+
+    public void SetTerrainTypeAndCost(TerrainType newType, int newCost)
+    {
+        TerrainType = newType;
+        MovementCost = newCost;
+        Debug.Log($"Tile {GridPosition}: TerrainTypeを{TerrainType}に変更し、移動コストを{MovementCost}に設定");
     }
 
     /// <summary>
@@ -114,12 +122,13 @@ public partial class MyTile : MonoBehaviour
         }
     }
 
-    public void Initialize(Vector2Int gridPos, TerrainType terraintype,bool isGool)
+    public void Initialize(Vector2Int gridPos, TerrainType terraintype,bool isGool, int movementCost)
     {
         GridPosition = gridPos;
         TerrainType = terraintype;
         IsGool = isGool;
         OccupyingUnit=null;
+        MovementCost = movementCost;
         //GameObjectの名前をデバッグ用に設定
         gameObject.name = $"({gridPos.x},{gridPos.y})";
 

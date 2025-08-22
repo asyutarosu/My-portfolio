@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sprite: {fileID: -5269519099407390509, guid: f5f90caa95aabde4896185b5975a45cb, type: 3}
   terrainType: 1
+  <MovementCost>k__BackingField: 1

@@ -79,11 +79,15 @@ using UnityEngine.Tilemaps;
 //}
 
 ////
+///
+
+//Tilemapingから名称変更TerrainTileEntry
 [System.Serializable]
-public class TileMapping
+public class TerrainTileEntry
 {
     public TerrainType terrainType;
     public TileBase tileBase;
+    public CustomTile customTile;
 }
 
 
@@ -132,11 +136,14 @@ public class MapManager : MonoBehaviour
     private Dictionary<Vector2Int, MyTile> _tileData = new Dictionary<Vector2Int, MyTile>();//生成された全てのTileオブジェクトとグリッド座標を管理する
 
     //天地鳴動システムの地形変化関連
-    [SerializeField] private List<TileMapping> _terrainTileList;
+    [SerializeField] private List<TerrainTileEntry> _terrainTileList;
     [SerializeField] private Dictionary<TerrainType, TileBase> _terrainTiles = new Dictionary<TerrainType, TileBase>();
     //一時的にコメントアウト
     //[SerializeField] private Tilemap _groundTilemap;
-
+    
+    //////////
+    //[SerializeField] private List<TerrainTileEntry> _terrainTileEntries;
+    private Dictionary<TerrainType,CustomTile> _terrainTileAssetMap = new Dictionary<TerrainType, CustomTile>();
 
     //Tilemap関連
     [SerializeField] private Tilemap _generateTilemap;
@@ -241,17 +248,28 @@ public class MapManager : MonoBehaviour
             _instance = this;
         }
 
-        foreach(var mapping in _terrainTileList)
+        foreach (var entry in _terrainTileList)
         {
-            if (!_terrainTiles.ContainsKey(mapping.terrainType))
+            if (!_terrainTiles.ContainsKey(entry.terrainType))
             {
-                _terrainTiles.Add(mapping.terrainType, mapping.tileBase);
+                _terrainTiles.Add(entry.terrainType, entry.customTile);
+            }
+        }
+
+        foreach (var entry in _terrainTileList)
+        {
+            if (!_terrainTileAssetMap.ContainsKey(entry.terrainType))
+            {
+                _terrainTileAssetMap.Add(entry.terrainType, entry.customTile);
             }
         }
     }
 
 
-    //準備フェイズ用のメソッド
+    ////////////準備フェイズ用のメソッド
+    
+
+
     // マウス入力でタイル情報を取得するための処理
     private void HandleMouseInputInBattlePreparation()
     {
@@ -282,14 +300,14 @@ public class MapManager : MonoBehaviour
         if (_clickedTile != null)
         {
             Debug.Log($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTile.TerrainType}をクリックしました。");
+            Debug.LogWarning($"Cost::{_clickedTile.MovementCost},Type::{_clickedTile.TerrainType}");
+
         }
         else if (_clickedTile == null)
         {
             Debug.Log("マップ範囲外です");
             return;
         }
-
-
 
         //ユニットが未選択の場合
         if (_selectedUnit == null)
@@ -340,6 +358,9 @@ public class MapManager : MonoBehaviour
         }
         
     }
+
+
+    //ユニットの配置
 
 
     /// <summary>
@@ -654,15 +675,25 @@ public class MapManager : MonoBehaviour
             Debug.LogError("MapManager: _player001Prefabが割り当てられていません！");
         }
 
-        //if (_player002Prefab != null)
-        //{
-        //    PlayerUnit player002 = Instantiate(_player002Prefab, transform);
-        //    PlaceUnit(player002, new Vector2Int(0, 2));
-        //}
-        //else
-        //{
-        //    Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
-        //}
+        if (_player002Prefab != null)
+        {
+            PlayerUnit player002 = Instantiate(_player002Prefab, transform);
+            PlaceUnit(player002, new Vector2Int(3, 2));
+        }
+        else
+        {
+            Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
+        }
+
+        if (_player002Prefab != null)
+        {
+            PlayerUnit player003 = Instantiate(_player002Prefab, transform);
+            PlaceUnit(player003, new Vector2Int(3, 4));
+        }
+        else
+        {
+            Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
+        }
 
         //敵ユニット
         //GameObject enemy1Go = Instantiate(_enemyUnitprefab, transform);
@@ -781,7 +812,8 @@ public class MapManager : MonoBehaviour
                 }
 
                 //取得したTileコンポーネントを初期化
-                tile.Initialize(gridPos, terrainType, false);
+                //一時的にMovementCostを１に設定
+                tile.Initialize(gridPos, terrainType, false, 1);
 
                 //地形タイプに応じたスプライトをTileに設定
                 SetTileSprite(tile, terrainType);
@@ -837,20 +869,21 @@ public class MapManager : MonoBehaviour
                 if (unitType == UnitType.Flying) { return 1; }//飛行ユニットはコスト低
                 if (unitType == UnitType.Mountain) { return 1; }//山賊ユニットはコスト低
                 return 3;
+            case TerrainType.Desert://砂漠
+                if (unitType == UnitType.Flying) { return 1; }//飛行ユニットはコスト低
+                return 2;
             case TerrainType.Water://水場
                 if (unitType == UnitType.Flying) { return 1; }//飛行ユニットはコスト低
                 if (unitType == UnitType.Aquatic) { return 1; }//水棲ユニットはコスト低
                 return 4;
-            case TerrainType.Desert://砂漠
-                if (unitType == UnitType.Flying) { return 1; }//飛行ユニットはコスト低
-                return 2;
             case TerrainType.Snow://積雪
                 if (unitType == UnitType.Flying) { return 1; }//飛行ユニットはコスト低
                 return 2;
             case TerrainType.River://川
                 if (unitType == UnitType.Flying) { return 1; }//飛行ユニットはコスト低
                 if (unitType == UnitType.Aquatic) { return 1; }//水棲ユニットはコスト低
-                return int.MinValue;//他のユニットは移動不可
+                //一時的に移動コストを99にして移動不可を実現
+                return 999;//他のユニットは移動不可
             case TerrainType.Flooded://水害
                 if (unitType == UnitType.Flying) { return 1; }//飛行ユニットはコスト低
                 if (unitType == UnitType.Aquatic) { return 1; }//水棲ユニットはコスト低
@@ -872,19 +905,40 @@ public class MapManager : MonoBehaviour
     /// <param name="newType">新しい地形タイプ</param>
     public void ChangeEventTerrain(Vector2Int gridPosition, TerrainType newType)
     {
-        MyTile tile = GetTileAt(gridPosition);
-        if (tile != null)
-        {
-            //見た目の変化のため視覚的処理を指示
-            //tile.SetType(newType);
-            //SetTileSprite(tile, newType);
-            //Debug.Log($"MapManager:{gridPosition}の地形を{tile.TerrainType}から{newType}変化しました");
+        //MyTile tile = GetTileAt(gridPosition);
+        //if (tile != null)
+        //{
+        //    //見た目の変化のため視覚的処理を指示
+        //    //tile.SetType(newType);
+        //    //SetTileSprite(tile, newType);
+        //    //Debug.Log($"MapManager:{gridPosition}の地形を{tile.TerrainType}から{newType}変化しました");
 
-            //実行時DictionaryからTileBaseを取得
-            if (_terrainTiles.TryGetValue(newType, out TileBase tileBase))
+        //    //実行時DictionaryからTileBaseを取得
+        //    if (_terrainTiles.TryGetValue(newType, out TileBase tileBase))
+        //    {
+        //        _generateTilemap.SetTile(new Vector3Int(gridPosition.x, gridPosition.y, 0), tileBase);
+        //    }
+        //}
+
+        if (_tileDataFromTilemapTest.TryGetValue(gridPosition, out MyTile tile))
+        {
+            Debug.LogWarning(newType);
+            if (_terrainTileAssetMap.TryGetValue(newType, out CustomTile newTileAsset))
             {
-                _generateTilemap.SetTile(new Vector3Int(gridPosition.x, gridPosition.y, 0), tileBase);
+                tile.SetTerrainTypeAndCost(newType, newTileAsset.MovementCost);
+
+                _generateTilemap.SetTile(new Vector3Int(gridPosition.x, gridPosition.y, 0), newTileAsset);
+
+                Debug.Log($"タイル ({gridPosition.x}, {gridPosition.y}) の地形とコストを更新しました");
             }
+            else
+            {
+                Debug.LogWarning($"TerrainType '{newType}' に対応するTileアセットが見つかりません");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"タイル ({gridPosition.x}, {gridPosition.y}) にタイルが見つかりませんでした");
         }
     }
 
@@ -1402,6 +1456,9 @@ public class MapManager : MonoBehaviour
             return;
         }
 
+        //Debug.Log($"クリックされたグリッド座標：{clickedGridPos},Cost{_clickedTile.MovementCost}");
+        //Debug.LogWarning($"Cost::{_clickedTile.MovementCost},Type::{_clickedTile.TerrainType}");
+        GetTileInfo(clickedGridPos);
 
 
         //ユニットが未選択の場合
@@ -1414,6 +1471,7 @@ public class MapManager : MonoBehaviour
             {
                 SelectUnit(_clickedTile.OccupyingUnit);
                 _originalTile = _clickedTile;
+                Debug.LogWarning($"BaseMovement::{_selectedUnit.BaseMovement}");
             }
             //敵ユニットの場合行動範囲予測を表示（未実装2025 / 07）
             else if (_clickedTile.OccupyingUnit != null &&
@@ -1752,18 +1810,18 @@ public class MapManager : MonoBehaviour
         //確認用のため処理を追加
         if (tile == null)
         {
-            Debug.LogError($"IsTileOccupiedForStopping: Tile at {gridPos} is null! This should not happen.");
+            //Debug.LogError($"IsTileOccupiedForStopping: Tile at {gridPos} is null! This should not happen.");
             return true;// タイルがnullの場合は安全のため停止不可とみなす
         }
         string occupyingUnitName = (tile.OccupyingUnit != null) ? tile.OccupyingUnit.UnitName : "NONE";
         string selectedUnitName = (selectedUnit != null) ? selectedUnit.UnitName : "NONE";
-        Debug.Log($"IsTileOccupiedForStopping Check: Tile {gridPos}, OccupyingUnit: {occupyingUnitName}, SelectedUnit: {selectedUnitName}");
+        //Debug.Log($"IsTileOccupiedForStopping Check: Tile {gridPos}, OccupyingUnit: {occupyingUnitName}, SelectedUnit: {selectedUnitName}");
 
         // タイルが存在し、かつ何らかのユニットが占有しており、それが選択中のユニット自身ではない場合
         bool occupiedByOther = tile.OccupyingUnit != null && tile.OccupyingUnit != selectedUnit;
 
         //デバッグログ
-        Debug.Log($"IsTileOccupiedForStopping Result for {gridPos}: Occupied by other unit = {occupiedByOther}");
+        //Debug.Log($"IsTileOccupiedForStopping Result for {gridPos}: Occupied by other unit = {occupiedByOther}");
         return occupiedByOther;
 
 
@@ -2640,11 +2698,11 @@ public class MapManager : MonoBehaviour
                         }
 
                         //取得したTileコンポーネントを初期化
-                        tile.Initialize(gridPos, terrainType, false);
+                        tile.Initialize(gridPos, terrainType, false,customTile.MovementCost);
 
                         //生成・初期化が完了したTileオブジェクトを後で検索できるように
                         _tileDataFromTilemapTest.Add(gridPos, tile);
-                        Debug.LogWarning($"GridPos{gridPos}:tileType{tile.TerrainType}");
+                        //Debug.LogWarning($"GridPos{gridPos}:tileType{tile.TerrainType}");
                     }
                 }
             }
@@ -2683,8 +2741,8 @@ public class MapManager : MonoBehaviour
         //    }
         //}
 
-        Debug.LogWarning($"_tileDataFromTilemapに格納されたタイルの数: {_tileDataFromTilemap.Count}");
-        Debug.LogWarning($"_tileDataFromTilemapに格納されたタイルの数: {_tileDataFromTilemapTest.Count}");
+        //Debug.LogWarning($"_tileDataFromTilemapに格納されたタイルの数: {_tileDataFromTilemap.Count}");
+        Debug.LogWarning($"_tileDataFromTilemapTestに格納されたタイルの数: {_tileDataFromTilemapTest.Count}");
     }
 
     private BoundsInt GetMapBoundsFromTilemap()
@@ -2721,7 +2779,7 @@ public class MapManager : MonoBehaviour
         }
     }
 
-
+    //_tileDataから_tileDataFromTilemapへ参照の変更
     public MyTile GetTileAt (Vector2Int position)
     {
         if (_tileDataFromTilemapTest.TryGetValue(position, out MyTile tile))
@@ -2743,71 +2801,82 @@ public class MapManager : MonoBehaviour
     }
 
 
-    //public void GenerateMap(string mapId)
-    //{
-    //    ClearMap();//既にマップが生成されている可能性を考慮して、一度クリアする
+    public void GetTileInfo(Vector2Int gridPos)
+    {
+        //指定されたグリッド座標のMyTileオブジェクトを取得
+        if (_tileDataFromTilemapTest.TryGetValue(gridPos, out MyTile tile))
+        {
+            //MyTileオブジェクトからMovementCostを取得
+            int movementCost = tile.MovementCost;
 
-    //    //MapDataLoaderでCSVファイルからマップデータを読み込む
-    //    MapData mapData = MapDataLoader.LoadMapDataFromCSV(mapId);
-
-    //    //_currentMapData = MapDataLoader.LoadMapDataFromCSV(mapId);
-
-    //    if (mapData == null)
-    //    {
-    //        Debug.LogError("MapManager:マップデータの読み込みに失敗しました。マップ生成できません");
-    //        return;
-    //    }
-
-    //    _currentMapData = mapData;
-
-    //    _gridSize = new Vector2Int(_currentMapData.Width, _currentMapData.Height);
+            Debug.Log($"グリッド座標 ({gridPos.x}, {gridPos.y}) のタイルの移動コストは {movementCost} です。");
+        }
+        else
+        {
+            Debug.LogWarning($"グリッド座標 ({gridPos.x}, {gridPos.y}) にMyTileオブジェクトが見つかりませんでした。");
+        }
+    }
 
 
-    //    for (int y = 0; y < _currentMapData.Height; y++)
-    //    {
-    //        for (int x = 0; x < _currentMapData.Width; x++)
-    //        {
-    //            Vector2Int gridPos = new Vector2Int(x, y);//現在のグリッド座標
-    //            TerrainType terrainType = _currentMapData.GetTerrainType(gridPos);//その座標の地形タイプを取得
+    //地形の基本移動コストにunitTypeごとに加算する形式に変更
+    public int GetMovementCostFromTilemap(Vector2Int gridPos, UnitType unitType)
+    {
+        if (_tileDataFromTilemapTest.TryGetValue(gridPos, out MyTile tile))
+        {
+            int unitMovementCost = GetUnitTerrainCost(tile.TerrainType, unitType);
 
+            return tile.MovementCost + unitMovementCost;
+        }
+        else
+        {
+            Debug.LogWarning($"グリッド座標 ({gridPos.x}, {gridPos.y}) にタイルが見つかりませんでした");
+            return int.MaxValue; //タイルが見つからない場合は移動不可
+        }
+        //MyTile tile = GetTileAt(gridPos);
+        //return tile.MovementCost;
+    }
 
-    //            Vector3 worldPos = GetWorldPositionFromGrid(gridPos);//グリッド座標をワールド座標に変換
-
-    //            GameObject tileGO = Instantiate(_tilePrefab, worldPos, Quaternion.identity, transform);
-
-    //            //生成したGameObjectからTileコンポーネントを取得する
-    //            MyTile tile = tileGO.GetComponent<MyTile>();
-    //            if (tile == null)
-    //            {
-    //                Debug.LogError($"TilePrefabにTileコンポーネントがアタッチされいません{_tilePrefab.name}");
-    //                Destroy(tileGO);
-    //                continue;
-    //            }
-
-    //            //取得したTileコンポーネントを初期化
-    //            tile.Initialize(gridPos, terrainType, false);
-
-    //            //地形タイプに応じたスプライトをTileに設定
-    //            SetTileSprite(tile, terrainType);
-
-    //            //生成・初期化が完了したTileオブジェクトを後で検索できるように
-    //            _tileData.Add(gridPos, tile);
-    //        }
-    //    }
-    //    Debug.Log($"MapManager:マップを生成しました({_currentMapData.Width}x{_currentMapData.Height})");
-
-    //    //PlayerUnitの初期配置
-    //    //PlacePlayerUnitAtInitialPostiton();
-    //}
-
-
-
-
-
-
-
-
-
+    //移動コスト基礎値＝１に各ユニットタイプと地形情報から加算する移動コストを取得
+    private int GetUnitTerrainCost(TerrainType terrainType, UnitType unitType)
+    {
+        switch (terrainType)
+        {
+            case TerrainType.Plain://平地
+                return 0;
+            case TerrainType.Forest://森
+                if (unitType == UnitType.Flying) { return 0; }//飛行ユニットはコスト低
+                return 1;
+            case TerrainType.Mountain://山
+                if (unitType == UnitType.Flying) { return 0; }//飛行ユニットはコスト低
+                if (unitType == UnitType.Mountain) { return 0; }//山賊ユニットはコスト低
+                return 2;
+            case TerrainType.Desert://砂漠
+                if (unitType == UnitType.Flying) { return 0; }//飛行ユニットはコスト低
+                return 1;
+            case TerrainType.Water://水場
+                if (unitType == UnitType.Flying) { return 0; }//飛行ユニットはコスト低
+                if (unitType == UnitType.Aquatic) { return 0; }//水棲ユニットはコスト低
+                return 4;
+            case TerrainType.Snow://積雪
+                if (unitType == UnitType.Flying) { return 0; }//飛行ユニットはコスト低
+                return 2;
+            case TerrainType.River://川
+                if (unitType == UnitType.Flying) { return 0; }//飛行ユニットはコスト低
+                if (unitType == UnitType.Aquatic) { return 0; }//水棲ユニットはコスト低
+                return int.MinValue;//他のユニットは移動不可
+            case TerrainType.Flooded://水害
+                if (unitType == UnitType.Flying) { return 0; }//飛行ユニットはコスト低
+                if (unitType == UnitType.Aquatic) { return 0; }//水棲ユニットはコスト低
+                return 4;
+            case TerrainType.Landslide://土砂
+                if (unitType == UnitType.Flying) { return 0; }//飛行ユニットはコスト低
+                return 3;
+            case TerrainType.Paved://舗装
+                return 1;
+            default:
+                return 1;
+        }
+    }
 
 
 
@@ -2815,7 +2884,9 @@ public class MapManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        if(_mapSequence.Length > 0)
+        
+
+        if (_mapSequence.Length > 0)
         {
             Initialize();
             InitializeCamera();

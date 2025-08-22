@@ -9,6 +9,8 @@ public class TurnManager : MonoBehaviour
 
     [SerializeField]private MapManager _mapManager;
 
+    [SerializeField]private GameManager _gameManager;
+
     [SerializeField] private float _enemyTurnDelay = 1.0f;//敵のターン処理開始までの遅延時間
 
     //現在のターン状態
@@ -362,16 +364,19 @@ public class TurnManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //仮：プレイヤーがターン終了を明示的に行うための処理2025/07
-        if(CurrnetTurnState == TurnState.PlayerTurn && Input.GetKeyDown(KeyCode.E))
+        if(_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
         {
-            EndPlayerTurn();
-        }
+            //仮：プレイヤーがターン終了を明示的に行うための処理2025/07
+            if (CurrnetTurnState == TurnState.PlayerTurn && Input.GetKeyDown(KeyCode.E))
+            {
+                EndPlayerTurn();
+            }
 
-        //デバッグ用：敵ターンの終了させる処理
-        if(CurrnetTurnState == TurnState.EnemyTurn && Input.GetKeyDown(KeyCode.K))
-        {
-            EndEnemyTurn();
-        } 
+            //デバッグ用：敵ターンの終了させる処理
+            if (CurrnetTurnState == TurnState.EnemyTurn && Input.GetKeyDown(KeyCode.K))
+            {
+                EndEnemyTurn();
+            }
+        }
     }
 }

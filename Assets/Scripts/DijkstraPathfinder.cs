@@ -153,6 +153,7 @@ public static class DijkstraPathfinder
 
 
                 // 地形による移動コストを取得
+                //int movementCost = MapManager.Instance.GetMovementCost(neighborPos, unit.Type);
                 int movementCost = MapManager.Instance.GetMovementCost(neighborPos, unit.Type);
                 if (movementCost == int.MaxValue) // 移動不可能な地形（コストが無限大の場合）
                 {
@@ -356,6 +357,7 @@ public static class DijkstraPathfinder
                     continue;
                 }
 
+                //int movementCost = MapManager.Instance.GetMovementCost(nextPos, unit.Type);
                 int movementCost = MapManager.Instance.GetMovementCost(nextPos, unit.Type);
 
                 //移動不可な地形

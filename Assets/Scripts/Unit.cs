@@ -258,7 +258,6 @@ public partial class Unit : MonoBehaviour
         HasActedThisTurn = false;
         CurrentMovementPoints = BaseMovement;
         SetSelected(false);
-
     }
 
     /// <summary>

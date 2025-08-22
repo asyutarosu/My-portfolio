@@ -10,7 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ed36fbab938ef154f879b05cadcb596d, type: 3}
-  m_Name: Forest
+  m_Name: Water
   m_EditorClassIdentifier: 
-  sprite: {fileID: -1304275475, guid: 56c2d8557a89ad94caa7c5a85bfd94de, type: 3}
-  terrainType: 2
+  sprite: {fileID: -358932258, guid: 81344019e165cfd4d878ed9bc566ffad, type: 3}
+  terrainType: 6
+  <MovementCost>k__BackingField: 4
