@@ -24,6 +24,13 @@ public enum BattlePhase
     BattleMain,         //戦闘メインフェイズ
 }
 
+//仮として実装
+public enum GameMode
+{
+    PlacementMode,    //配置モード
+    MapMode           //マップモード
+}
+
 public partial class GameManager : MonoBehaviour
 {
     private static GameManager _instance;
@@ -51,6 +58,11 @@ public partial class GameManager : MonoBehaviour
     public BattlePhase CurrentBattlePhase => _currentBattlePhase;
     [SerializeField] private int _currentStageId;//現在のステージID(Inspectorで確認用)
     public int CurrentStageId => _currentStageId;
+
+    /////
+    [SerializeField]private GameMode _currentgameMode;//配置モードとマップモードの切り替え用
+    public GameMode CurrentMode => _currentgameMode;
+
 
     //スクリプトインスタンスがロードされたときに呼び出される
     void Awake()
@@ -81,7 +93,8 @@ public partial class GameManager : MonoBehaviour
         Debug.Log("GameManager:ゲームの初期化を開始します");
 
         //各Managerクラスの初期化を指示
-
+        _currentBattlePhase = BattlePhase.BattleDeployment;
+        _currentgameMode = GameMode.MapMode;
 
         //ChangeState(GameState.Title);//タイトル画面へ
     }
@@ -249,6 +262,23 @@ public partial class GameManager : MonoBehaviour
         }
     }
 
+
+    //モードの変更をする
+    private void ToggleMode()
+    {
+        if(CurrentMode == GameMode.PlacementMode)
+        {
+            _currentgameMode = GameMode.MapMode;
+            Debug.LogWarning("モードをマップモードに切り替えました");
+        }
+        else
+        {
+            _currentgameMode = GameMode.PlacementMode;
+            Debug.LogWarning("モードを配置モードに切り替えました");
+        }
+    }
+
+
     /// <summary>
     /// ステージIDを設定する(ステージ選択などで呼ばれる想定)
     /// </summary>
@@ -262,6 +292,13 @@ public partial class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (CurrentBattlePhase == BattlePhase.BattleDeployment)
+        {
+            // 「C」キーが押されたらモードを切り替える
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                ToggleMode();
+            }
+        }
     }
 }

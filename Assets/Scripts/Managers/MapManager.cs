@@ -267,7 +267,7 @@ public class MapManager : MonoBehaviour
 
 
     ////////////準備フェイズ用のメソッド
-    
+
 
 
     // マウス入力でタイル情報を取得するための処理
@@ -280,7 +280,8 @@ public class MapManager : MonoBehaviour
 
         //ToDo->GetTileAt----GetTileFromTIlemap
         //確認のため一時的に移動
-        MyTile _clickedTile = GetTileAt(clickedgridPos);
+        ////////処理の変更の試みによる変更
+        //MyTile _clickedTile = GetTileAt(clickedgridPos);
 
         //Tilemap
         //MyTile _clickedTileTilemap = GetTileAtFromTilemap(clickedgridPos);
@@ -294,73 +295,126 @@ public class MapManager : MonoBehaviour
         //    return;
         //}
 
-
-        //グリッド座標のタイル情報を取得
-        //MyTile _clickedTile = GetTileAt(clickedgridPos);
-        if (_clickedTile != null)
+        //モードごとの処理
+        if (_gameManager.CurrentMode == GameMode.PlacementMode)
         {
-            Debug.Log($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTile.TerrainType}をクリックしました。");
-            Debug.LogWarning($"Cost::{_clickedTile.MovementCost},Type::{_clickedTile.TerrainType}");
-
+            PlaceOrMoveUnit(clickedgridPos);
         }
-        else if (_clickedTile == null)
+        else if (_gameManager.CurrentMode == GameMode.MapMode)
         {
-            Debug.Log("マップ範囲外です");
-            return;
-        }
 
-        //ユニットが未選択の場合
-        if (_selectedUnit == null)
-        {
-            //クリックされたタイルにユニットがいるか、かつプレイヤーユニットか、かつ未行動か
-            if (_clickedTile.OccupyingUnit != null &&
-                _clickedTile.OccupyingUnit.Faction == FactionType.Player &&
-                !_clickedTile.OccupyingUnit.HasActedThisTurn)
+            ////////処理の変更の試みによる変更2025/08
+            if (_tileDataFromTilemapTest.TryGetValue(clickedgridPos, out MyTile _clickedTile))
             {
-                SelectUnit(_clickedTile.OccupyingUnit);
-                _originalTile = _clickedTile;
+
+
+
+                //グリッド座標のタイル情報を取得
+                //MyTile _clickedTile = GetTileAt(clickedgridPos);
+                if (_clickedTile != null)
+                {
+                    Debug.Log($"戦闘準備フェイズ: グリッド座標({clickedgridPos.x}, {clickedgridPos.y})のタイル{_clickedTile.TerrainType}をクリックしました。");
+                    Debug.LogWarning($"Cost::{_clickedTile.MovementCost},Type::{_clickedTile.TerrainType}");
+
+                }
+                ////////処理の変更の試みによる変更
+                //else if (_clickedTile == null)
+                //{
+                //    Debug.Log("マップ範囲外です");
+                //    return;
+                //}
+
+
+                ///モードによる処理の変更
+
+
+                //ユニットが未選択の場合
+                if (_selectedUnit == null)
+                {
+                    //クリックされたタイルにユニットがいるか、かつプレイヤーユニットか、かつ未行動か
+                    if (_clickedTile.OccupyingUnit != null &&
+                        _clickedTile.OccupyingUnit.Faction == FactionType.Player &&
+                        !_clickedTile.OccupyingUnit.HasActedThisTurn)
+                    {
+                        SelectUnit(_clickedTile.OccupyingUnit);
+                        _originalTile = _clickedTile;
+                    }
+                    //敵ユニットの場合行動範囲予測を表示（未実装2025 / 07）
+                    else if (_clickedTile.OccupyingUnit != null &&
+                        _clickedTile.OccupyingUnit.Faction == FactionType.Enemy &&
+                        !_clickedTile.OccupyingUnit.HasActedThisTurn)
+                    {
+                        Debug.Log("敵ユニットです");
+                        SelectUnit(_clickedTile.OccupyingUnit);
+                    }
+                    else
+                    {
+                        //ユニットが未選択の状態でハイライトが出ないように
+                        ClearAllHighlights();
+                        //////ClearMovableRangeDisplay();
+                        Debug.LogWarning("!!!");
+                    }
+                }
+                else
+                {
+                    //選択中のユニットと同じユニットがクリックされたら選択解除
+                    if (_clickedTile.OccupyingUnit == _selectedUnit)
+                    {
+                        CancelMove();
+                    }
+                    //他のプレイヤーユニットがクリックされたら、現在の選択を解除し。新しいユニットを選択
+                    else if (_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
+                    {
+                        CancelMove();//現在の選択を解除
+                        SelectUnit(_clickedTile.OccupyingUnit);//新しいユニットを選択
+                    }
+
+                    //移動範囲外の空のタイルや敵ユニットをクリックしたらキャンセル
+                    else
+                    {
+                        CancelMove();
+                    }
+                }
             }
-            //敵ユニットの場合行動範囲予測を表示（未実装2025 / 07）
-            else if (_clickedTile.OccupyingUnit != null &&
-                _clickedTile.OccupyingUnit.Faction == FactionType.Enemy &&
-                !_clickedTile.OccupyingUnit.HasActedThisTurn)
+        }
+    }
+
+    //ユニットの配置と再配置
+    public void PlaceOrMoveUnit(Vector2Int gridPos)
+    {
+        //ユニットを配置したいタイルの情報を取得
+        if (_tileDataFromTilemapTest.TryGetValue(gridPos, out MyTile tile))
+        {
+            //既にタイルにユニットが存在する場合、それを削除
+            if (tile.OccupyingUnit != null)
             {
-                Debug.Log("敵ユニットです");
-                SelectUnit(_clickedTile.OccupyingUnit);
+                Destroy(tile.OccupyingUnit.gameObject);
+                tile.OccupyingUnit = null;
+            }
+
+            //新しいユニットをインスタンス化
+            //GameObject newUnitObject = Instantiate(_playerUnitPrefab);
+            //Unit newUnit = newUnitObject.GetComponent<Unit>();
+
+
+            if (_player002Prefab != null)
+            {
+                PlayerUnit player002 = Instantiate(_player002Prefab, transform);
+                PlaceUnit(player002, gridPos);
             }
             else
             {
-                //ユニットが未選択の状態でハイライトが出ないように
-                ClearAllHighlights();
-                //////ClearMovableRangeDisplay();
-                Debug.LogWarning("!!!");
+                Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
             }
         }
         else
         {
-            //選択中のユニットと同じユニットがクリックされたら選択解除
-            if (_clickedTile.OccupyingUnit == _selectedUnit)
-            {
-                CancelMove();
-            }
-            //他のプレイヤーユニットがクリックされたら、現在の選択を解除し。新しいユニットを選択
-            else if (_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
-            {
-                CancelMove();//現在の選択を解除
-                SelectUnit(_clickedTile.OccupyingUnit);//新しいユニットを選択
-            }
-
-            //移動範囲外の空のタイルや敵ユニットをクリックしたらキャンセル
-            else
-            {
-                CancelMove();
-            }
+            Debug.LogWarning($"グリッド座標 ({gridPos.x}, {gridPos.y}) にMyTileオブジェクトが見つかりませんでした");
         }
-        
     }
 
 
-    //ユニットの配置
+    //////////////////////////////カメラ
 
 
     /// <summary>
@@ -620,6 +674,8 @@ public class MapManager : MonoBehaviour
     }
 
 
+    ///////////////////////戦闘フェイズ
+
 
     //初期化処理
     public void Initialize()
@@ -675,25 +731,25 @@ public class MapManager : MonoBehaviour
             Debug.LogError("MapManager: _player001Prefabが割り当てられていません！");
         }
 
-        if (_player002Prefab != null)
-        {
-            PlayerUnit player002 = Instantiate(_player002Prefab, transform);
-            PlaceUnit(player002, new Vector2Int(3, 2));
-        }
-        else
-        {
-            Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
-        }
+        //if (_player002Prefab != null)
+        //{
+        //    PlayerUnit player002 = Instantiate(_player002Prefab, transform);
+        //    PlaceUnit(player002, new Vector2Int(3, 2));
+        //}
+        //else
+        //{
+        //    Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
+        //}
 
-        if (_player002Prefab != null)
-        {
-            PlayerUnit player003 = Instantiate(_player002Prefab, transform);
-            PlaceUnit(player003, new Vector2Int(3, 4));
-        }
-        else
-        {
-            Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
-        }
+        //if (_player002Prefab != null)
+        //{
+        //    PlayerUnit player003 = Instantiate(_player002Prefab, transform);
+        //    PlaceUnit(player003, new Vector2Int(3, 4));
+        //}
+        //else
+        //{
+        //    Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
+        //}
 
         //敵ユニット
         //GameObject enemy1Go = Instantiate(_enemyUnitprefab, transform);
@@ -882,7 +938,7 @@ public class MapManager : MonoBehaviour
             case TerrainType.River://川
                 if (unitType == UnitType.Flying) { return 1; }//飛行ユニットはコスト低
                 if (unitType == UnitType.Aquatic) { return 1; }//水棲ユニットはコスト低
-                //一時的に移動コストを99にして移動不可を実現
+                //一時的に移動コストを999にして移動不可を実現
                 return 999;//他のユニットは移動不可
             case TerrainType.Flooded://水害
                 if (unitType == UnitType.Flying) { return 1; }//飛行ユニットはコスト低
