@@ -407,12 +407,12 @@ public class MapManager : MonoBehaviour
                 case "001":
                     PlayerUnit player002 = Instantiate(_player001Prefab, transform);
                     PlaceUnit(player002, gridPos);
-                    _turnManager.AddPlayerUnit(player002);
+                    //_turnManager.AddPlayerUnit(player002);
                     break;
                 case "002":
                     PlayerUnit player003 = Instantiate(_player002Prefab, transform);
                     PlaceUnit(player003, gridPos);
-                    _turnManager.AddPlayerUnit(player003);
+                    //_turnManager.AddPlayerUnit(player003);
                     break;
             }
         }
@@ -795,7 +795,7 @@ public class MapManager : MonoBehaviour
         //    Debug.LogError("MapManager: _enemy002Prefabが割り当てられていません！");
         //}
 
-        TurnManager.Instance.InitializeTurnManager();
+        //TurnManager.Instance.InitializeTurnManager();
     }
 
     //GenerateMapとして処理を統合2025/06
@@ -1444,6 +1444,7 @@ public class MapManager : MonoBehaviour
         {
             _allEnemyUnits.Add(enemyUnit);
         }
+        _allUnit.Add(unit);
     }
 
     /// <summary>
@@ -2982,9 +2983,10 @@ public class MapManager : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.B))
             {
                 Debug.LogWarning("戦闘フェイズへ移行");
+                TurnManager.Instance.InitializeTurnManager();
                 ResetMoveState();
                 _gameManager.ChangePhase(BattlePhase.BattleMain);
-                _turnManager.GetAllUnits();
+                //_turnManager.GetAllUnits();
             }
 
         }

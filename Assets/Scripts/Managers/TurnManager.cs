@@ -53,14 +53,15 @@ public class TurnManager : MonoBehaviour
         CurrentTurnNumber = 1;
 
         //ユニットリストを取得
-        _allUnits = MapManager.Instance.GetAllUnits();
         _playerUnits = MapManager.Instance.GetAllPlayerUnits();
         _enemyUnits = MapManager.Instance.GetAllEnemyUnits();
+        _allUnits = MapManager.Instance.GetAllUnits();
+
 
         //確認用
         if (_playerUnits == null)
         {
-            //Debug.LogError("TurnManager: _playerUnitsがMapManagerから取得できませんでした！");
+            Debug.LogError("TurnManager: _playerUnitsがMapManagerから取得できませんでした！");
         }
         if (_enemyUnits == null)
         {
@@ -68,8 +69,12 @@ public class TurnManager : MonoBehaviour
         }
         Debug.Log($"TurnManager: プレイヤーユニット数: {_playerUnits?.Count ?? 0}, 敵ユニット数: {_enemyUnits?.Count ?? 0}");
 
+        Debug.LogWarning($"マップに存在する全てのユニットの数：{_allUnits.Count}");
+        Debug.LogWarning($"マップに存在する全てのプレイヤーユニットの数：{_playerUnits.Count}");
+        Debug.LogWarning($"マップに存在する全ての敵ユニットの数：{_enemyUnits.Count}");
 
         Debug.Log("TurnManager:ゲーム初期化完了");
+
         StartPlayerTurn();//プレイヤーターンから開始
     }
 
@@ -83,11 +88,11 @@ public class TurnManager : MonoBehaviour
 
 
     //全てユニットを取得する
-    public void GetAllUnits()
+    public void GetAllUnitsTurnManager()
     {
         //シーン内のすべてのUnitコンポーネントを検索
         _allUnits = FindObjectsOfType<Unit>().ToList();
-        Debug.LogWarning($"全てのユニットの総数{_allUnits.Count}");
+        Debug.LogWarning($"マップに存在する全てのユニットの数：{_allUnits.Count}");
     }
 
     //プレイヤーユニットをリストに追加する公開メソッド
@@ -100,6 +105,51 @@ public class TurnManager : MonoBehaviour
         }
     }
 
+    //ユニットをリストから削除する
+    public void RemoveSpecificUnit(Unit unitToRemove)
+    {
+        //対象がPlayerUnitのとき
+        if(unitToRemove.Faction == FactionType.Player)
+        {
+            //UnitをPlayerUnitにキャストしてUnit型へ
+            PlayerUnit playerUnitToRemove = unitToRemove as PlayerUnit;
+
+            //キャストが成功し、かつプレイヤーユニットのリストに存在するか確認
+            if (playerUnitToRemove != null && _playerUnits.Contains(playerUnitToRemove))
+            {
+                //プレイヤーユニットのリストから削除
+                _playerUnits.Remove(playerUnitToRemove);
+                Debug.Log($"プレイヤーユニット {playerUnitToRemove.name} をリストから削除しました。");
+            }
+        }
+
+        //対象がEnemyUnitのとき
+        if (unitToRemove.Faction == FactionType.Enemy)
+        {
+            //UnitをEnemyUnitにキャストしてUnit型へ
+            EnemyUnit enemyUnitToRemove = unitToRemove as EnemyUnit;
+
+            //キャストが成功し、かつ敵ユニットのリストに存在するか確認
+            if (enemyUnitToRemove != null && _enemyUnits.Contains(enemyUnitToRemove))
+            {
+                //敵ユニットのリストから削除
+                _enemyUnits.Remove(enemyUnitToRemove);
+                Debug.Log($"プレイヤーユニット {enemyUnitToRemove.name} をリストから削除しました。");
+            }
+        }
+        
+
+        if (_allUnits.Contains(unitToRemove))
+        {
+            _allUnits.Remove(unitToRemove);
+            Debug.Log($"ユニット {unitToRemove.name} をリストから削除しました。");
+        }
+        else
+        {
+            Debug.LogWarning("削除しようとしたユニットはリスト内に見つかりませんでした。");
+        }
+    }
+
     /// <summary>
     /// プレイヤーのターンを開始する
     /// </summary>
@@ -108,9 +158,10 @@ public class TurnManager : MonoBehaviour
 
         CurrnetTurnState = TurnState.PlayerTurn;
         Debug.Log("プレイヤーターン開始");
+        Debug.LogWarning($"プレイヤーの数：{_playerUnits.Count}");
 
         //全てのプレイヤーユニットの行動状態をリセット
-        foreach(Unit unit in _allUnits)
+        foreach (Unit unit in _allUnits)
         {
             if(unit.Faction == FactionType.Player)
             {

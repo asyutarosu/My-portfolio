@@ -30,6 +30,8 @@ public partial class BattleManager : MonoBehaviour
     [SerializeField] private Unit _activeUnit;//現在行動中のユニット
     [SerializeField] private List<Unit> _allUnits;//マップ上の全てのユニットのリスト
 
+    //[SerializeField] private TurnManager _turnManager;
+
     private void Awake()
     {
         if(_instanse != null && _instanse != this)
@@ -60,6 +62,7 @@ public partial class BattleManager : MonoBehaviour
         if (attackableTiles.Contains(attacker.GetCurrentGridPostion()))
         {
             Debug.LogWarning($"攻撃許可が認証");
+            TurnManager.Instance.RemoveSpecificUnit(target);
             target.Die();
         }
         // 攻撃側が先に攻撃したため、相手を倒す

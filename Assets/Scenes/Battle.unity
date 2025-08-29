@@ -1996,7 +1996,7 @@ MonoBehaviour:
   _placeModeUI: {fileID: 2072900447}
   _mapManager: {fileID: 306895318}
   _mapUnitPlacementData: {fileID: 11400000, guid: 4b1aac5bec3240649b8547b1dc103336, type: 2}
-  _turnManager: {fileID: 0}
+  _turnManager: {fileID: 2082029023}
 --- !u!4 &1882805515
 Transform:
   m_ObjectHideFlags: 0
