@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
 using UnityEngine.Tilemaps;
+using UnityEngine.UI;
 
 /// Tiles.csへ移行（済み）2025/06
 /// < summary >
@@ -229,6 +230,11 @@ public class MapManager : MonoBehaviour
     private bool _isInBattleDeployment = true;// 戦闘準備フェイズかどうかのフラグ→以降準備フェイズとする
 
 
+    //////仮：実装Button関連
+    [SerializeField] private Button _unitButton; 
+
+
+    [SerializeField] private TurnManager _turnManager;
 
     [System.Serializable] public class TerrainCost
     {
@@ -298,9 +304,9 @@ public class MapManager : MonoBehaviour
         //モードごとの処理
         if (_gameManager.CurrentMode == GameMode.PlacementMode)
         {
-            PlaceOrMoveUnit(clickedgridPos);
+            //PlaceOrMoveUnit(clickedgridPos);
         }
-        else if (_gameManager.CurrentMode == GameMode.MapMode)
+        if (_gameManager.CurrentMode == GameMode.MapMode)
         {
 
             ////////処理の変更の試みによる変更2025/08
@@ -382,6 +388,9 @@ public class MapManager : MonoBehaviour
     //ユニットの配置と再配置
     public void PlaceOrMoveUnit(Vector2Int gridPos)
     {
+        string unitName = _gameManager.ButtonText;
+        Debug.LogWarning(unitName);
+
         //ユニットを配置したいタイルの情報を取得
         if (_tileDataFromTilemapTest.TryGetValue(gridPos, out MyTile tile))
         {
@@ -392,19 +401,19 @@ public class MapManager : MonoBehaviour
                 tile.OccupyingUnit = null;
             }
 
-            //新しいユニットをインスタンス化
-            //GameObject newUnitObject = Instantiate(_playerUnitPrefab);
-            //Unit newUnit = newUnitObject.GetComponent<Unit>();
-
-
-            if (_player002Prefab != null)
+            //仮：実装
+            switch (unitName)
             {
-                PlayerUnit player002 = Instantiate(_player002Prefab, transform);
-                PlaceUnit(player002, gridPos);
-            }
-            else
-            {
-                Debug.LogError("MapManager: _player002Prefabが割り当てられていません！");
+                case "001":
+                    PlayerUnit player002 = Instantiate(_player001Prefab, transform);
+                    PlaceUnit(player002, gridPos);
+                    _turnManager.AddPlayerUnit(player002);
+                    break;
+                case "002":
+                    PlayerUnit player003 = Instantiate(_player002Prefab, transform);
+                    PlaceUnit(player003, gridPos);
+                    _turnManager.AddPlayerUnit(player003);
+                    break;
             }
         }
         else
@@ -2975,6 +2984,7 @@ public class MapManager : MonoBehaviour
                 Debug.LogWarning("戦闘フェイズへ移行");
                 ResetMoveState();
                 _gameManager.ChangePhase(BattlePhase.BattleMain);
+                _turnManager.GetAllUnits();
             }
 
         }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;//シーン管理のため導入
 using System.Collections.Generic;//リストを使うため導入
+using UnityEngine.UI;
 
 /// <summary>
 /// ゲームの各シーンを定義する列挙型
@@ -63,6 +64,21 @@ public partial class GameManager : MonoBehaviour
     [SerializeField]private GameMode _currentgameMode;//配置モードとマップモードの切り替え用
     public GameMode CurrentMode => _currentgameMode;
 
+    [SerializeField] private GameObject _placementUI; //仮：配置UI
+    public string ButtonText = "";
+    [SerializeField] private GameObject _placeModeUI;//仮：配置モードUI
+
+    //仮：実装
+    //配置したいグリッド座標のリスト
+    //ScriptableObjectによる参照に変更
+    //[SerializeField]private List<Vector2Int> _placementPositions;
+    //現在配置する場所を示すインデックス
+    private int _currentPlacementIndex = 0;
+
+    [SerializeField]private MapManager _mapManager;
+    [SerializeField]private MapUnitPlacementData _mapUnitPlacementData;
+
+    [SerializeField]private TurnManager _turnManager;
 
     //スクリプトインスタンスがロードされたときに呼び出される
     void Awake()
@@ -95,6 +111,10 @@ public partial class GameManager : MonoBehaviour
         //各Managerクラスの初期化を指示
         _currentBattlePhase = BattlePhase.BattleDeployment;
         _currentgameMode = GameMode.MapMode;
+
+        _placementUI.SetActive(false);
+        _placeModeUI.SetActive(false);
+
 
         //ChangeState(GameState.Title);//タイトル画面へ
     }
@@ -270,13 +290,65 @@ public partial class GameManager : MonoBehaviour
         {
             _currentgameMode = GameMode.MapMode;
             Debug.LogWarning("モードをマップモードに切り替えました");
+            _placementUI.SetActive(false);
+            _placeModeUI.SetActive(false);
         }
         else
         {
             _currentgameMode = GameMode.PlacementMode;
+            _placementUI.SetActive(true);
+            _placeModeUI.SetActive(true);
             Debug.LogWarning("モードを配置モードに切り替えました");
         }
     }
+
+    //////仮：実装メソッド群
+
+    //Buttonからテキストを取得する
+    public string GetButtonText(Button targetButton)
+    {
+        // ボタンの子オブジェクトからTextMeshProUGUIコンポーネントを取得
+        Text tmpText = targetButton.GetComponentInChildren<Text>();
+        ButtonText = tmpText.text;
+        if (tmpText != null)
+        {
+            return tmpText.text;
+        }
+
+        Debug.LogWarning("指定されたボタンにTextMeshProUGUIコンポーネントが見つかりません。");
+        return string.Empty;
+    }
+
+    //Button押下処理
+    public void OnEnterPlacementMode(Button targetButton)
+    {
+        Text tmpText = targetButton.GetComponentInChildren<Text>();
+        ButtonText = tmpText.text;
+    }
+
+
+    //配置するユニットの座標を確認しユニットの配置をMapManagerに通達
+    public void PlaceNextUnit()
+    {
+        //配置する座標が残っているか確認
+        if (_currentPlacementIndex < _mapUnitPlacementData.placementPositions.Count)
+        {
+            //リストから現在のグリッド座標を取得
+            Vector2Int targetPos = _mapUnitPlacementData.placementPositions[_currentPlacementIndex];
+
+            //MapManager経由でユニットを配置
+            _mapManager.PlaceOrMoveUnit(targetPos);
+
+            //次の配置場所へインデックスを更新
+            _currentPlacementIndex++;
+        }
+        else
+        {
+            Debug.LogWarning("すべてのプレイヤーユニットを配置しました");
+        }
+    }
+
+
 
 
     /// <summary>
@@ -289,6 +361,7 @@ public partial class GameManager : MonoBehaviour
         Debug.Log($"GameManager:現在のステージIDを{stageId}に設定しました");
 
     }
+
     // Update is called once per frame
     void Update()
     {
@@ -299,6 +372,10 @@ public partial class GameManager : MonoBehaviour
             {
                 ToggleMode();
             }
+        }
+        else if (CurrentBattlePhase == BattlePhase.BattleMain)
+        {
+            _placementUI.SetActive(false);
         }
     }
 }

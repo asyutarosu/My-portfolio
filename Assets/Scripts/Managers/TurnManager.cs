@@ -20,6 +20,7 @@ public class TurnManager : MonoBehaviour
     //TurnManagerで管理するのユニットリスト
     private List<Unit> _allUnits;
     private List<PlayerUnit> _playerUnits;
+    //private List<Unit> _playerUnits;
     private List<EnemyUnit> _enemyUnits;
 
     //現在行動中の敵ユニットのインデックス
@@ -59,7 +60,7 @@ public class TurnManager : MonoBehaviour
         //確認用
         if (_playerUnits == null)
         {
-            Debug.LogError("TurnManager: _playerUnitsがMapManagerから取得できませんでした！");
+            //Debug.LogError("TurnManager: _playerUnitsがMapManagerから取得できませんでした！");
         }
         if (_enemyUnits == null)
         {
@@ -80,11 +81,31 @@ public class TurnManager : MonoBehaviour
         _allUnits = FindObjectsOfType<Unit>().ToList();
     }
 
+
+    //全てユニットを取得する
+    public void GetAllUnits()
+    {
+        //シーン内のすべてのUnitコンポーネントを検索
+        _allUnits = FindObjectsOfType<Unit>().ToList();
+        Debug.LogWarning($"全てのユニットの総数{_allUnits.Count}");
+    }
+
+    //プレイヤーユニットをリストに追加する公開メソッド
+    public void AddPlayerUnit(PlayerUnit unit)
+    {
+        if (unit != null && !_playerUnits.Contains(unit))
+        {
+            _playerUnits.Add(unit);
+            Debug.Log($"ユニットが_playerUnitsに追加されました。現在のユニット数: {_playerUnits.Count}");
+        }
+    }
+
     /// <summary>
     /// プレイヤーのターンを開始する
     /// </summary>
     public void StartPlayerTurn()
     {
+
         CurrnetTurnState = TurnState.PlayerTurn;
         Debug.Log("プレイヤーターン開始");
 
@@ -157,7 +178,8 @@ public class TurnManager : MonoBehaviour
 
         if (allActed)
         {
-            Debug.Log("全てのプレイヤーユニットが行動を完了しました。敵ターンへ移行します。");
+            Debug.LogWarning("全てのプレイヤーユニットが行動を完了しました。敵ターンへ移行します。");
+            Debug.LogWarning($"プレイヤーの数{_playerUnits.Count}");
             EndPlayerTurn();
         }
     }
