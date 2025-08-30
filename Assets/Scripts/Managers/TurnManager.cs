@@ -19,9 +19,11 @@ public class TurnManager : MonoBehaviour
 
     //TurnManagerで管理するのユニットリスト
     private List<Unit> _allUnits;
+    public List<Unit> AllUnits => _allUnits;
     private List<PlayerUnit> _playerUnits;
-    //private List<Unit> _playerUnits;
+    public List<PlayerUnit> PlayerUnits => _playerUnits;
     private List<EnemyUnit> _enemyUnits;
+    public List<EnemyUnit> EnemyUnits => _enemyUnits;
 
     //現在行動中の敵ユニットのインデックス
     private int _currentEnemyUnitIndex = 0;
@@ -134,7 +136,7 @@ public class TurnManager : MonoBehaviour
             {
                 //敵ユニットのリストから削除
                 _enemyUnits.Remove(enemyUnitToRemove);
-                Debug.Log($"プレイヤーユニット {enemyUnitToRemove.name} をリストから削除しました。");
+                Debug.Log($"敵ユニット {enemyUnitToRemove.name} をリストから削除しました。");
             }
         }
         
@@ -142,11 +144,11 @@ public class TurnManager : MonoBehaviour
         if (_allUnits.Contains(unitToRemove))
         {
             _allUnits.Remove(unitToRemove);
-            Debug.Log($"ユニット {unitToRemove.name} をリストから削除しました。");
+            Debug.Log($"ユニット {unitToRemove.name} を全体リストから削除しました。");
         }
         else
         {
-            Debug.LogWarning("削除しようとしたユニットはリスト内に見つかりませんでした。");
+            Debug.LogWarning("削除しようとしたユニットは全体リスト内に見つかりませんでした。");
         }
     }
 
@@ -437,7 +439,8 @@ public class TurnManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
+
+        if (_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
         {
             //仮：プレイヤーがターン終了を明示的に行うための処理2025/07
             if (CurrnetTurnState == TurnState.PlayerTurn && Input.GetKeyDown(KeyCode.E))

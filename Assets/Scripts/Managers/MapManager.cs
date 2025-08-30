@@ -414,6 +414,8 @@ public class MapManager : MonoBehaviour
                     PlaceUnit(player003, gridPos);
                     //_turnManager.AddPlayerUnit(player003);
                     break;
+                default:
+                    break;
             }
         }
         else
@@ -730,15 +732,15 @@ public class MapManager : MonoBehaviour
         //}
 
 
-        if (_player001Prefab != null)
-        {
-            PlayerUnit player001 = Instantiate(_player001Prefab, transform);
-            PlaceUnit(player001, new Vector2Int(5, 0));
-        }
-        else
-        {
-            Debug.LogError("MapManager: _player001Prefabが割り当てられていません！");
-        }
+        //if (_player001Prefab != null)
+        //{
+        //    PlayerUnit player001 = Instantiate(_player001Prefab, transform);
+        //    PlaceUnit(player001, new Vector2Int(5, 0));
+        //}
+        //else
+        //{
+        //    Debug.LogError("MapManager: _player001Prefabが割り当てられていません！");
+        //}
 
         //if (_player002Prefab != null)
         //{
@@ -2980,13 +2982,20 @@ public class MapManager : MonoBehaviour
             {
                 HandleMouseInputInBattlePreparation();
             }
-            if (Input.GetKeyDown(KeyCode.B))
+
+            if(GameManager.Instance.CurrentMode == GameMode.MapMode)
             {
-                Debug.LogWarning("戦闘フェイズへ移行");
-                TurnManager.Instance.InitializeTurnManager();
-                ResetMoveState();
-                _gameManager.ChangePhase(BattlePhase.BattleMain);
-                //_turnManager.GetAllUnits();
+                if (_allPlayerUnits.Count > 0)
+                {
+                    if (Input.GetKeyDown(KeyCode.B))
+                    {
+                        Debug.LogWarning("戦闘フェイズへ移行");
+                        TurnManager.Instance.InitializeTurnManager();
+                        ResetMoveState();
+                        _gameManager.ChangePhase(BattlePhase.BattleMain);
+                        //_turnManager.GetAllUnits();
+                    }
+                }
             }
 
         }
@@ -3019,6 +3028,8 @@ public class MapManager : MonoBehaviour
                     return;
                 }
             }
+
+            
         }
 
 

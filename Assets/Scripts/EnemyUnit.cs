@@ -93,7 +93,8 @@ public class EnemyUnit : Unit
         Vector2Int targetPos = CurrentGridPosition;
 
         //プレイヤーユニットの検索
-        List<PlayerUnit> playerUnits = MapManager.Instance.GetAllPlayerUnits();
+        //List<PlayerUnit> playerUnits = MapManager.Instance.GetAllPlayerUnits();
+        List<PlayerUnit> playerUnits = TurnManager.Instance.PlayerUnits;
 
         if (playerUnits == null || playerUnits.Count == 0)
         {
@@ -262,10 +263,11 @@ public class EnemyUnit : Unit
                 bestMoveTargetPos,
                 this);
 
-                foreach (Vector2Int animation in AnimationPath)
-                {
-                    Debug.LogWarning(animation);
-                }
+                //デバッグ用
+                //foreach (Vector2Int animation in AnimationPath)
+                //{
+                //    Debug.LogWarning(animation);
+                //}
 
                 
                 //if (pathForAnimation != null && pathForAnimation.Count > 1)
