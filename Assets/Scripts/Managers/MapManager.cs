@@ -2513,8 +2513,20 @@ public class MapManager : MonoBehaviour
         //ResetMoveState();
     }
 
-
-
+    /// <summary>
+    /// その場で行動完了をする
+    /// </summary>
+    private void CompleteAction()
+    {
+        if (_selectedUnit != null)
+        {
+            _selectedUnit.transform.position = MapManager.Instance.GetWorldPositionFromGrid(_originalUnitPositon);
+        }
+        _selectedUnit.SetActedThisTrun();
+        ResetMoveState();
+        Debug.Log("その場で待機します");
+        TurnManager.Instance.CheckAllPlayerUnitActed();
+    }
 
     /// <summary>
     /// 移動を確定する
@@ -2531,7 +2543,7 @@ public class MapManager : MonoBehaviour
         //    return;
         //}
 
-        if(_selectedUnit == null || !_isMovingOrPlanning)
+        if (_selectedUnit == null || !_isMovingOrPlanning)
         {
             return;
         }
@@ -3019,6 +3031,16 @@ public class MapManager : MonoBehaviour
                 {
                     CancelMove();
                 }
+
+                //その場で待機する場合の処理
+                if (!_isMovingOrPlanning)
+                {
+                    if (Input.GetKeyDown(KeyCode.Space))
+                    {
+                        CompleteAction();
+                    }
+                }
+                
             }
             if (_isConfirmingMove)
             {
