@@ -65,6 +65,7 @@ public partial class GameManager : MonoBehaviour
     public GameMode CurrentMode => _currentgameMode;
 
     [SerializeField] private GameObject _placementUI; //仮：配置UI
+    [SerializeField] private GameObject _placementUI2; //仮：配置UI
     public string ButtonText = "";
     [SerializeField] private GameObject _placeModeUI;//仮：配置モードUI
 
@@ -113,6 +114,7 @@ public partial class GameManager : MonoBehaviour
         _currentgameMode = GameMode.MapMode;
 
         _placementUI.SetActive(false);
+        _placementUI2.SetActive(false);
         _placeModeUI.SetActive(false);
 
 
@@ -291,12 +293,14 @@ public partial class GameManager : MonoBehaviour
             _currentgameMode = GameMode.MapMode;
             Debug.LogWarning("モードをマップモードに切り替えました");
             _placementUI.SetActive(false);
+            _placementUI2.SetActive(false);
             _placeModeUI.SetActive(false);
         }
         else
         {
             _currentgameMode = GameMode.PlacementMode;
             _placementUI.SetActive(true);
+            _placementUI2.SetActive(true);
             _placeModeUI.SetActive(true);
             Debug.LogWarning("モードを配置モードに切り替えました");
         }
@@ -376,6 +380,7 @@ public partial class GameManager : MonoBehaviour
         else if (CurrentBattlePhase == BattlePhase.BattleMain)
         {
             _placementUI.SetActive(false);
+            _placementUI2.SetActive(false);
         }
     }
 }

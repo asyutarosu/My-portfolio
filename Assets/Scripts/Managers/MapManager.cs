@@ -165,6 +165,15 @@ public class MapManager : MonoBehaviour
     //確認用ハイライト
     [SerializeField] private GameObject _occupiedHighlightPrefab;//ユニット占有用のハイライト
 
+    //ユニットの配置可能マスを表示するハイライト関連
+    [SerializeField] private GameObject _placePlayerUnitPosHighlightPrefab;
+    private List<GameObject> _currentPlacePlayerUnitPosHighlight = new List<GameObject>();
+
+    //プレイヤーユニットの配置データのスクリプタブル・オブジェクト
+    [SerializeField]private MapUnitPlacementData _mapUnitPlacementData;
+
+
+
     //ユニットの移動状態を管理するための変数
     private Vector2Int _originalUnitPositon = Vector2Int.zero;//移動前のグリッド座標
     private Vector2Int _currentPlannedMovePositon = Vector2Int.zero;//移動先のグリッド座標
@@ -235,6 +244,10 @@ public class MapManager : MonoBehaviour
 
 
     [SerializeField] private TurnManager _turnManager;
+
+
+    //ユニットの配置入れ替え関連
+    private Unit _selectedUnitToSwap = null;
 
     [System.Serializable] public class TerrainCost
     {
@@ -343,6 +356,7 @@ public class MapManager : MonoBehaviour
                         !_clickedTile.OccupyingUnit.HasActedThisTurn)
                     {
                         SelectUnit(_clickedTile.OccupyingUnit);
+                        _selectedUnitToSwap = _clickedTile.OccupyingUnit;
                         _originalTile = _clickedTile;
                     }
                     //敵ユニットの場合行動範囲予測を表示（未実装2025 / 07）
@@ -369,10 +383,33 @@ public class MapManager : MonoBehaviour
                         CancelMove();
                     }
                     //他のプレイヤーユニットがクリックされたら、現在の選択を解除し。新しいユニットを選択
-                    else if (_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
+                    //else if (_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
+                    //{
+                    //    CancelMove();//現在の選択を解除
+                    //    SelectUnit(_clickedTile.OccupyingUnit);//新しいユニットを選択
+                    //}
+
+                    /////ToDo
+                    else if(_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
                     {
-                        CancelMove();//現在の選択を解除
-                        SelectUnit(_clickedTile.OccupyingUnit);//新しいユニットを選択
+                        
+                        Debug.LogWarning("ユニットの入れ替えを実施します");
+                        Debug.LogWarning($"移動するユニット{_selectedUnitToSwap}：：入れ替え先のユニット{_clickedTile.OccupyingUnit}");
+                        SwapUnits(_selectedUnitToSwap, _clickedTile.OccupyingUnit);
+                    }
+                    else if (IsValidGridPosition(clickedgridPos) && _clickedTile.OccupyingUnit == null)
+                    {
+                        if (_mapUnitPlacementData.placementPositions.Contains(clickedgridPos))
+                        {
+                            Debug.LogWarning("空きマスへの移動を実施する");
+                            PlacementMoveUnit(_selectedUnit, clickedgridPos);
+                        }
+                        else
+                        {
+                            Debug.LogWarning("ユニットの移動ができないマスです");
+                            CancelMove();
+                        }
+                        
                     }
 
                     //移動範囲外の空のタイルや敵ユニットをクリックしたらキャンセル
@@ -423,6 +460,98 @@ public class MapManager : MonoBehaviour
             Debug.LogWarning($"グリッド座標 ({gridPos.x}, {gridPos.y}) にMyTileオブジェクトが見つかりませんでした");
         }
     }
+
+    //ユニットを別の空きマスに移動させる
+    public void PlacementMoveUnit(Unit unit, Vector2Int targetPos)
+    {
+        //移動元のタイルのOccupyingUnitをクリア
+        unit.OccupyingTile.OccupyingUnit = null;
+
+        //移動先のタイルの情報を取得
+        MyTile targetTile = GetTileAt(targetPos);
+        if(targetTile != null)
+        {
+            //ユニットの情報を更新
+            unit.MoveToGridPosition(targetPos,targetTile);
+
+            unit.transform.position = GetWorldPositionFromGrid(targetPos);
+            Debug.Log($"{unit.name} を {targetPos} に移動しました");
+        }
+        _selectedUnit.SetSelected(false);
+        _selectedUnit = null;
+        _selectedUnitToSwap = null;
+        ClearAllHighlights();
+    }
+
+    //２つのユニットの位置を入れ替える
+    public void SwapUnits(Unit unit1, Unit unit2)
+    {
+        //ユニット1の元のタイルと座標を保存
+        MyTile tile1 = unit1.OccupyingTile;
+        Vector2Int pos1 = new Vector2Int(tile1.GridPosition.x, tile1.GridPosition.y);
+
+        //Debug.LogWarning($"ユニット１：：名前{unit1.name} ：：位置{unit1.CurrentGridPosition} ");
+
+
+        //ユニット2の元のタイルと座標を保存
+        MyTile tile2 = unit2.OccupyingTile;
+        Vector2Int pos2 = new Vector2Int(tile2.GridPosition.x, tile2.GridPosition.y);
+
+        //Debug.LogWarning($"ユニット２：：名前{unit2.name} ：：位置{unit2.CurrentGridPosition} ");
+
+        //タイルのOccupyingUnitを入れ替える
+        unit1.MoveToGridPosition(pos2,tile2);
+        unit2.MoveToGridPosition(pos1,tile1);
+
+        //ユニットのCurrentTileを更新
+        unit1.transform.position = GetWorldPositionFromGrid(pos2);
+        unit2.transform.position = GetWorldPositionFromGrid(pos1);
+
+        Debug.Log($"{unit1.name} と {unit2.name} の位置を入れ替えました");
+        _selectedUnit.SetSelected(false);
+        _selectedUnit = null;
+        _selectedUnitToSwap = null;
+        ClearAllHighlights();
+    }
+
+    //ユニットの配置可能マスを表示する
+    public void ShowPlacementHighlights()
+    {
+        //既存のハイライトをすべてクリア
+        ClearAllHighlights();
+
+        if(_mapUnitPlacementData == null || _placePlayerUnitPosHighlightPrefab == null)
+        {
+            Debug.LogError("ハイライトデータまたはプレハブが割り当てられていません");
+            return;
+        }
+
+        foreach(Vector2Int position in _mapUnitPlacementData.placementPositions)
+        {
+            Vector3 worldPos = GetWorldPositionFromGrid(position);
+
+            GameObject highlightObject = Instantiate(_placePlayerUnitPosHighlightPrefab, worldPos, Quaternion.identity);
+            _currentPlacePlayerUnitPosHighlight.Add(highlightObject);
+        }
+    }
+
+
+    //配置可能マスのハイライト表示をクリアする
+    public void HidePlacementHithlight()
+    {
+        if (_gameManager.CurrentBattlePhase != BattlePhase.BattleDeployment)
+        {
+            foreach (GameObject highlight in _currentPlacePlayerUnitPosHighlight)
+            {
+                Destroy(highlight);
+            }
+        }
+
+
+        _currentPlacePlayerUnitPosHighlight.Clear();
+
+    }
+
 
 
     //////////////////////////////カメラ
@@ -711,6 +840,8 @@ public class MapManager : MonoBehaviour
         //ToDo->一時的にコメントアウト
         PlaceEnemiesForCurrentMap("Maps/map_00");
 
+        //プレイヤーユニットの配置可能マスの表示
+        ShowPlacementHighlights();
 
 
         //_allPlayerUnits.Clear();
@@ -2059,6 +2190,7 @@ public class MapManager : MonoBehaviour
             Destroy(highlight);
         }
 
+        
         _currentHighlights.Clear();
 
         _activeHighlights.Clear();
@@ -2093,6 +2225,8 @@ public class MapManager : MonoBehaviour
             _activeHighlights[gridPosition] = highlight;
         }
     }
+
+    
 
     /// <summary>
     /// 経路ラインを表示する
@@ -2710,7 +2844,7 @@ public class MapManager : MonoBehaviour
     }
 
 
-    //////////TIlemapを使ったメソッド群
+    ////////////////////////////////////////TIlemapを使ったメソッド群
 
     public class Tile
     {
@@ -2995,7 +3129,7 @@ public class MapManager : MonoBehaviour
                 HandleMouseInputInBattlePreparation();
             }
 
-            if(GameManager.Instance.CurrentMode == GameMode.MapMode)
+            if(_gameManager.CurrentMode == GameMode.MapMode)
             {
                 if (_allPlayerUnits.Count > 0)
                 {
@@ -3005,6 +3139,7 @@ public class MapManager : MonoBehaviour
                         TurnManager.Instance.InitializeTurnManager();
                         ResetMoveState();
                         _gameManager.ChangePhase(BattlePhase.BattleMain);
+                        HidePlacementHithlight();
                         //_turnManager.GetAllUnits();
                     }
                 }
