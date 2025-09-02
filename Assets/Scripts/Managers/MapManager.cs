@@ -514,6 +514,26 @@ public class MapManager : MonoBehaviour
         ClearAllHighlights();
     }
 
+    //ユニットの削除ボタンのメソッド
+    public void DeleteSelectedUnit()
+    {
+        //削除したいユニットが選択されているか確認
+        if (_selectedUnitToSwap != null)
+        {
+            //TurnManagerのメソッドを呼び出してユニットを削除
+            TurnManager.Instance.RemoveSpecificUnit(_selectedUnitToSwap);
+
+            Debug.LogWarning($"{_selectedUnitToSwap.name} を削除しました");
+            //削除が完了したら選択状態を解除
+            _selectedUnitToSwap = null;
+        }
+        else
+        {
+            Debug.LogWarning("削除するユニットが選択されていません");
+        }
+    }
+
+
     //ユニットの配置可能マスを表示する
     public void ShowPlacementHighlights()
     {
@@ -1423,9 +1443,9 @@ public class MapManager : MonoBehaviour
                 tileEntry.Value.OccupyingUnit = null;
             }
         }
-        _allUnit.Clear();
-        _allPlayerUnits.Clear();
-        _allPlayerUnits.Clear();
+        //_allUnit.Clear();
+        //_allPlayerUnits.Clear();
+        //_allPlayerUnits.Clear();
     }
 
 
@@ -1571,13 +1591,17 @@ public class MapManager : MonoBehaviour
 
         if (unit is PlayerUnit playerUnit)
         {
-            _allPlayerUnits.Add(playerUnit);
+            //_allPlayerUnits.Add(playerUnit);
+            _turnManager.AddPlayerUnit(playerUnit);
         }
         else if (unit is EnemyUnit enemyUnit)
         {
-            _allEnemyUnits.Add(enemyUnit);
+            //_allEnemyUnits.Add(enemyUnit);
+            _turnManager.AddEnemyUnit(enemyUnit);
         }
-        _allUnit.Add(unit);
+        //_allUnit.Add(unit);
+        _turnManager.AddAllUnits(unit);
+        
     }
 
     /// <summary>
@@ -3131,7 +3155,7 @@ public class MapManager : MonoBehaviour
 
             if(_gameManager.CurrentMode == GameMode.MapMode)
             {
-                if (_allPlayerUnits.Count > 0)
+                if (_turnManager.PlayerUnits.Count > 0)
                 {
                     if (Input.GetKeyDown(KeyCode.B))
                     {

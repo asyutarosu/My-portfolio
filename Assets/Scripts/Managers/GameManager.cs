@@ -334,25 +334,44 @@ public partial class GameManager : MonoBehaviour
     //配置するユニットの座標を確認しユニットの配置をMapManagerに通達
     public void PlaceNextUnit()
     {
+
+        //処理に不具合があったのでコメントアウト化
         //配置する座標が残っているか確認
-        if (_currentPlacementIndex < _mapUnitPlacementData.placementPositions.Count)
-        {
-            //リストから現在のグリッド座標を取得
-            Vector2Int targetPos = _mapUnitPlacementData.placementPositions[_currentPlacementIndex];
+        //if (_currentPlacementIndex < _mapUnitPlacementData.placementPositions.Count)
+        //{
+        //    //リストから現在のグリッド座標を取得
+        //    Vector2Int targetPos = _mapUnitPlacementData.placementPositions[_currentPlacementIndex];
 
-            //MapManager経由でユニットを配置
-            _mapManager.PlaceOrMoveUnit(targetPos);
+        //    //MapManager経由でユニットを配置
+        //    _mapManager.PlaceOrMoveUnit(targetPos);
 
-            //次の配置場所へインデックスを更新
-            _currentPlacementIndex++;
-        }
-        else
+        //    //次の配置場所へインデックスを更新
+        //    _currentPlacementIndex++;
+        //}
+        //else
+        //{
+        //    Debug.LogWarning("すべてのプレイヤーユニットを配置しました");
+        //}
+
+        for(int i = 0;i < _mapUnitPlacementData.placementPositions.Count; i++)
         {
-            Debug.LogWarning("すべてのプレイヤーユニットを配置しました");
+            Vector2Int targetPos = _mapUnitPlacementData.placementPositions[i];
+            MyTile targetTile = _mapManager.GetTileAt(targetPos);
+
+            //マスが空いているか確認
+            if (targetTile != null && targetTile.OccupyingUnit == null)
+            {
+                //空いているマスが見つかったら、そこにユニットを配置
+                _mapManager.PlaceOrMoveUnit(targetPos);
+                Debug.Log($"ユニットを空きマス ({targetPos}) に配置しました");
+                return;
+            }
+
         }
+        Debug.LogWarning("すべてのプレイヤーユニットを配置しました");
     }
 
-
+    
 
 
     /// <summary>
