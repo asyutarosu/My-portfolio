@@ -11,5 +11,6 @@ public enum TurnState
     NeutralTurn,//中立ユニットの行動フェイズ
     PostTurn,   //ターン終了後のクリーンアップ
     Cutscene,   //イベントシーン用
+    StageClear, //ステージクリア
     GameOver    //ゲーム終了
 }

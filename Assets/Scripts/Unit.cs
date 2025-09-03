@@ -34,6 +34,7 @@ public partial class Unit : MonoBehaviour
 
     [field: SerializeField]public int Speed { get; private set; }//速さ
 
+    public bool IsAlive => CurrentHP > 0;//ユニットの死亡判定フラグ
 
     //攻撃範囲:仮実装
     [SerializeField] public int _minAttackRange = 1;//最小攻撃射程
@@ -179,8 +180,10 @@ public partial class Unit : MonoBehaviour
     public void TakeDamage(int damage)
     {
         CurrentHP -= damage;
+        Debug.LogWarning($"ユニットが{damage}ダメージを受けた");
         if(CurrentHP <= 0)
         {
+            Debug.LogWarning("ユニットのHPが０になりました");
             CurrentHP = 0;
             Die();
         }

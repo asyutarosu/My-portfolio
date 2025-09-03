@@ -18,9 +18,12 @@ public class TurnManager : MonoBehaviour
     public int CurrentTurnNumber { get; private set; } = 1;
 
     //TurnManagerで管理するのユニットリスト
-    private List<Unit> _allUnits;
-    private List<PlayerUnit> _playerUnits;
-    private List<EnemyUnit> _enemyUnits;
+    private List<Unit> _allUnits = new List<Unit>();
+    public List<Unit> AllUnits => _allUnits;
+    private List<PlayerUnit> _playerUnits = new List<PlayerUnit>();
+    public List<PlayerUnit> PlayerUnits => _playerUnits;
+    private List<EnemyUnit> _enemyUnits = new List<EnemyUnit>();
+    public List<EnemyUnit> EnemyUnits => _enemyUnits;
 
     //現在行動中の敵ユニットのインデックス
     private int _currentEnemyUnitIndex = 0;
@@ -43,6 +46,8 @@ public class TurnManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
+
+        
     }
 
     //初期化処理
@@ -51,24 +56,31 @@ public class TurnManager : MonoBehaviour
         CurrnetTurnState = TurnState.PreGame;
         CurrentTurnNumber = 1;
 
+        //一時的にコメントアウト：MapManagerでリアルタイムでプレイヤーユニットのリストを更新する方法を試すため
         //ユニットリストを取得
-        _allUnits = MapManager.Instance.GetAllUnits();
-        _playerUnits = MapManager.Instance.GetAllPlayerUnits();
-        _enemyUnits = MapManager.Instance.GetAllEnemyUnits();
+        //_playerUnits = MapManager.Instance.GetAllPlayerUnits();
 
-        //確認用
-        if (_playerUnits == null)
-        {
-            Debug.LogError("TurnManager: _playerUnitsがMapManagerから取得できませんでした！");
-        }
-        if (_enemyUnits == null)
-        {
-            Debug.LogError("TurnManager: _enemyUnitsがMapManagerから取得できませんでした！");
-        }
-        Debug.Log($"TurnManager: プレイヤーユニット数: {_playerUnits?.Count ?? 0}, 敵ユニット数: {_enemyUnits?.Count ?? 0}");
+        //_enemyUnits = MapManager.Instance.GetAllEnemyUnits();
+        //_allUnits = MapManager.Instance.GetAllUnits();
 
+
+        ////確認用
+        //if (_playerUnits == null)
+        //{
+        //    Debug.LogError("TurnManager: _playerUnitsがMapManagerから取得できませんでした！");
+        //}
+        //if (_enemyUnits == null)
+        //{
+        //    Debug.LogError("TurnManager: _enemyUnitsがMapManagerから取得できませんでした！");
+        //}
+        //Debug.Log($"TurnManager: プレイヤーユニット数: {_playerUnits?.Count ?? 0}, 敵ユニット数: {_enemyUnits?.Count ?? 0}");
+
+        //Debug.LogWarning($"マップに存在する全てのユニットの数：{_allUnits.Count}");
+        //Debug.LogWarning($"マップに存在する全てのプレイヤーユニットの数：{_playerUnits.Count}");
+        //Debug.LogWarning($"マップに存在する全ての敵ユニットの数：{_enemyUnits.Count}");
 
         Debug.Log("TurnManager:ゲーム初期化完了");
+
         StartPlayerTurn();//プレイヤーターンから開始
     }
 
@@ -80,16 +92,109 @@ public class TurnManager : MonoBehaviour
         _allUnits = FindObjectsOfType<Unit>().ToList();
     }
 
+
+    //全てユニットを取得する
+    public void GetAllUnitsTurnManager()
+    {
+        //シーン内のすべてのUnitコンポーネントを検索
+        _allUnits = FindObjectsOfType<Unit>().ToList();
+        Debug.LogWarning($"マップに存在する全てのユニットの数：{_allUnits.Count}");
+    }
+
+    //プレイヤーユニットをリストに追加する公開メソッド
+    public void AddPlayerUnit(PlayerUnit unit)
+    {
+        //if (unit != null && !_playerUnits.Contains(unit))
+        //{
+        //    _playerUnits.Add(unit);
+        //    Debug.Log($"ユニットが_playerUnitsに追加されました。現在のユニット数: {_playerUnits.Count}");
+        //}
+        if(unit != null)
+        {
+            _playerUnits.Add(unit);
+            Debug.LogWarning($"ユニットが_playerUnitsに追加されました。現在のユニット数: {_playerUnits.Count}");
+        }
+    }
+
+    //敵ユニットをリストに追加するメソッド
+    public void AddEnemyUnit(EnemyUnit unit)
+    {
+        if (unit != null)
+        {
+            _enemyUnits.Add(unit);
+            Debug.LogWarning($"ユニットがenemyUnitsに追加されました。現在のユニット数: {_enemyUnits.Count}");
+        }
+    }
+
+    //全てのユニットのリストに追加するメソッド
+    public void AddAllUnits(Unit unit)
+    {
+        if (unit != null)
+        {
+            _allUnits.Add(unit);
+            Debug.LogWarning($"ユニットが_allUnitsに追加されました。現在のユニット数: {_allUnits.Count}");
+        }
+    }
+
+    //ユニットをリストから削除する
+    public void RemoveSpecificUnit(Unit unitToRemove)
+    {
+        //対象がPlayerUnitのとき
+        if(unitToRemove.Faction == FactionType.Player)
+        {
+            //UnitをPlayerUnitにキャストしてUnit型へ
+            PlayerUnit playerUnitToRemove = unitToRemove as PlayerUnit;
+
+            //キャストが成功し、かつプレイヤーユニットのリストに存在するか確認
+            if (playerUnitToRemove != null && _playerUnits.Contains(playerUnitToRemove))
+            {
+                //プレイヤーユニットのリストから削除
+                _playerUnits.Remove(playerUnitToRemove);
+                Debug.Log($"プレイヤーユニット {playerUnitToRemove.name} をリストから削除しました。");
+            }
+        }
+
+        //対象がEnemyUnitのとき
+        if (unitToRemove.Faction == FactionType.Enemy)
+        {
+            //UnitをEnemyUnitにキャストしてUnit型へ
+            EnemyUnit enemyUnitToRemove = unitToRemove as EnemyUnit;
+
+            //キャストが成功し、かつ敵ユニットのリストに存在するか確認
+            if (enemyUnitToRemove != null && _enemyUnits.Contains(enemyUnitToRemove))
+            {
+                //敵ユニットのリストから削除
+                _enemyUnits.Remove(enemyUnitToRemove);
+                Debug.Log($"敵ユニット {enemyUnitToRemove.name} をリストから削除しました。");
+            }
+        }
+        
+
+        if (_allUnits.Contains(unitToRemove))
+        {
+            _allUnits.Remove(unitToRemove);
+            Debug.Log($"ユニット {unitToRemove.name} を全体リストから削除しました。");
+        }
+        else
+        {
+            Debug.LogWarning("削除しようとしたユニットは全体リスト内に見つかりませんでした。");
+        }
+        _mapManager.ClearAllHighlights();
+        Destroy(unitToRemove.gameObject);
+    }
+
     /// <summary>
     /// プレイヤーのターンを開始する
     /// </summary>
     public void StartPlayerTurn()
     {
+
         CurrnetTurnState = TurnState.PlayerTurn;
         Debug.Log("プレイヤーターン開始");
+        Debug.LogWarning($"プレイヤーの数：{_playerUnits.Count}");
 
         //全てのプレイヤーユニットの行動状態をリセット
-        foreach(Unit unit in _allUnits)
+        foreach (Unit unit in _allUnits)
         {
             if(unit.Faction == FactionType.Player)
             {
@@ -137,13 +242,14 @@ public class TurnManager : MonoBehaviour
     public void CheckAllPlayerUnitActed()
     {
         //プレイヤーユニットが全滅の場合
-        if(_playerUnits == null || _playerUnits.Count == 0)
-        {
-            Debug.Log("プレイヤーユニットがいません。ゲームオーバー。");
-            //仮として敵ターンへ移行（ゲームオーバー関連未実装2025/07）
-            EndPlayerTurn();
-            return;
-        }
+        //if(_playerUnits == null || _playerUnits.Count == 0)
+        //{
+        //    Debug.Log("プレイヤーユニットがいません。ゲームオーバー。");
+        //    SetGameOver();
+        //    //仮として敵ターンへ移行（ゲームオーバー関連未実装2025/07）
+        //    EndPlayerTurn();
+        //    return;
+        //}
 
         bool allActed = true;
         foreach(PlayerUnit playerUnit in _playerUnits)
@@ -157,7 +263,8 @@ public class TurnManager : MonoBehaviour
 
         if (allActed)
         {
-            Debug.Log("全てのプレイヤーユニットが行動を完了しました。敵ターンへ移行します。");
+            Debug.LogWarning("全てのプレイヤーユニットが行動を完了しました。敵ターンへ移行します。");
+            Debug.LogWarning($"プレイヤーの数{_playerUnits.Count}");
             EndPlayerTurn();
         }
     }
@@ -276,11 +383,51 @@ public class TurnManager : MonoBehaviour
         StartPlayerTurn();
     }
 
-    //ゲームオーバー処理
-    public void SetGameOver()
+    //ステージクリア判定処理
+    public void CheckStageClear()
     {
-        CurrnetTurnState = TurnState.GameOver;
-        Debug.Log("--- ゲームオーバー ---");
+        //ステージクリア条件１
+        //敵ユニットの全滅判定
+        bool allEnemyUnitsDead = true;
+        foreach(var enemyUnit in _enemyUnits)
+        {
+            if (enemyUnit.IsAlive)
+            {
+                allEnemyUnitsDead = false;
+                break;
+            }
+        }
+
+        if (allEnemyUnitsDead)
+        {
+            CurrnetTurnState = TurnState.StageClear;
+            Debug.LogWarning("--- ステージクリア ---");
+            Debug.LogWarning($"現在のステイト{CurrnetTurnState}");
+        }
+    }
+
+    //ゲームオーバー処理
+    public void CheckGameOver()
+    {
+        //_playerUnitsリスト内のすべてのユニットがIsAliveがfalseかを確認
+        bool allPlayersDead = true;
+        foreach(var playerUnit in _playerUnits)
+        {
+            if (playerUnit.IsAlive)
+            {
+                allPlayersDead = false;
+                break;
+            }
+        }
+
+        if (allPlayersDead)
+        {
+            CurrnetTurnState = TurnState.GameOver;
+            Debug.LogWarning("--- ゲームオーバー ---");
+            Debug.LogWarning($"現在のステイト{CurrnetTurnState}");
+        }
+
+        
     }
 
     //その他のターン状態への遷移メソッド（未定2025/07）
@@ -364,7 +511,8 @@ public class TurnManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
+
+        if (_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
         {
             //仮：プレイヤーがターン終了を明示的に行うための処理2025/07
             if (CurrnetTurnState == TurnState.PlayerTurn && Input.GetKeyDown(KeyCode.E))
