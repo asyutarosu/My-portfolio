@@ -18,3 +18,7 @@ MonoBehaviour:
     gridPosition: {x: 0, y: 2}
     overrideHP: 0
     overrideMovement: 0
+  - enemyPrefab: {fileID: -3626944775743022083, guid: 67a72ccbf1e1b174eb14f41f3bfb6a67, type: 3}
+    gridPosition: {x: 0, y: 4}
+    overrideHP: 0
+    overrideMovement: 0

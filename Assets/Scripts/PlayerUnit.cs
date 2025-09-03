@@ -12,6 +12,8 @@ public class PlayerUnit : Unit
 
     public static PlayerUnit Instance;
 
+    //public bool IsAlive => CurrentHP > 0;
+
     //[SerializeField] private int _moveRange = 3;//ˆÚ“®”ÍˆÍ
     //[SerializeField] private int _currentMovementPoints = 3;
 

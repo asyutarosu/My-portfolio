@@ -303,6 +303,10 @@ public class EnemyUnit : Unit
 
                     //ここに攻撃処理
                     BattleManager.Instance.ResolveBattle_ShogiBase(this, targetedPlayer);
+
+                    //ゲームオーバー判定
+                    TurnManager.Instance.CheckGameOver();
+
                 }
                 else
                 {

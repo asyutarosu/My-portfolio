@@ -59,11 +59,13 @@ public partial class BattleManager : MonoBehaviour
         Debug.LogWarning($"{attacker.gameObject.name}‚ª{target.gameObject.name}‚ÉUŒ‚I");
         Debug.LogWarning($"{attacker.GetCurrentGridPostion()}");
 
+
         if (attackableTiles.Contains(attacker.GetCurrentGridPostion()))
         {
             Debug.LogWarning($"UŒ‚‹–‰Â‚ª”FØ");
             TurnManager.Instance.RemoveSpecificUnit(target);
-            target.Die();
+            //‰¼’iŠK‚Å‚Í«Šûƒx[ƒX‚Ì‚½‚ß•¡G‚Èˆ—‚ğÈ‚«ˆêŒ‚‚Å“|‚·
+            target.TakeDamage(10);
         }
         // UŒ‚‘¤‚ªæ‚ÉUŒ‚‚µ‚½‚½‚ßA‘Šè‚ğ“|‚·
         //target.Die();

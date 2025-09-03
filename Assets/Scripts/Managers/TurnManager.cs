@@ -242,13 +242,14 @@ public class TurnManager : MonoBehaviour
     public void CheckAllPlayerUnitActed()
     {
         //プレイヤーユニットが全滅の場合
-        if(_playerUnits == null || _playerUnits.Count == 0)
-        {
-            Debug.Log("プレイヤーユニットがいません。ゲームオーバー。");
-            //仮として敵ターンへ移行（ゲームオーバー関連未実装2025/07）
-            EndPlayerTurn();
-            return;
-        }
+        //if(_playerUnits == null || _playerUnits.Count == 0)
+        //{
+        //    Debug.Log("プレイヤーユニットがいません。ゲームオーバー。");
+        //    SetGameOver();
+        //    //仮として敵ターンへ移行（ゲームオーバー関連未実装2025/07）
+        //    EndPlayerTurn();
+        //    return;
+        //}
 
         bool allActed = true;
         foreach(PlayerUnit playerUnit in _playerUnits)
@@ -382,11 +383,51 @@ public class TurnManager : MonoBehaviour
         StartPlayerTurn();
     }
 
-    //ゲームオーバー処理
-    public void SetGameOver()
+    //ステージクリア判定処理
+    public void CheckStageClear()
     {
-        CurrnetTurnState = TurnState.GameOver;
-        Debug.Log("--- ゲームオーバー ---");
+        //ステージクリア条件１
+        //敵ユニットの全滅判定
+        bool allEnemyUnitsDead = true;
+        foreach(var enemyUnit in _enemyUnits)
+        {
+            if (enemyUnit.IsAlive)
+            {
+                allEnemyUnitsDead = false;
+                break;
+            }
+        }
+
+        if (allEnemyUnitsDead)
+        {
+            CurrnetTurnState = TurnState.StageClear;
+            Debug.LogWarning("--- ステージクリア ---");
+            Debug.LogWarning($"現在のステイト{CurrnetTurnState}");
+        }
+    }
+
+    //ゲームオーバー処理
+    public void CheckGameOver()
+    {
+        //_playerUnitsリスト内のすべてのユニットがIsAliveがfalseかを確認
+        bool allPlayersDead = true;
+        foreach(var playerUnit in _playerUnits)
+        {
+            if (playerUnit.IsAlive)
+            {
+                allPlayersDead = false;
+                break;
+            }
+        }
+
+        if (allPlayersDead)
+        {
+            CurrnetTurnState = TurnState.GameOver;
+            Debug.LogWarning("--- ゲームオーバー ---");
+            Debug.LogWarning($"現在のステイト{CurrnetTurnState}");
+        }
+
+        
     }
 
     //その他のターン状態への遷移メソッド（未定2025/07）

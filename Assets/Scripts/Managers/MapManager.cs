@@ -1140,7 +1140,7 @@ public class MapManager : MonoBehaviour
 
         if (_tileDataFromTilemapTest.TryGetValue(gridPosition, out MyTile tile))
         {
-            Debug.LogWarning(newType);
+            //Debug.LogWarning(newType);
             if (_terrainTileAssetMap.TryGetValue(newType, out CustomTile newTileAsset))
             {
                 tile.SetTerrainTypeAndCost(newType, newTileAsset.MovementCost);
@@ -1743,6 +1743,9 @@ public class MapManager : MonoBehaviour
                     BattleManager.Instance.ResolveBattle_ShogiBase(_selectedUnit, _clickedTile.OccupyingUnit);
                     _selectedUnit.SetActedThisTrun();
                     ResetMoveState();
+
+                    //仮のステージクリア判定
+                    TurnManager.Instance.CheckStageClear();
                 }
                 //攻撃できる敵ユニット以外の場合は攻撃状態のみ
                 else
