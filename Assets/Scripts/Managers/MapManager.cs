@@ -2583,7 +2583,7 @@ public class MapManager : MonoBehaviour
     /// </summary>
     private void ConfirmUnit()
     {
-        if (_selectedUnit == null || !_isMovingOrPlanning)
+        if (_selectedUnit == null || !_isMovingOrPlanning || !_isConfirmingMove)
         {
             return;
         }
@@ -2601,7 +2601,14 @@ public class MapManager : MonoBehaviour
         //攻撃処理
         else if (Input.GetKeyDown(KeyCode.D))
         {
-            AttackRangeHighlight();
+            if (!_isAttacking)
+            {
+                AttackRangeHighlight();
+            }
+            else
+            {
+                CancelMove();
+            }
         }
     }
 
@@ -2624,14 +2631,27 @@ public class MapManager : MonoBehaviour
         int minAttackRange = _selectedUnit._minAttackRange;//最小射程
         int maxAttackRange = _selectedUnit._maxAttackRange;//最大射程
 
-
-
-        MyTile newTile = GetTileAt(_currentPlannedMovePositon);
-        if (newTile != null)
+        //その場で攻撃する場合
+        if (!_isMovingOrPlanning)
         {
-            _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
-            _selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
+            if (_selectedUnit != null)
+            {
+                _selectedUnit.transform.position = MapManager.Instance.GetWorldPositionFromGrid(_originalUnitPositon);
+            }
         }
+        //移動後に攻撃する場合
+        else
+        {
+            MyTile newTile = GetTileAt(_currentPlannedMovePositon);
+            if (newTile != null)
+            {
+                _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
+                _selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
+            }
+        }
+
+        
+
         Vector2Int currentPos = _selectedUnit.CurrentGridPosition;
 
         for (int x = -maxAttackRange; x <= maxAttackRange; x++)
@@ -2767,10 +2787,11 @@ public class MapManager : MonoBehaviour
     /// </summary>
     private void CancelMove()
     {
-
         if (_selectedUnit != null)
         {
             //_selectedUnit.SetSelected(false);
+            MyTile newTile = GetTileAt(_originalUnitPositon);
+            _selectedUnit.MoveToGridPosition(_originalUnitPositon, newTile);
             _selectedUnit.transform.position = MapManager.Instance.GetWorldPositionFromGrid(_originalUnitPositon);
         }
 
@@ -3189,20 +3210,35 @@ public class MapManager : MonoBehaviour
 
             if (_selectedUnit != null)
             {
-                if (Input.GetKeyDown(KeyCode.Q))
-                {
-                    CancelMove();
-                }
-
-                //その場で待機する場合の処理
+                //その場で攻撃・待機する・キー入力でキャンセルする場合の処理
                 if (!_isMovingOrPlanning)
                 {
+                    //キー入力で選択キャンセルする
+                    if (Input.GetKeyDown(KeyCode.Q))
+                    {
+                        CancelMove();
+                    }
+                    //その場で待機する
                     if (Input.GetKeyDown(KeyCode.Space))
                     {
                         CompleteAction();
                     }
+                    //その場で攻撃する
+                    if (Input.GetKeyDown(KeyCode.D))
+                    {
+
+                        if (!_isAttacking)
+                        {
+                            AttackRangeHighlight();
+                        }
+                        else
+                        {
+                            CancelMove();
+                        }
+                    }
+
                 }
-                
+
             }
             if (_isConfirmingMove)
             {
