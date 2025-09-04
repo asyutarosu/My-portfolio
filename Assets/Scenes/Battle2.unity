@@ -402,7 +402,7 @@ MonoBehaviour:
   _pathLinePrefab: {fileID: 4717480643199746719, guid: cc76b8a067ca31e4caa034fb53e65ca3, type: 3}
   _occupiedHighlightPrefab: {fileID: 2112004532673721051, guid: 6d0c655df767d8e4cb27e99c9bd08fcf, type: 3}
   _placePlayerUnitPosHighlightPrefab: {fileID: 2112004532673721051, guid: 0c1bb2c25a9609246bdf5b8927abdecb, type: 3}
-  _mapUnitPlacementData: {fileID: 11400000, guid: 4b1aac5bec3240649b8547b1dc103336, type: 2}
+  _mapUnitPlacementData: {fileID: 0}
   _playerUnitPrefab: {fileID: 4147914350845448932, guid: 8bb0c553e5fe2cc4eb04cd2f8b3062b7, type: 3}
   _enemyUnitprefab: {fileID: 8331606119897806834, guid: 5883c741009fdaf4f978338660bbe515, type: 3}
   _player001Prefab: {fileID: 3110548308744166863, guid: 2b6681db20a11514987ce230f8f1fe2b, type: 3}
@@ -415,6 +415,7 @@ MonoBehaviour:
   _gameManager: {fileID: 1882805514}
   _unitButton: {fileID: 1428174710}
   _turnManager: {fileID: 2082029023}
+  _stageDataContainer: {fileID: 11400000, guid: fcfc98b2e9356e3449d440ef330ca482, type: 2}
 --- !u!4 &306895319
 Transform:
   m_ObjectHideFlags: 0

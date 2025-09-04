@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mapplacementDataList:
   - {fileID: 11400000, guid: 4b1aac5bec3240649b8547b1dc103336, type: 2}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 0c2b327228a6a3447860dd1e9272019e, type: 2}
   enemyEncounterDataList:
   - {fileID: 11400000, guid: 77b706ae5ae77ad46b9efd1e0f1b334d, type: 2}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: ee49fea9319906c4a992bfcdc200951a, type: 2}

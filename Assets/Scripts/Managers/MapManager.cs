@@ -759,8 +759,8 @@ public class MapManager : MonoBehaviour
             float camHalfHeight = _mainCamera.orthographicSize;
             float camHalfWidth = _mainCamera.orthographicSize * _mainCamera.aspect;
 
-            Vector3 mapMinWorldPos = GetWorldPositionFromGrid(Vector2Int.zero);
-            Vector3 mapMaxWorldPos = GetWorldPositionFromGrid(new Vector2Int(_currentMapData.Width - 1, _currentMapData.Height - 1));
+            //Vector3 mapMinWorldPos = GetWorldPositionFromGrid(Vector2Int.zero);
+            //Vector3 mapMaxWorldPos = GetWorldPositionFromGrid(new Vector2Int(_currentMapData.Width - 1, _currentMapData.Height - 1));
 
 
             float minX = camHalfWidth + tileBasePos.x;
@@ -3167,8 +3167,10 @@ public class MapManager : MonoBehaviour
             MapUnitPlacementData currentMapPlacementData = _stageDataContainer.mapplacementDataList[currentStage - 1];
             EnemyEncounterData currentEnemyEncounterData = _stageDataContainer.enemyEncounterDataList[currentStage - 1];
 
-            PlaceEnemiesForCurrentMap(currentEnemyEncounterData);
             ShowPlacementHighlights(currentMapPlacementData);
+            PlaceEnemiesForCurrentMap(currentEnemyEncounterData);
+            _gameManager.SetMapPlacementUnitData(currentMapPlacementData);
+            Debug.LogWarning($"ユニットの配置データ数：{_mapUnitPlacementData.placementPositions.Count}");
         }
         //if (_mapSequence.Length > 0)
         //{

@@ -113,6 +113,8 @@ public partial class GameManager : MonoBehaviour
         _currentBattlePhase = BattlePhase.BattleDeployment;
         _currentgameMode = GameMode.MapMode;
 
+        //_mapUnitPlacementData = 
+
         _placementUI.SetActive(false);
         _placementUI2.SetActive(false);
         _placeModeUI.SetActive(false);
@@ -353,7 +355,10 @@ public partial class GameManager : MonoBehaviour
         //    Debug.LogWarning("すべてのプレイヤーユニットを配置しました");
         //}
 
-        for(int i = 0;i < _mapUnitPlacementData.placementPositions.Count; i++)
+        Debug.LogWarning($"GameManager::ユニットの配置データ数：{_mapUnitPlacementData.placementPositions.Count}");
+
+
+        for (int i = 0;i < _mapUnitPlacementData.placementPositions.Count; i++)
         {
             Vector2Int targetPos = _mapUnitPlacementData.placementPositions[i];
             MyTile targetTile = _mapManager.GetTileAt(targetPos);
@@ -366,7 +371,6 @@ public partial class GameManager : MonoBehaviour
                 Debug.Log($"ユニットを空きマス ({targetPos}) に配置しました");
                 return;
             }
-
         }
         Debug.LogWarning("すべてのプレイヤーユニットを配置しました");
     }
@@ -401,6 +405,15 @@ public partial class GameManager : MonoBehaviour
         //フォーマットが正しくない場合はエラーを返すか、デフォルト値を返す
         Debug.LogError("シーン名が想定された形式ではありません（例: Battle1）");
         return 0;
+    }
+
+    //現在のステージのユニットの配置データを取得
+    public void SetMapPlacementUnitData(MapUnitPlacementData currentData)
+    {
+        if(currentData != null)
+        {
+            _mapUnitPlacementData = currentData;
+        }
     }
 
 
