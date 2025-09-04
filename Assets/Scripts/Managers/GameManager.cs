@@ -385,6 +385,25 @@ public partial class GameManager : MonoBehaviour
 
     }
 
+    //シーン名から参照先のデータ番号を取得
+    public int GetCurrentStageNumber()
+    {
+        string sceneName = SceneManager.GetActiveScene().name;
+        //現在はシーン名を「Battle1」、「Battle2」といった形式で作成
+        string numberString = sceneName.Replace("Battle", "");
+
+        //文字列を整数に変換
+        if(int.TryParse(numberString, out int stagenumber))
+        {
+            return stagenumber;
+        }
+
+        //フォーマットが正しくない場合はエラーを返すか、デフォルト値を返す
+        Debug.LogError("シーン名が想定された形式ではありません（例: Battle1）");
+        return 0;
+    }
+
+
     // Update is called once per frame
     void Update()
     {

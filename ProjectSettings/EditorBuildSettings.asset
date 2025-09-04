@@ -15,7 +15,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Deployment.unity
     guid: dde204c2590bef941a753df17ffde468
   - enabled: 1
-    path: Assets/Scenes/Battle.unity
+    path: Assets/Scenes/Battle1.unity
     guid: 5d31a20c5b2a4914ba9137e254369d39
   - enabled: 1
     path: Assets/Scenes/Result.unity
