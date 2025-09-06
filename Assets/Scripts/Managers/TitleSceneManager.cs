@@ -18,7 +18,8 @@ public class TitleSceneManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             Debug.Log("エンターキーが押されました。ステージ選択シーンへ移行します。");
-            SceneManager.LoadScene("StageSelect");
+            //SceneManager.LoadScene("StageSelect");
+            GameManager.Instance.ChangeState(GameState.StageSelect);
         }
     }
 }

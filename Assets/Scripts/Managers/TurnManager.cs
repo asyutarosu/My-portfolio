@@ -36,6 +36,12 @@ public class TurnManager : MonoBehaviour
 
     private void Awake()
     {
+        _gameManager = GameManager.Instance;
+        if(_gameManager == null)
+        {
+            Debug.LogError("TurnManager: GameManagerのインスタンスが見つかりません");
+        }
+
         if(Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -44,15 +50,17 @@ public class TurnManager : MonoBehaviour
         else
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            //DontDestroyOnLoad(gameObject);
         }
-
+        ClearAllUnitsList();
         
     }
 
     //初期化処理
     public void InitializeTurnManager()
     {
+        _mapManager = FindFirstObjectByType<MapManager>();
+
         CurrnetTurnState = TurnState.PreGame;
         CurrentTurnNumber = 1;
 
@@ -101,6 +109,15 @@ public class TurnManager : MonoBehaviour
         Debug.LogWarning($"マップに存在する全てのユニットの数：{_allUnits.Count}");
     }
 
+
+    //全てのユニットのリストをクリアする
+    public void ClearAllUnitsList()
+    {
+        _playerUnits.Clear();
+        _enemyUnits.Clear();
+        _allUnits.Clear();
+    }
+
     //プレイヤーユニットをリストに追加する公開メソッド
     public void AddPlayerUnit(PlayerUnit unit)
     {
@@ -122,7 +139,7 @@ public class TurnManager : MonoBehaviour
         if (unit != null)
         {
             _enemyUnits.Add(unit);
-            Debug.LogWarning($"ユニットがenemyUnitsに追加されました。現在のユニット数: {_enemyUnits.Count}");
+            Debug.LogWarning($"ユニット：：{unit.name}がenemyUnitsに追加されました。現在のユニット数: {_enemyUnits.Count}");
         }
     }
 
@@ -192,6 +209,8 @@ public class TurnManager : MonoBehaviour
         CurrnetTurnState = TurnState.PlayerTurn;
         Debug.Log("プレイヤーターン開始");
         Debug.LogWarning($"プレイヤーの数：{_playerUnits.Count}");
+        Debug.LogWarning($"敵の数：{_enemyUnits.Count}");
+
 
         //全てのプレイヤーユニットの行動状態をリセット
         foreach (Unit unit in _allUnits)
@@ -292,6 +311,8 @@ public class TurnManager : MonoBehaviour
         {
             unit.SetActionTaken(false);
         }
+
+        Debug.LogWarning($"敵の数：：{_enemyUnits.Count}");
 
         //敵の行動ロジックを遅延させて開始
         StartCoroutine(EnemyTurnRoutine());
@@ -403,6 +424,7 @@ public class TurnManager : MonoBehaviour
             CurrnetTurnState = TurnState.StageClear;
             Debug.LogWarning("--- ステージクリア ---");
             Debug.LogWarning($"現在のステイト{CurrnetTurnState}");
+            _gameManager.LoadNextStage();
         }
     }
 
@@ -425,6 +447,7 @@ public class TurnManager : MonoBehaviour
             CurrnetTurnState = TurnState.GameOver;
             Debug.LogWarning("--- ゲームオーバー ---");
             Debug.LogWarning($"現在のステイト{CurrnetTurnState}");
+            _gameManager.ChangeState(GameState.GameOver);
         }
 
         
@@ -502,28 +525,36 @@ public class TurnManager : MonoBehaviour
     void Start()
     {
         //初期化処理としてシーン上の全てのユニットを検索してリストに追加
-        _allUnits = FindObjectsOfType<Unit>().ToList();
+        //_allUnits = FindObjectsOfType<Unit>().ToList();
+
+        //////ToDo
+        var _ALLUNITS = FindObjectsByType<Unit>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        _allUnits = _ALLUNITS.ToList();
 
         //最初のターン開始
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-
-        if (_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
+        //Battleステイトのときのみ
+        if (_gameManager.CurrentState == GameState.Battle)
         {
-            //仮：プレイヤーがターン終了を明示的に行うための処理2025/07
-            if (CurrnetTurnState == TurnState.PlayerTurn && Input.GetKeyDown(KeyCode.E))
-            {
-                EndPlayerTurn();
-            }
 
-            //デバッグ用：敵ターンの終了させる処理
-            if (CurrnetTurnState == TurnState.EnemyTurn && Input.GetKeyDown(KeyCode.K))
+            if (_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
             {
-                EndEnemyTurn();
+                //仮：プレイヤーがターン終了を明示的に行うための処理2025/07
+                if (CurrnetTurnState == TurnState.PlayerTurn && Input.GetKeyDown(KeyCode.E))
+                {
+                    EndPlayerTurn();
+                }
+
+                //デバッグ用：敵ターンの終了させる処理
+                if (CurrnetTurnState == TurnState.EnemyTurn && Input.GetKeyDown(KeyCode.K))
+                {
+                    EndEnemyTurn();
+                }
             }
         }
     }

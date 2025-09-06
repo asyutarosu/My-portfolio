@@ -104,7 +104,7 @@ public class MapManager : MonoBehaviour
         {
             if (_instance == null)
             {
-                _instance = FindObjectOfType<MapManager>();
+                _instance = FindFirstObjectByType<MapManager>();
                 if (_instance == null)
                 {
                     GameObject singletonObject = new GameObject("MapManager");
@@ -846,7 +846,7 @@ public class MapManager : MonoBehaviour
     public void Initialize()
     {
         Debug.LogWarning("準備フェイズから始まります");
-
+        _gameManager = FindFirstObjectByType<GameManager>();
 
         //タイルリストとユニットリストのクリア
         ClaerExistingUnits();
@@ -3160,6 +3160,8 @@ public class MapManager : MonoBehaviour
     {
         Initialize();
         InitializeCamera();
+
+        //_turnManager.ClearAllUnitsList();
 
         int currentStage = _gameManager.GetCurrentStageNumber();
         if(currentStage > 0 && currentStage <= _stageDataContainer.mapplacementDataList.Count)

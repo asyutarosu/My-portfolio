@@ -212,7 +212,7 @@ GameObject:
   - component: {fileID: 249436138}
   m_Layer: 5
   m_Name: UnitDereat
-  m_TagString: Untagged
+  m_TagString: DereatButton
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2017,7 +2017,7 @@ GameObject:
   - component: {fileID: 1428174710}
   m_Layer: 5
   m_Name: UnitPlace
-  m_TagString: Untagged
+  m_TagString: UnitsPlaceButton
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2085,31 +2085,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1428174711}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1882805514}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: OnEnterPlacementMode
-        m_Mode: 2
-        m_Arguments:
-          m_ObjectArgument: {fileID: 1428174710}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.UI.Button, UnityEngine.UI
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 1882805514}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: PlaceNextUnit
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1428174711
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2287,8 +2263,8 @@ MonoBehaviour:
   _currentBattlePhase: 0
   _currentStageId: 0
   _currentgameMode: 0
-  _placementUI: {fileID: 1428174708}
-  _placementUI2: {fileID: 2058732148}
+  _placementUI: {fileID: 0}
+  _placementUI2: {fileID: 0}
   ButtonText: 
   _placeModeUI: {fileID: 2072900447}
   _mapManager: {fileID: 306895318}
@@ -2371,7 +2347,7 @@ GameObject:
   - component: {fileID: 2058732150}
   m_Layer: 5
   m_Name: UnitPlace2
-  m_TagString: Untagged
+  m_TagString: UnitsPlaceButton
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2439,31 +2415,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2058732151}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1882805514}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: OnEnterPlacementMode
-        m_Mode: 2
-        m_Arguments:
-          m_ObjectArgument: {fileID: 2058732150}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.UI.Button, UnityEngine.UI
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 1882805514}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: PlaceNextUnit
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &2058732151
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2594,7 +2546,7 @@ GameObject:
   - component: {fileID: 2072900449}
   m_Layer: 5
   m_Name: PlaceModeUI
-  m_TagString: Untagged
+  m_TagString: PlacementUI
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
