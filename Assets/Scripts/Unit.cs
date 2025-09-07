@@ -16,6 +16,16 @@ public enum UnitType
     Mountain//山賊
 }
 
+
+public enum EnemyAIType
+{
+    notEnemy,   //敵ユニットではない
+    Aggreeive,  //積極的にプレイヤーを追う
+    Stationary, //特定のマスに侵入されるまで動かない
+    Patrol,     //パトロール型：実装予定
+    DefalutAI      //常にプレイヤーユニットを狙う基本AI
+}
+
 public partial class Unit : MonoBehaviour
 {
     [field:SerializeField]public string UnitId { get;private set; }//ユニットのユニークID
@@ -23,6 +33,11 @@ public partial class Unit : MonoBehaviour
     [field:SerializeField]public UnitType Type { get; private set; }//ユニットタイプ
     [field: SerializeField] protected FactionType _factionType = FactionType.Player;//デフォルトはプレイヤー
     public FactionType Faction => _factionType;
+    
+
+    /////
+    [field: SerializeField] protected EnemyAIType _enemyAIType { get; private set; }//敵のAIタイプ
+    public EnemyAIType EnemyAIType => _enemyAIType;
 
     [field:SerializeField]public int CurrentHP { get; private set; }//現在のHP
     [field:SerializeField]public int MaxHP { get; private set; }//最大HP
@@ -82,6 +97,7 @@ public partial class Unit : MonoBehaviour
             UnitName  = unitData.UnitName;
             Type = unitData.Type;
             _factionType = unitData.FactionType;
+            _enemyAIType = unitData.EnemyAIType;
             CurrentHP = unitData.MaxHP;
             MaxHP = unitData.MaxHP;
             BaseMovement = unitData.BaseMovement;
@@ -89,6 +105,7 @@ public partial class Unit : MonoBehaviour
             AttackPower = unitData.BaseAttackPower;
             DefensePower = unitData.BaseDefensePower;
 
+            Debug.Log($"!!!!!::ユニットの勢力{_factionType},AIのタイプ{_enemyAIType}");
             Debug.Log($"{UnitName} (ID: {UnitId}) のステータスをUnitDataから設定しました。" +
                       $"HP: {CurrentHP}/{MaxHP}, 移動力: {BaseMovement}, 攻撃力: {AttackPower}, 防御力: {DefensePower}");
         }

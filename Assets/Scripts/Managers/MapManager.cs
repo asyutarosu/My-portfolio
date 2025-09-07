@@ -449,7 +449,7 @@ public class MapManager : MonoBehaviour
                 case "001":
                     PlayerUnit player002 = Instantiate(_player001Prefab, transform);
                     PlaceUnit(player002, gridPos);
-                    //_turnManager.AddPlayerUnit(player002);
+                    //_turnManager.Geta(player002);
                     break;
                 case "002":
                     PlayerUnit player003 = Instantiate(_player002Prefab, transform);

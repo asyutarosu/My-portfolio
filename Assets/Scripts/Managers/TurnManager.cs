@@ -133,6 +133,12 @@ public class TurnManager : MonoBehaviour
         }
     }
 
+    //プレイヤーユニットリストの取得
+    public List<PlayerUnit> SetAllPlayerUnit()
+    {
+        return _playerUnits;
+    }
+
     //敵ユニットをリストに追加するメソッド
     public void AddEnemyUnit(EnemyUnit unit)
     {
