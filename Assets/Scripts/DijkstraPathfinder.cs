@@ -310,6 +310,10 @@ public static class DijkstraPathfinder
         }
     }
 
+
+
+
+
     /// <summary>
     /// ダイクストラ法を用いて、開始地点から到達可能な全てのタイルとその最小移動コストを計算する
     /// </summary>
@@ -564,5 +568,87 @@ public static class DijkstraPathfinder
             heap[index1] = heap[index2];
             heap[index2] = temp;
         }
+    }
+
+    /////////////////////////////////敵AIの処理パフォーマンスの向上のためA-Starを導入
+    
+    ///
+    /// <summary>
+    /// A-Star法を用いて、開始地点から到達可能な全てのタイルとその最小移動コストを計算する
+    /// </summary>
+    /// <param name="startPos">開始グリッド座標</param>
+    /// <param name="unit">移動するユニット</param>
+    /// <param name="targetPos">目標グリッド座標 (A-Star法では探索の最適化に利用)</param>
+    /// <returns>到達可能なタイルの座標と最小移動コスト</returns>
+    public static Dictionary<Vector2Int, PathNode> FindReachableTiles_Astar(Vector2Int startPos, Unit unit, Vector2Int targetPos)
+    {
+        Dictionary<Vector2Int, PathNode> visitedNodes = new Dictionary<Vector2Int, PathNode>();
+        PathNodePriorityQueue frontier = new PathNodePriorityQueue();
+
+        PathNode startNode = new PathNode(startPos, 0, null);
+        // 優先度には g(n) + h(n) を使用
+        int startPriority = startNode.Cost + GetManhattanDistance_Astar(startPos, targetPos);
+        frontier.Enqueue(startNode, startPriority);
+        visitedNodes[startPos] = startNode;
+
+        while (frontier.Count > 0)
+        {
+            PathNode current = frontier.Dequeue();
+
+            if (current.Cost > visitedNodes[current.Position].Cost)
+            {
+                continue;
+            }
+
+            if (current.Cost > unit.CurrentMovementPoints)
+            {
+                continue;
+            }
+
+            foreach (var dir in _directions)
+            {
+                Vector2Int nextPos = current.Position + dir;
+                MyTile nextTile = MapManager.Instance.GetTileAt(nextPos);
+
+                if (nextTile == null || (nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != unit.Faction))
+                {
+                    continue;
+                }
+
+                int movementCost = MapManager.Instance.GetMovementCost(nextPos, unit.Type);
+
+                if (movementCost == int.MaxValue)
+                {
+                    continue;
+                }
+
+                int newCost = current.Cost + movementCost;
+
+                // 新しいコストがユニットの最大移動力以内であること
+                if (newCost <= unit.CurrentMovementPoints)
+                {
+                    if (!visitedNodes.ContainsKey(nextPos) || newCost < visitedNodes[nextPos].Cost)
+                    {
+                        PathNode nextNode = new PathNode(nextPos, newCost, current);
+                        visitedNodes[nextPos] = nextNode;
+
+                        // A-Starの優先度を計算
+                        int heuristicCost = GetManhattanDistance_Astar(nextPos, targetPos);
+                        int newPriority = newCost + heuristicCost;
+
+                        frontier.Enqueue(nextNode, newPriority);
+                    }
+                }
+            }
+        }
+        return visitedNodes;
+    }
+
+    /// <summary>
+    /// マンハッタン距離を計算するヒューリスティック関数
+    /// </summary>
+    private static int GetManhattanDistance_Astar(Vector2Int from, Vector2Int to)
+    {
+        return Mathf.Abs(from.x - to.x) + Mathf.Abs(from.y - to.y);
     }
 }
