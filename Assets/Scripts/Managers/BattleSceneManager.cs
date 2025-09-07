@@ -18,7 +18,8 @@ public class BattleSceneManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             Debug.Log("エンターキーが押されました。リザルトシーンへ移行します。");
-            SceneManager.LoadScene("Result");
+            //SceneManager.LoadScene("Result");
+            GameManager.Instance.ChangeState(GameState.Result);
         }
     }
 }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: EnemyUnit001
   m_EditorClassIdentifier: 
   <UnitId>k__BackingField: E001
-  <UnitName>k__BackingField: 
+  <UnitName>k__BackingField: E001
   <Type>k__BackingField: 0
   <FactionType>k__BackingField: 1
   <MaxHP>k__BackingField: 1

@@ -19,7 +19,8 @@ public class StageSelectSceneManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             Debug.Log("エンターキーが押されました。戦闘準備シーンへ移行します。");
-            SceneManager.LoadScene("Deployment");
+            //SceneManager.LoadScene("Deployment");
+            GameManager.Instance.ChangeState(GameState.Deployment);
         }
     }
 }

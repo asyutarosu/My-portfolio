@@ -14,7 +14,8 @@ public enum GameState
     Battle,         //戦闘フェイズ
     StageClear,     //ステージクリア
     GameOver,       //ゲームオーバー
-    Loading         //ロード中
+    Loading,        //ロード中
+    Result          //リザルト画面
 }
 
 //戦闘シーンのフェイズ
@@ -42,7 +43,7 @@ public partial class GameManager : MonoBehaviour
             if (_instance == null)
             {
                 //シーン上に存在しない場合は探す
-                _instance = FindObjectOfType<GameManager>();
+                _instance = FindFirstObjectByType<GameManager>();
                 if(_instance == null)
                 {
                     GameObject singletonObject = new GameObject("GameManager");
@@ -111,16 +112,91 @@ public partial class GameManager : MonoBehaviour
 
         //各Managerクラスの初期化を指示
         _currentBattlePhase = BattlePhase.BattleDeployment;
-        _currentgameMode = GameMode.MapMode;
+        _currentgameMode = GameMode.PlacementMode;
 
-        _placementUI.SetActive(false);
-        _placementUI2.SetActive(false);
-        _placeModeUI.SetActive(false);
+        //_mapUnitPlacementData = 
+
+        
 
 
         //ChangeState(GameState.Title);//タイトル画面へ
     }
 
+    //このGameObjectが有効になったときに呼び出される
+    private void OnEnable()
+    {
+        //sceneLoadedイベントにOnSceneLoadedメソッドを登録
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    //このGameObjectが無効になったときに呼び出される
+    private void OnDisable()
+    {
+        //sceneLoadedイベントからOnSceneLoadedメソッドを解除
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    //シーンがロードされたときに呼び出されるメソッド
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name.StartsWith("Battle"))
+        {
+            _mapManager = FindFirstObjectByType<MapManager>();
+            _turnManager = FindFirstObjectByType<TurnManager>();
+
+            //_turnManager.ClearAllUnitsList();
+
+            //_placementUI = GameObject.FindWithTag("UnitsPlaceButton");
+            //_placementUI2 = GameObject.FindWithTag("UnitsPlaceButton");
+
+            _placeModeUI = GameObject.FindWithTag("PlacementUI");
+
+            GameObject[] UIButtons = GameObject.FindGameObjectsWithTag("UnitsPlaceButton");
+
+            
+            foreach (GameObject buttonObject in UIButtons)
+            {
+                Button button = buttonObject.GetComponent<Button>();
+                if(button != null)
+                {
+                    button.onClick.RemoveAllListeners();
+
+                    if(buttonObject.name == "UnitPlace")
+                    {
+                        _placementUI = buttonObject;
+                        button.onClick.AddListener(() => OnEnterPlacementMode(button));
+                        button.onClick.AddListener(() => PlaceNextUnit());
+                    }
+                    if(buttonObject.name == "UnitPlace2")
+                    {
+                        _placementUI2 = buttonObject;
+                        button.onClick.AddListener(() => OnEnterPlacementMode(button));
+                        button.onClick.AddListener(() => PlaceNextUnit());
+                    }
+                }
+            }
+
+            //////ToDo
+            //_placementUI = UIButtons[0];
+            //_placementUI2 = UIButtons[1];
+
+
+            if (_mapManager == null || _turnManager == null)
+            {
+                Debug.LogError("シーンの初期化に失敗しました。必要なコンポーネントが見つかりません");
+            }
+        }
+    }
+
+
+    //GameManager本体の初期化処理
+    //public void StartNewGame()
+    //{
+    //    if(TurnManager.Instance != null)
+    //    {
+    //        TurnManager.Instance.ClearAllUnitsList();
+    //    }
+    //}
 
     /// <summary>
     /// フェイズを切り替える
@@ -204,7 +280,7 @@ public partial class GameManager : MonoBehaviour
                 LoadScene("Deployment");
                 break;
             case GameState.Battle:
-                LoadScene("Battle");
+                LoadScene("Battle1");
                 break;
             case GameState.StageClear:
                 LoadScene("StageClear");
@@ -214,6 +290,9 @@ public partial class GameManager : MonoBehaviour
                 break;
             case GameState.Loading:
                 LoadScene("Loading");
+                break;
+            case GameState.Result:
+                LoadScene("Result");
                 break;
             default:
                 Debug.Log($"GameManager:未定義のゲームシーンです{newPhase}");
@@ -232,6 +311,29 @@ public partial class GameManager : MonoBehaviour
         Debug.Log($"GameManager:シーン{sceneName}をロードします");
         SceneManager.LoadScene(sceneName);
     }
+
+    //各ステージシーンの遷移ようのメソッド
+    public void LoadNextStage()
+    {
+        int currentStage = GetCurrentStageNumber();
+        string nextSceneName = "Battle" + (currentStage + 1);
+
+        if(SceneUtility.GetBuildIndexByScenePath(nextSceneName) != -1)
+        {
+            //ステージの遷移
+            Debug.LogWarning($"次のステージ：：ステージ{nextSceneName}");
+            _currentBattlePhase = BattlePhase.BattleDeployment;
+            _currentgameMode = GameMode.PlacementMode;
+            SceneManager.LoadScene(nextSceneName);
+        }
+        else
+        {
+            //ゲームステイトの遷移：ゲームクリア
+            Debug.Log("これ以上ステージがありません。ゲームクリア！");
+            ChangeState(GameState.StageClear);
+        }
+    }
+
 
     /// <summary>
     /// ゲームをセーブする
@@ -266,6 +368,8 @@ public partial class GameManager : MonoBehaviour
         {
             case GameState.Title:
                 break;
+            default:
+                break;
                 //他のシーン終了時の処理を記載2025/06
         }
     }
@@ -279,6 +383,8 @@ public partial class GameManager : MonoBehaviour
         switch (phase)
         {
             case GameState.Title:
+                break;
+            default:
                 break;
                 //他のシーン終了時の処理
         }
@@ -353,7 +459,10 @@ public partial class GameManager : MonoBehaviour
         //    Debug.LogWarning("すべてのプレイヤーユニットを配置しました");
         //}
 
-        for(int i = 0;i < _mapUnitPlacementData.placementPositions.Count; i++)
+        Debug.LogWarning($"GameManager::ユニットの配置データ数：{_mapUnitPlacementData.placementPositions.Count}");
+
+
+        for (int i = 0;i < _mapUnitPlacementData.placementPositions.Count; i++)
         {
             Vector2Int targetPos = _mapUnitPlacementData.placementPositions[i];
             MyTile targetTile = _mapManager.GetTileAt(targetPos);
@@ -366,7 +475,6 @@ public partial class GameManager : MonoBehaviour
                 Debug.Log($"ユニットを空きマス ({targetPos}) に配置しました");
                 return;
             }
-
         }
         Debug.LogWarning("すべてのプレイヤーユニットを配置しました");
     }
@@ -385,21 +493,53 @@ public partial class GameManager : MonoBehaviour
 
     }
 
+    //シーン名から参照先のデータ番号を取得
+    public int GetCurrentStageNumber()
+    {
+        string sceneName = SceneManager.GetActiveScene().name;
+        //現在はシーン名を「Battle1」、「Battle2」といった形式で作成
+        string numberString = sceneName.Replace("Battle", "");
+
+        //文字列を整数に変換
+        if(int.TryParse(numberString, out int stagenumber))
+        {
+            return stagenumber;
+        }
+
+        //フォーマットが正しくない場合はエラーを返すか、デフォルト値を返す
+        Debug.LogError("シーン名が想定された形式ではありません（例: Battle1）");
+        return 0;
+    }
+
+    //現在のステージのユニットの配置データを取得
+    public void SetMapPlacementUnitData(MapUnitPlacementData currentData)
+    {
+        if(currentData != null)
+        {
+            _mapUnitPlacementData = currentData;
+        }
+    }
+
+
     // Update is called once per frame
     void Update()
     {
-        if (CurrentBattlePhase == BattlePhase.BattleDeployment)
+        //Battleのシーンのときのみ
+        if (CurrentState == GameState.Battle)
         {
-            // 「C」キーが押されたらモードを切り替える
-            if (Input.GetKeyDown(KeyCode.C))
+            if (CurrentBattlePhase == BattlePhase.BattleDeployment)
             {
-                ToggleMode();
+                // 「C」キーが押されたらモードを切り替える
+                if (Input.GetKeyDown(KeyCode.C))
+                {
+                    ToggleMode();
+                }
             }
-        }
-        else if (CurrentBattlePhase == BattlePhase.BattleMain)
-        {
-            _placementUI.SetActive(false);
-            _placementUI2.SetActive(false);
+            //else if (CurrentBattlePhase == BattlePhase.BattleMain)
+            //{
+            //    _placementUI.SetActive(false);
+            //    _placementUI2.SetActive(false);
+            //}
         }
     }
 }

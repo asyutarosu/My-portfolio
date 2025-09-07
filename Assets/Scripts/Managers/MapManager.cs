@@ -104,7 +104,7 @@ public class MapManager : MonoBehaviour
         {
             if (_instance == null)
             {
-                _instance = FindObjectOfType<MapManager>();
+                _instance = FindFirstObjectByType<MapManager>();
                 if (_instance == null)
                 {
                     GameObject singletonObject = new GameObject("MapManager");
@@ -248,6 +248,11 @@ public class MapManager : MonoBehaviour
 
     //ユニットの配置入れ替え関連
     private Unit _selectedUnitToSwap = null;
+
+
+    //データコンテナから取得したデータ管理
+    [SerializeField] private StageDataContainer _stageDataContainer;
+
 
     [System.Serializable] public class TerrainCost
     {
@@ -533,13 +538,13 @@ public class MapManager : MonoBehaviour
         }
     }
 
-
+    ///////ToDo->()->MapUnitPlacementData placemtData
     //ユニットの配置可能マスを表示する
-    public void ShowPlacementHighlights()
+    public void ShowPlacementHighlights(MapUnitPlacementData placementData)
     {
         //既存のハイライトをすべてクリア
         ClearAllHighlights();
-
+        _mapUnitPlacementData = placementData;
         if(_mapUnitPlacementData == null || _placePlayerUnitPosHighlightPrefab == null)
         {
             Debug.LogError("ハイライトデータまたはプレハブが割り当てられていません");
@@ -754,8 +759,8 @@ public class MapManager : MonoBehaviour
             float camHalfHeight = _mainCamera.orthographicSize;
             float camHalfWidth = _mainCamera.orthographicSize * _mainCamera.aspect;
 
-            Vector3 mapMinWorldPos = GetWorldPositionFromGrid(Vector2Int.zero);
-            Vector3 mapMaxWorldPos = GetWorldPositionFromGrid(new Vector2Int(_currentMapData.Width - 1, _currentMapData.Height - 1));
+            //Vector3 mapMinWorldPos = GetWorldPositionFromGrid(Vector2Int.zero);
+            //Vector3 mapMaxWorldPos = GetWorldPositionFromGrid(new Vector2Int(_currentMapData.Width - 1, _currentMapData.Height - 1));
 
 
             float minX = camHalfWidth + tileBasePos.x;
@@ -841,7 +846,7 @@ public class MapManager : MonoBehaviour
     public void Initialize()
     {
         Debug.LogWarning("準備フェイズから始まります");
-
+        _gameManager = FindFirstObjectByType<GameManager>();
 
         //タイルリストとユニットリストのクリア
         ClaerExistingUnits();
@@ -858,10 +863,11 @@ public class MapManager : MonoBehaviour
 
 
         //ToDo->一時的にコメントアウト
-        PlaceEnemiesForCurrentMap("Maps/map_00");
+        //PlaceEnemiesForCurrentMap("Maps/map_00");
+        //PlaceEnemiesForCurrentMap("test");
 
         //プレイヤーユニットの配置可能マスの表示
-        ShowPlacementHighlights();
+        //ShowPlacementHighlights();
 
 
         //_allPlayerUnits.Clear();
@@ -1608,12 +1614,16 @@ public class MapManager : MonoBehaviour
     /// 敵ユニット上マップに配置する（マップデータを参照）
     /// </summary>
     /// <param name="mapId"></param>
-    public void PlaceEnemiesForCurrentMap(string mapId)
+    /// 
+
+    ///////ToDo->string->EnemyEncounterData mapId->enconterData
+    public void PlaceEnemiesForCurrentMap(EnemyEncounterData encounterData)
     {
-        EnemyEncounterData encounterData = EnemyEncounterManager.Instance.GetEnemyEncounterData(mapId);
+        //EnemyEncounterData encounterData = EnemyEncounterManager.Instance.GetEnemyEncounterData(mapId);
         if (encounterData == null)
         {
-            Debug.LogWarning($"MapManager: マップ '{mapId}' の敵データが見つかりません。敵は配置されません。");
+            //Debug.LogWarning($"MapManager: マップ '{mapId}' の敵データが見つかりません。敵は配置されません。");
+            Debug.LogWarning($"MapManager: マップ '{encounterData}' の敵データが見つかりません。敵は配置されません。");
             return;
         }
 
@@ -1626,10 +1636,12 @@ public class MapManager : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"MapManager: マップ '{mapId}' の敵配置で、Prefabがnullのものが含まれています。");
+                //Debug.LogWarning($"MapManager: マップ '{mapId}' の敵配置で、Prefabがnullのものが含まれています。");
+                Debug.LogWarning($"MapManager: マップ '{encounterData}' の敵配置で、Prefabがnullのものが含まれています。");
             }
         }
-        Debug.Log($"MapManager:マップ'{mapId}'に敵ユニットを配置しました");
+        //Debug.Log($"MapManager:マップ'{mapId}'に敵ユニットを配置しました");
+        Debug.Log($"MapManager:マップ'{encounterData}'に敵ユニットを配置しました");
     }
 
     /// <summary>
@@ -3146,22 +3158,36 @@ public class MapManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        Initialize();
+        InitializeCamera();
 
-        if (_mapSequence.Length > 0)
+        //_turnManager.ClearAllUnitsList();
+
+        int currentStage = _gameManager.GetCurrentStageNumber();
+        if(currentStage > 0 && currentStage <= _stageDataContainer.mapplacementDataList.Count)
         {
-            Initialize();
-            InitializeCamera();
-            //TurnManager.Instance.InitializeTurnManager();
-            //GenerateMap(_mapSequence[_currentMapIndex]);
-            //GenerateMap(_mapSequence[0]);
-            //PlacePlayerUnitAtInitialPostiton();
-            //PlaceEnemyUnitAtInitialPostiton();
+            MapUnitPlacementData currentMapPlacementData = _stageDataContainer.mapplacementDataList[currentStage - 1];
+            EnemyEncounterData currentEnemyEncounterData = _stageDataContainer.enemyEncounterDataList[currentStage - 1];
+
+            ShowPlacementHighlights(currentMapPlacementData);
+            PlaceEnemiesForCurrentMap(currentEnemyEncounterData);
+            _gameManager.SetMapPlacementUnitData(currentMapPlacementData);
+            Debug.LogWarning($"ユニットの配置データ数：{_mapUnitPlacementData.placementPositions.Count}");
         }
-        else
-        {
-            Debug.LogError("MapManager:マップシーケンスが設定されていません");
-        }
+        //if (_mapSequence.Length > 0)
+        //{
+        //    Initialize();
+        //    InitializeCamera();
+        //    //TurnManager.Instance.InitializeTurnManager();
+        //    //GenerateMap(_mapSequence[_currentMapIndex]);
+        //    //GenerateMap(_mapSequence[0]);
+        //    //PlacePlayerUnitAtInitialPostiton();
+        //    //PlaceEnemyUnitAtInitialPostiton();
+        //}
+        //else
+        //{
+        //    Debug.LogError("MapManager:マップシーケンスが設定されていません");
+        //}
     }
 
     // Update is called once per frame
