@@ -16,4 +16,6 @@ public partial class UnitData : ScriptableObject
     [field: SerializeField] public int BaseDefensePower { get; private set; }
     [field: SerializeField] public int BaseSkill { get; private set; }
     [field: SerializeField] public int BaseSpeed { get; private set; }
+    [field: SerializeField] public int MinAttackRange { get; private set; }
+    [field: SerializeField] public int MaxAttackRange { get; private set; }
 }

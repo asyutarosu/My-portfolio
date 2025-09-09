@@ -839,7 +839,7 @@ public class MapManager : MonoBehaviour
     }
 
 
-    ///////////////////////戦闘フェイズ
+    /////////////////////////////////////戦闘フェイズ
 
 
     //初期化処理
@@ -1122,6 +1122,10 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    
+    //-----------------------天地鳴動のシステムメソッド群------------------------------
+    //
+    //
     /// <summary>
     /// 特定のグリッドの地形タイプを変更する(不確定要素)
     /// </summary>
@@ -1271,7 +1275,13 @@ public class MapManager : MonoBehaviour
 
         ChangeMultipleTerrains(tileToChange,newType);
     }
+    //
+    //
+    //-----------------------天地鳴動のシステムメソッド群------------------------------
+
+
     
+
 
     /// <summary>
     /// マップ上のタイルのグリッド座標を取得する

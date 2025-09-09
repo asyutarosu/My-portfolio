@@ -580,7 +580,7 @@ public static class DijkstraPathfinder
     /// <param name="unit">移動するユニット</param>
     /// <param name="targetPos">目標グリッド座標 (A-Star法では探索の最適化に利用)</param>
     /// <returns>到達可能なタイルの座標と最小移動コスト</returns>
-    public static Dictionary<Vector2Int, PathNode> FindReachableTiles_Astar(Vector2Int startPos, Unit unit, Vector2Int targetPos)
+    public static Dictionary<Vector2Int, PathNode> FindReachableTiles_Astar(Vector2Int startPos, Vector2Int targetPos, Unit unit)
     {
         Dictionary<Vector2Int, PathNode> visitedNodes = new Dictionary<Vector2Int, PathNode>();
         PathNodePriorityQueue frontier = new PathNodePriorityQueue();

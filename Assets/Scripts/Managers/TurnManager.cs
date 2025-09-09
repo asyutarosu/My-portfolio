@@ -139,6 +139,11 @@ public class TurnManager : MonoBehaviour
         return _playerUnits;
     }
 
+    public List<EnemyUnit> SetAllEnemyUnits()
+    {
+        return _enemyUnits;
+    }
+
     //敵ユニットをリストに追加するメソッド
     public void AddEnemyUnit(EnemyUnit unit)
     {

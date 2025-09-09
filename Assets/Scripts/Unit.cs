@@ -23,7 +23,8 @@ public enum EnemyAIType
     Aggreeive,  //積極的にプレイヤーを追う
     Stationary, //特定のマスに侵入されるまで動かない
     Patrol,     //パトロール型：実装予定
-    DefalutAI      //常にプレイヤーユニットを狙う基本AI
+    DefalutAI,  //常にプレイヤーユニットを狙う基本AI
+    KimoAI,     //きもそうなAI
 }
 
 public partial class Unit : MonoBehaviour
@@ -52,8 +53,8 @@ public partial class Unit : MonoBehaviour
     public bool IsAlive => CurrentHP > 0;//ユニットの死亡判定フラグ
 
     //攻撃範囲:仮実装
-    [SerializeField] public int _minAttackRange = 1;//最小攻撃射程
-    [SerializeField] public int _maxAttackRange = 2;//最大攻撃射程
+    [field: SerializeField] public int _minAttackRange { get; private set; }//最小攻撃射程
+    [field: SerializeField] public int _maxAttackRange { get; private set; }//最大攻撃射程
 
 
     [field:SerializeField]protected UnitData unitData { get; private set; }//ユニットデータ取得用
@@ -104,6 +105,8 @@ public partial class Unit : MonoBehaviour
             CurrentMovementPoints = BaseMovement;
             AttackPower = unitData.BaseAttackPower;
             DefensePower = unitData.BaseDefensePower;
+            _minAttackRange = unitData.MinAttackRange;
+            _maxAttackRange = unitData.MaxAttackRange;
 
             Debug.Log($"!!!!!::ユニットの勢力{_factionType},AIのタイプ{_enemyAIType}");
             Debug.Log($"{UnitName} (ID: {UnitId}) のステータスをUnitDataから設定しました。" +
