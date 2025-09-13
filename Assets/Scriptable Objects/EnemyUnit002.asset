@@ -16,7 +16,7 @@ MonoBehaviour:
   <UnitName>k__BackingField: E002
   <Type>k__BackingField: 0
   <FactionType>k__BackingField: 1
-  <EnemyAIType>k__BackingField: 5
+  <EnemyAIType>k__BackingField: 6
   <MaxHP>k__BackingField: 1
   <BaseMovement>k__BackingField: 3
   <BaseAttackPower>k__BackingField: 0

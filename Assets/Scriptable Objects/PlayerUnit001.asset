@@ -24,4 +24,4 @@ MonoBehaviour:
   <BaseSkill>k__BackingField: 0
   <BaseSpeed>k__BackingField: 0
   <MinAttackRange>k__BackingField: 1
-  <MaxAttackRange>k__BackingField: 2
+  <MaxAttackRange>k__BackingField: 1

@@ -15,14 +15,14 @@ MonoBehaviour:
   mapId: test
   enemyPlacements:
   - enemyPrefab: {fileID: -3626944775743022083, guid: 67a72ccbf1e1b174eb14f41f3bfb6a67, type: 3}
-    gridPosition: {x: 10, y: 1}
+    gridPosition: {x: 10, y: 0}
     overrideHP: 0
     overrideMovement: 0
   - enemyPrefab: {fileID: -3626944775743022083, guid: d55497484f5907d40bf241ffbd86cad6, type: 3}
-    gridPosition: {x: 7, y: 6}
+    gridPosition: {x: 10, y: 5}
     overrideHP: 0
     overrideMovement: 0
   - enemyPrefab: {fileID: -3626944775743022083, guid: ec5a39122e6f8f74f9f4533bd9c22204, type: 3}
-    gridPosition: {x: 9, y: 5}
+    gridPosition: {x: 10, y: 1}
     overrideHP: 0
     overrideMovement: 0

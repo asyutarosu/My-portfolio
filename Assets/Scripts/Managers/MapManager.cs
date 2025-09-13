@@ -395,7 +395,7 @@ public class MapManager : MonoBehaviour
                     //}
 
                     /////ToDo
-                    else if(_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
+                    else if(_selectedUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
                     {
                         
                         Debug.LogWarning("ユニットの入れ替えを実施します");
@@ -1766,6 +1766,8 @@ public class MapManager : MonoBehaviour
                     _selectedUnit.SetActedThisTrun();
                     ResetMoveState();
 
+                    TurnManager.Instance.CheckAllPlayerUnitActed();
+
                     //仮のステージクリア判定
                     TurnManager.Instance.CheckStageClear();
                 }
@@ -1995,9 +1997,6 @@ public class MapManager : MonoBehaviour
                 _selectedUnit.CurrentGridPosition,
                 targetTile.GridPosition,
                 _selectedUnit);
-
-       
-
 
         if (reacheleTiles != null && reacheleTiles.Count > 0)
         {
@@ -2418,8 +2417,8 @@ public class MapManager : MonoBehaviour
 
         //攻撃範囲指定のマンハッタン距離方での実装(まだ各typeとの連携は未実装)
         //一部数値を仮として実装2025/06
-        int minAttackRange = 2;//最小射程
-        int maxAttackRange = 2;//最大射程
+        int minAttackRange = currentUnit._minAttackRange;//最小射程
+        int maxAttackRange = currentUnit._maxAttackRange;//最大射程
 
         foreach (Vector2Int movePos in moveableTiles)
         {

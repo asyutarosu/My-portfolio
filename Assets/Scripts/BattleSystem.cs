@@ -10,7 +10,7 @@ public class BattleSystem : MonoBehaviour
     /// </summary>
     /// <param name="attacker">攻撃側のユニット</param>
     /// <param name="target">防衛側のユニット</param>
-    public void ResolveBattle_ShogiBase(Unit attacker, Unit target)
+    public void ResolveBattle_ShogiBasetest(Unit attacker, Unit target)
     {
         Debug.LogError($"{attacker.gameObject.name}が{target.gameObject.name}に攻撃！");
 

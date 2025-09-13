@@ -81,6 +81,9 @@ public class EnemyUnit : Unit
             case EnemyAIType.KimoAI:
                 yield return DecideDefensiveAction();
                 break;
+            case EnemyAIType.Distance:
+                yield return DistanceAI();
+                break;
             //他のAIを追加
             default:
                 Debug.Log($"{name}のAIタイプが未定義です:{_enemyAIType}");
@@ -600,12 +603,6 @@ public class EnemyUnit : Unit
                 Vector2Int bestPos = FindBestDefensivePosition(targetUnit, nearplayerUnit);
                 Vector2Int originalCurrentGridPosition = CurrentGridPosition;
 
-                //MyTile newTile = MapManager.Instance.GetTileAt(bestPos);
-                //if (newTile != null)
-                //{
-                //    MoveToGridPosition(bestPos, newTile); // 占有情報更新
-                //}
-
                 //AI行動
                 List<Vector2Int> AnimationPath = DijkstraPathfinder.GetPathToTarget(
                 originalCurrentGridPosition,
@@ -617,9 +614,7 @@ public class EnemyUnit : Unit
                 if(targetPlayer != null)
                 {
                     Debug.LogWarning("mooooooooooooa");
-
                     yield return EnemyAIbestMoveAttack(targetPlayer);
-
                 }
                 else
                 {
@@ -634,7 +629,6 @@ public class EnemyUnit : Unit
                         //アニメーションは Unit.AnimateMove を使用しているはずなので、以下に修正
                         yield return StartCoroutine(AnimateMove(AnimationPath));
 
-                        Debug.LogWarning("yaaaaaaaaaaaaaaaaaaaaaaaa");
                     }
                 }
             }
@@ -645,11 +639,230 @@ public class EnemyUnit : Unit
                 //AI行動
                 yield return HandleAggressiveAItest();
             }
-
         }
-        
-        
     }
+
+    /// <summary>
+    /// 安全な位置から遠距離攻撃するAI
+    /// </summary>
+    /// <returns></returns>
+    private IEnumerator DistanceAI()
+    {
+        //一番近いプレイヤーユニットから順に３体の取得(移動先の取得のため）
+        List<PlayerUnit> targetPlayers = GetThreeClosestPlayers();
+
+        Vector2Int bestPos = new Vector2Int();
+
+        //NotDoubleUnitAttackRange(targetPlayers);
+        Vector2Int targetsPos = NotDoubleUnitAttackRange(targetPlayers);
+        //取得した移動可能マスの候補からランダムに１マスを選択する（多少のランダム性を持たせることで動きを読みにくくする）
+        //List<Vector2Int> targetsPosList = targetsPos.ToList();
+        //int randomIndex = Random.Range(0, targetsPos.Count);
+
+        Vector2Int? NullableBestPos = NotOneUnitAttackRange(targetPlayers[0]);
+
+        if (targetPlayers != null && targetsPos != null)
+        {
+            bestPos = targetsPos;
+        }
+
+        //最も近い位置の攻撃可能なプレイヤーユニットを攻撃目標として取得
+        PlayerUnit targetPlayer = CanAttackPlayerUnit();
+        Vector2Int originalCurrentGridPosition = CurrentGridPosition;
+
+        if (targetPlayer != null)
+        {
+            MyTile newTile = MapManager.Instance.GetTileAt(bestPos);
+            if (newTile != null)
+            {
+                MoveToGridPosition(bestPos, newTile); // 占有情報更新
+            }
+
+            List<Vector2Int> AnimationPath = DijkstraPathfinder.GetPathToTarget(
+                originalCurrentGridPosition,
+                bestPos,
+                this);
+
+            if (AnimationPath != null && AnimationPath.Count > 0)
+            {
+                yield return StartCoroutine(AnimateMove(AnimationPath));
+
+                //ここに攻撃処理
+                BattleManager.Instance.ResolveBattle_ShogiBase(this, targetPlayer);
+
+                //ゲームオーバー判定
+                TurnManager.Instance.CheckGameOver();
+            }
+        }
+        else
+        {
+            //ターゲットが攻撃範囲外ならターゲットに近づくように移動
+            yield return StartCoroutine(PerformAggressiveMoveToAttackRange(targetPlayers[0]));
+        }
+    }
+
+    ///プレイヤーユニットへの遠距離攻撃用
+    /// ターゲットのプレイヤーユニットのから、攻撃を受けない位置で自身の移動可能マスを探す
+    /// nullを返すためにNullable
+    /// 
+    /// 現段階の将棋ベースでの戦闘ではあまり意味をなさないかもしれない
+    /// 動きとしては移動不可の地形などを挟んで攻撃をする際にターゲットの攻撃範囲が１のときに使える
+    /// 
+    private Vector2Int? NotOneUnitAttackRange(PlayerUnit targetPlayer)
+    {
+        Vector2Int? bestMoveTargetPos = Vector2Int.zero;
+        int maxPlayerDistance = -1;
+
+        HashSet<Vector2Int> attackableTiles = GetAttackRange(targetPlayer);
+
+        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableNodes =
+            DijkstraPathfinder.FindReachableTiles(this.CurrentGridPosition, this);
+
+
+        bool isMatch = false;
+        foreach (var attackPosCandidate in attackableTiles)
+        {
+            if (reachableNodes.ContainsKey(attackPosCandidate))
+            {
+                isMatch = true;
+                int distanceToPlayer = 
+                    Mathf.Abs(attackPosCandidate.x - targetPlayer.CurrentGridPosition.x) +
+                    Mathf.Abs(attackPosCandidate.y - targetPlayer.CurrentGridPosition.y);
+                if(distanceToPlayer > maxPlayerDistance)
+                {
+                    maxPlayerDistance = distanceToPlayer;
+                    bestMoveTargetPos = attackPosCandidate;
+                }
+            }
+        }
+        if (!isMatch)
+        {
+            bestMoveTargetPos = this.CurrentGridPosition;
+        }
+        return bestMoveTargetPos;
+    }
+
+    //////位置のみ
+    /// ターゲットのプレイヤーユニットの以外の周囲2体までの攻撃範囲を取得し、
+    /// ターゲットに攻撃可能でターゲット以外の周囲2体から攻撃を受けない位置を探す
+    private Vector2Int NotDoubleUnitAttackRange(List<PlayerUnit> playerUnits)
+    {
+        Vector2Int bestPos = new Vector2Int();
+        if(playerUnits == null || playerUnits.Count == 0)
+        {
+            return bestPos;
+        }
+        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableNodes =
+            DijkstraPathfinder.FindReachableTiles(this.CurrentGridPosition, this);
+
+        HashSet<Vector2Int> moveableTiles = new HashSet<Vector2Int>(reachableNodes.Keys.ToList());
+
+        HashSet<Vector2Int> sharedTiles1 = new HashSet<Vector2Int>();
+        HashSet<Vector2Int> sharedTiles2 = new HashSet<Vector2Int>();
+
+
+        //ターゲット以外に1体いる場合
+        if (playerUnits.Count == 2)
+        {
+            sharedTiles1 = GetAttackRange(playerUnits[1]);
+            moveableTiles.ExceptWith(sharedTiles1);
+        }
+        //ターゲット以外に2体以上いる場合
+        else if (playerUnits.Count == 3)
+        {
+            sharedTiles1 = GetAttackRange(playerUnits[1]);
+            moveableTiles.ExceptWith(sharedTiles1);
+            sharedTiles2 = GetAttackRange(playerUnits[2]);
+            moveableTiles.ExceptWith(sharedTiles2);
+        }
+
+        //ターゲットへ攻撃可能な位置の計算
+        HashSet<Vector2Int> potentialEnemyMoveToAttackPositions = CalculateEnemyMoveToAttackPositions(playerUnits[0].GetCurrentGridPostion());
+        int maxPlayerDistance = -1;
+        bool isMatch = false;
+        foreach (Vector2Int attackPosCandidate in potentialEnemyMoveToAttackPositions)
+        {
+            //移動可能かつ安全な位置と攻撃可能な位置の一致を検索
+            if (moveableTiles.Contains(attackPosCandidate))
+            {
+                isMatch = true;
+                bestPos = attackPosCandidate;
+                int distanceToPlayer =
+                     Mathf.Abs(attackPosCandidate.x - playerUnits[0].CurrentGridPosition.x) +
+                     Mathf.Abs(attackPosCandidate.y - playerUnits[0].CurrentGridPosition.y);
+                if (distanceToPlayer > maxPlayerDistance)
+                {
+                    maxPlayerDistance = distanceToPlayer;
+                    bestPos = attackPosCandidate;
+                }
+            }
+        }
+
+        //条件を満たしたマスがない場合は攻撃可能マスからランダムに取得する
+        if (!isMatch)
+        {
+            List<Vector2Int> tileList = potentialEnemyMoveToAttackPositions.ToList();
+            int ramdomIndex = Random.Range(0, tileList.Count);
+            bestPos = tileList[ramdomIndex];
+        }
+
+        if (moveableTiles != null)
+        {
+            foreach (Vector2Int tilePos in moveableTiles)
+            {
+                Debug.LogWarning($"デバックログ：（{tilePos.x}：{tilePos.y}）");
+
+            }
+            Debug.LogWarning($"合計数：：{moveableTiles.Count}");
+        }
+        Debug.LogWarning($"目標位置：：{bestPos}");
+
+        return bestPos;
+    }
+
+    ///プレイヤーユニットの攻撃範囲外のマスの取得
+    private HashSet<Vector2Int> GetAttackRange(PlayerUnit targetPlayer)
+    {
+
+        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableNodes =
+            DijkstraPathfinder.FindReachableTiles(targetPlayer.CurrentGridPosition, targetPlayer);
+
+        List<Vector2Int> moveableTiles = reachableNodes.Keys.ToList();
+
+        HashSet<Vector2Int> attackableTiles = new HashSet<Vector2Int>();
+
+        //攻撃範囲指定のマンハッタン距離方での実装(まだ各typeとの連携は未実装)
+        //一部数値を仮として実装2025/06
+        int minAttackRange = targetPlayer._minAttackRange;//最小射程
+        int maxAttackRange = targetPlayer._maxAttackRange;//最大射程
+
+        foreach (Vector2Int movePos in moveableTiles)
+        {
+            for (int x = -maxAttackRange; x <= maxAttackRange; x++)
+            {
+                for (int y = -maxAttackRange; y <= maxAttackRange; y++)
+                {
+                    //現在の移動可能タイル(movePos)からの相対座標
+                    Vector2Int potentialAttackPos = movePos + new Vector2Int(x, y);
+
+                    //マンハッタン距離計算
+                    int distance = Mathf.Abs(x) + Mathf.Abs(y);
+
+                    if (distance >= minAttackRange && distance <= maxAttackRange)
+                    {
+                        if (MapManager.Instance.IsValidGridPosition(potentialAttackPos))
+                        {
+                            attackableTiles.Add(potentialAttackPos);
+                        }
+                    }
+                }
+            }
+        }
+        Debug.LogWarning($"合計数合計数合計数：：{moveableTiles.Count}");
+
+        return attackableTiles;
+    }
+
 
     ///
     /// 
@@ -718,6 +931,8 @@ public class EnemyUnit : Unit
             }
         }
         
+        //-----------------------------------------------Aiの目標選定項目
+
         //対象の選定条件の追加：未完成
         if (!aiTypeChange)
         {
@@ -1121,12 +1336,8 @@ public class EnemyUnit : Unit
     //敵ユニットの行動を制御するメインメソッド
     public void TakeTurnNomalAI(PlayerUnit targetPlayerUnit)
     {
-        PlayerUnit targetPlayer = GetClosestPlayerUnit();
 
-        if(targetPlayer != null)
-        {
-           
-        }
+   
     }
 
     
@@ -1169,6 +1380,29 @@ public class EnemyUnit : Unit
             }
         }
         return closesetPlayer;
+    }
+
+    /// <summary>
+    /// 最も近いプレイヤーユニットから順に３体プレイヤーユニットを取得する
+    /// </summary>
+    /// <returns></returns>
+    public List<PlayerUnit> GetThreeClosestPlayers()
+    {
+        var allPlayerUnits = TurnManager.Instance.SetAllPlayerUnit();
+
+        //敵ユニットが存在しない、またはプレイヤーユニットの数が3未満の場合は、取得できる分だけ返す
+        if(allPlayerUnits == null || allPlayerUnits.Count == 0)
+        {
+            return new List<PlayerUnit>();
+        }
+
+        //LINQを使用して、距離でソートし、上位3つのユニットを取得
+        var closestPlayers = allPlayerUnits.OrderBy(player =>
+        Mathf.Abs(CurrentGridPosition.x - player.CurrentGridPosition.x) +
+        Mathf.Abs(CurrentGridPosition.y - player.CurrentGridPosition.y))
+            .Take(3).ToList();//上位3つの要素を取得
+
+        return closestPlayers;
     }
 
     //自身を除く最も近い敵ユニットを取得する

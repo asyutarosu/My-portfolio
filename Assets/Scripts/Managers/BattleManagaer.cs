@@ -67,6 +67,7 @@ public partial class BattleManager : MonoBehaviour
             //‰¼’iŠK‚Å‚Í«Šûƒx[ƒX‚Ì‚½‚ß•¡G‚Èˆ—‚ğÈ‚«ˆêŒ‚‚Å“|‚·
             target.TakeDamage(10);
         }
+
         // UŒ‚‘¤‚ªæ‚ÉUŒ‚‚µ‚½‚½‚ßA‘Šè‚ğ“|‚·
         //target.Die();
     }

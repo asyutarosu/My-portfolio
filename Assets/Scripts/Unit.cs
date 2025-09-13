@@ -25,6 +25,7 @@ public enum EnemyAIType
     Patrol,     //パトロール型：実装予定
     DefalutAI,  //常にプレイヤーユニットを狙う基本AI
     KimoAI,     //きもそうなAI
+    Distance,   //安全な位置から遠距離攻撃する
 }
 
 public partial class Unit : MonoBehaviour
@@ -289,7 +290,9 @@ public partial class Unit : MonoBehaviour
     public void SetActedThisTrun()
     {
         HasActedThisTurn |= true;
-        CurrentMovementPoints = 0;
+        //一時的に変更　0->BaseMovement
+        //CurrentMovementPoints = 0;
+        CurrentMovementPoints = BaseMovement;
         SetSelected(false );
         UpdateVisualColor();
     }
