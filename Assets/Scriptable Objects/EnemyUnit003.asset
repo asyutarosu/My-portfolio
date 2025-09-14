@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 97eb5763484b25f418a024d1eca2053c, type: 3}
-  m_Name: PlayerUnit002
+  m_Name: EnemyUnit003
   m_EditorClassIdentifier: 
-  <UnitId>k__BackingField: P002
-  <UnitName>k__BackingField: P002
+  <UnitId>k__BackingField: E002
+  <UnitName>k__BackingField: E002
   <Type>k__BackingField: 0
-  <FactionType>k__BackingField: 0
-  <EnemyAIType>k__BackingField: 0
+  <FactionType>k__BackingField: 1
+  <EnemyAIType>k__BackingField: 4
   <MaxHP>k__BackingField: 1
-  <BaseMovement>k__BackingField: 5
+  <BaseMovement>k__BackingField: 0
   <BaseAttackPower>k__BackingField: 0
   <BaseDefensePower>k__BackingField: 0
   <BaseSkill>k__BackingField: 0

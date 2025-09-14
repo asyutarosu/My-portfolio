@@ -395,7 +395,7 @@ public class MapManager : MonoBehaviour
                     //}
 
                     /////ToDo
-                    else if(_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
+                    else if(_selectedUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
                     {
                         
                         Debug.LogWarning("ユニットの入れ替えを実施します");
@@ -449,7 +449,7 @@ public class MapManager : MonoBehaviour
                 case "001":
                     PlayerUnit player002 = Instantiate(_player001Prefab, transform);
                     PlaceUnit(player002, gridPos);
-                    //_turnManager.AddPlayerUnit(player002);
+                    //_turnManager.Geta(player002);
                     break;
                 case "002":
                     PlayerUnit player003 = Instantiate(_player002Prefab, transform);
@@ -839,7 +839,7 @@ public class MapManager : MonoBehaviour
     }
 
 
-    ///////////////////////戦闘フェイズ
+    /////////////////////////////////////戦闘フェイズ
 
 
     //初期化処理
@@ -1122,6 +1122,10 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    
+    //-----------------------天地鳴動のシステムメソッド群------------------------------
+    //
+    //
     /// <summary>
     /// 特定のグリッドの地形タイプを変更する(不確定要素)
     /// </summary>
@@ -1271,7 +1275,13 @@ public class MapManager : MonoBehaviour
 
         ChangeMultipleTerrains(tileToChange,newType);
     }
+    //
+    //
+    //-----------------------天地鳴動のシステムメソッド群------------------------------
+
+
     
+
 
     /// <summary>
     /// マップ上のタイルのグリッド座標を取得する
@@ -1756,6 +1766,8 @@ public class MapManager : MonoBehaviour
                     _selectedUnit.SetActedThisTrun();
                     ResetMoveState();
 
+                    TurnManager.Instance.CheckAllPlayerUnitActed();
+
                     //仮のステージクリア判定
                     TurnManager.Instance.CheckStageClear();
                 }
@@ -1985,9 +1997,6 @@ public class MapManager : MonoBehaviour
                 _selectedUnit.CurrentGridPosition,
                 targetTile.GridPosition,
                 _selectedUnit);
-
-       
-
 
         if (reacheleTiles != null && reacheleTiles.Count > 0)
         {
@@ -2408,8 +2417,8 @@ public class MapManager : MonoBehaviour
 
         //攻撃範囲指定のマンハッタン距離方での実装(まだ各typeとの連携は未実装)
         //一部数値を仮として実装2025/06
-        int minAttackRange = 2;//最小射程
-        int maxAttackRange = 2;//最大射程
+        int minAttackRange = currentUnit._minAttackRange;//最小射程
+        int maxAttackRange = currentUnit._maxAttackRange;//最大射程
 
         foreach (Vector2Int movePos in moveableTiles)
         {
@@ -2898,13 +2907,14 @@ public class MapManager : MonoBehaviour
         _isAttacking = false;
 
 
+
         ClearAllHighlights();
         //////ClearMovableRangeDisplay();
         ClearPathLine();
     }
 
 
-    ////////////////////////////////////////TIlemapを使ったメソッド群
+    ////////////////////////////////////////TIlemapを使ったメソッド群////////////////////////////////////////////
 
     public class Tile
     {

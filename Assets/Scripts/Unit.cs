@@ -16,6 +16,18 @@ public enum UnitType
     Mountain//山賊
 }
 
+
+public enum EnemyAIType
+{
+    notEnemy,   //敵ユニットではない
+    Aggreeive,  //積極的にプレイヤーを追う
+    Stationary, //特定のマスに侵入されるまで動かない
+    Patrol,     //パトロール型：実装予定
+    DefalutAI,  //常にプレイヤーユニットを狙う基本AI
+    KimoAI,     //きもそうなAI
+    Distance,   //安全な位置から遠距離攻撃する
+}
+
 public partial class Unit : MonoBehaviour
 {
     [field:SerializeField]public string UnitId { get;private set; }//ユニットのユニークID
@@ -23,10 +35,18 @@ public partial class Unit : MonoBehaviour
     [field:SerializeField]public UnitType Type { get; private set; }//ユニットタイプ
     [field: SerializeField] protected FactionType _factionType = FactionType.Player;//デフォルトはプレイヤー
     public FactionType Faction => _factionType;
+    
+
+    /////
+    [field: SerializeField] protected EnemyAIType _enemyAIType { get; private set; }//敵のAIタイプ
+    public EnemyAIType EnemyAIType => _enemyAIType;
 
     [field:SerializeField]public int CurrentHP { get; private set; }//現在のHP
     [field:SerializeField]public int MaxHP { get; private set; }//最大HP
     [field: SerializeField] public int BaseMovement { get; private set; }//基礎移動力
+
+    //ToDo
+    //一時的に別の移動ポイントとして運用（以前までは想定して作成していたがまだ明確な運用はしていなかった）
     [field: SerializeField] public int CurrentMovementPoints { get; private set; }//現在の移動力
     [field: SerializeField] public int AttackPower { get; private set; }//攻撃力
     [field: SerializeField] public int DefensePower { get; private set; }//防御力
@@ -34,11 +54,16 @@ public partial class Unit : MonoBehaviour
 
     [field: SerializeField]public int Speed { get; private set; }//速さ
 
+
+    //天地鳴動の移動システム関連
+    [field: SerializeField] public int MaxMovementPoint { get; private set; }//移動ポイントの最大値
+    [field: SerializeField] public int CurrentMovementPoints_tentimeidou { get; private set; }//一時的に別の移動ポイントを宣言
+
     public bool IsAlive => CurrentHP > 0;//ユニットの死亡判定フラグ
 
     //攻撃範囲:仮実装
-    [SerializeField] public int _minAttackRange = 1;//最小攻撃射程
-    [SerializeField] public int _maxAttackRange = 2;//最大攻撃射程
+    [field: SerializeField] public int _minAttackRange { get; private set; }//最小攻撃射程
+    [field: SerializeField] public int _maxAttackRange { get; private set; }//最大攻撃射程
 
 
     [field:SerializeField]protected UnitData unitData { get; private set; }//ユニットデータ取得用
@@ -82,13 +107,17 @@ public partial class Unit : MonoBehaviour
             UnitName  = unitData.UnitName;
             Type = unitData.Type;
             _factionType = unitData.FactionType;
+            _enemyAIType = unitData.EnemyAIType;
             CurrentHP = unitData.MaxHP;
             MaxHP = unitData.MaxHP;
             BaseMovement = unitData.BaseMovement;
             CurrentMovementPoints = BaseMovement;
             AttackPower = unitData.BaseAttackPower;
             DefensePower = unitData.BaseDefensePower;
+            _minAttackRange = unitData.MinAttackRange;
+            _maxAttackRange = unitData.MaxAttackRange;
 
+            Debug.Log($"!!!!!::ユニットの勢力{_factionType},AIのタイプ{_enemyAIType}");
             Debug.Log($"{UnitName} (ID: {UnitId}) のステータスをUnitDataから設定しました。" +
                       $"HP: {CurrentHP}/{MaxHP}, 移動力: {BaseMovement}, 攻撃力: {AttackPower}, 防御力: {DefensePower}");
         }
@@ -131,7 +160,8 @@ public partial class Unit : MonoBehaviour
         CurrentLevel = 1;
         HasActedThisTurn = false;
 
-
+        MaxMovementPoint = 20;
+        CurrentMovementPoints_tentimeidou = MaxMovementPoint;
 
         //武器の初期化処理など
         //仮データ2025/06
@@ -269,7 +299,9 @@ public partial class Unit : MonoBehaviour
     public void SetActedThisTrun()
     {
         HasActedThisTurn |= true;
-        CurrentMovementPoints = 0;
+        //一時的に変更　0->BaseMovement
+        //CurrentMovementPoints = 0;
+        CurrentMovementPoints = BaseMovement;
         SetSelected(false );
         UpdateVisualColor();
     }
@@ -366,6 +398,13 @@ public partial class Unit : MonoBehaviour
             transform.position = targetPos;
         }
         Debug.Log($"{UnitName} の視覚的な移動が完了しました。");
+        Debug.LogWarning($"{path.Count -1}の移動ポイントを消費しました。");
+        
+        //一時的にコメントアウト化
+        //CurrentMovementPoints -= path.Count -1;
+
+        Debug.LogWarning($"残りの移動ポイント：：{CurrentMovementPoints}");
+
     }
 
 
@@ -440,6 +479,17 @@ public partial class Unit : MonoBehaviour
             OccupyingTile.OccupyingUnit = null;
         }
     }
+
+    //------------------------------------天地鳴動の固有システム群---------------------------------
+    
+    
+    public void RestMovementPoints()
+    {
+        CurrentMovementPoints_tentimeidou = MaxMovementPoint;
+    }
+
+    //----------------------------------------------------------------------------------------
+
 
     //デバッグ用：マウスでユニットの座標確認用
     protected virtual void OnMouseEnter()
