@@ -2907,13 +2907,14 @@ public class MapManager : MonoBehaviour
         _isAttacking = false;
 
 
+
         ClearAllHighlights();
         //////ClearMovableRangeDisplay();
         ClearPathLine();
     }
 
 
-    ////////////////////////////////////////TIlemapを使ったメソッド群
+    ////////////////////////////////////////TIlemapを使ったメソッド群////////////////////////////////////////////
 
     public class Tile
     {
