@@ -30,6 +30,8 @@ public enum EnemyAIType
 
 public partial class Unit : MonoBehaviour
 {
+    public static Unit Instance { get; private set; }
+
     [field:SerializeField]public string UnitId { get;private set; }//ユニットのユニークID
     [field:SerializeField]public string UnitName { get; private set; }//ユニット名
     [field:SerializeField]public UnitType Type { get; private set; }//ユニットタイプ
@@ -55,10 +57,7 @@ public partial class Unit : MonoBehaviour
     [field: SerializeField]public int Speed { get; private set; }//速さ
 
 
-    //天地鳴動の移動システム関連
-    [field: SerializeField] public int MaxMovementPoint { get; private set; }//移動ポイントの最大値
-    [field: SerializeField] public int CurrentMovementPoints_tentimeidou { get; private set; }//一時的に別の移動ポイントを宣言
-
+    
     public bool IsAlive => CurrentHP > 0;//ユニットの死亡判定フラグ
 
     //攻撃範囲:仮実装
@@ -160,8 +159,7 @@ public partial class Unit : MonoBehaviour
         CurrentLevel = 1;
         HasActedThisTurn = false;
 
-        MaxMovementPoint = 20;
-        CurrentMovementPoints_tentimeidou = MaxMovementPoint;
+        
 
         //武器の初期化処理など
         //仮データ2025/06
@@ -398,13 +396,23 @@ public partial class Unit : MonoBehaviour
             transform.position = targetPos;
         }
         Debug.Log($"{UnitName} の視覚的な移動が完了しました。");
-        Debug.LogWarning($"{path.Count -1}の移動ポイントを消費しました。");
         
-        //一時的にコメントアウト化
-        //CurrentMovementPoints -= path.Count -1;
-
-        Debug.LogWarning($"残りの移動ポイント：：{CurrentMovementPoints}");
-
+        if(Faction == FactionType.Player)
+        {
+            TurnManager.Instance.SetConfirmMovementPoints(path.Count - 1);
+        }
+        if(Faction == FactionType.Enemy)
+        {
+            if (path.Count > 2)
+            {
+                Debug.LogWarning($"敵{UnitName}が{path.Count - 1}の移動ポイントを消費しました。");
+                TurnManager.Instance.consumptionEnemyCurrentMovementPoints_tentimeidou(path.Count - 1);
+            }
+            else
+            {
+                Debug.LogWarning($"敵{UnitName}が{path.Count - 1}の移動ポイントを消費しました。");
+            }
+        }
     }
 
 
@@ -480,16 +488,7 @@ public partial class Unit : MonoBehaviour
         }
     }
 
-    //------------------------------------天地鳴動の固有システム群---------------------------------
     
-    
-    public void RestMovementPoints()
-    {
-        CurrentMovementPoints_tentimeidou = MaxMovementPoint;
-    }
-
-    //----------------------------------------------------------------------------------------
-
 
     //デバッグ用：マウスでユニットの座標確認用
     protected virtual void OnMouseEnter()

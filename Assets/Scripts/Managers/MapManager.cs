@@ -2745,27 +2745,49 @@ public class MapManager : MonoBehaviour
         //    return;
         //}
 
+
+
+        //ToDo
+        //if(_selectedUnit != null && _selectedUnit.Faction == FactionType.Player && _isMovingOrPlanning)
+        //{
+        //    MyTile newTile = GetTileAt(_currentPlannedMovePositon);
+        //    if (newTile != null)
+        //    {
+        //        _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
+        //        _selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
+        //    }
+        //    _selectedUnit.SetActedThisTrun();
+        //    ResetMoveState();
+        //    Debug.Log("移動を確定しました。");
+        //}
+        //else
+        //{
+        //    TurnManager.Instance.consumptionEnemyCurrentMovementPoints_tentimeidou(1);
+        //}
+
+
+        //一時的にコメントアウト化
         if (_selectedUnit == null || !_isMovingOrPlanning)
         {
             return;
         }
 
-
+        //一時的にコメントアウト化
         MyTile newTile = GetTileAt(_currentPlannedMovePositon);
-        if(newTile != null)
+        if (newTile != null)
         {
             _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
             _selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
         }
 
+        _turnManager.consumptionPlayerCurrentMovementPoints_tentimeidou();
 
-       
-
+        //一時的にコメントアウト化
         _selectedUnit.SetActedThisTrun();
         ResetMoveState();
         Debug.Log("移動を確定しました。");
 
-        
+
 
 
         //_isMovingOrPlanning = false;

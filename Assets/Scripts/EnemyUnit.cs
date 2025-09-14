@@ -806,16 +806,16 @@ public class EnemyUnit : Unit
             bestPos = tileList[ramdomIndex];
         }
 
-        if (moveableTiles != null)
-        {
-            foreach (Vector2Int tilePos in moveableTiles)
-            {
-                Debug.LogWarning($"デバックログ：（{tilePos.x}：{tilePos.y}）");
+        //if (moveableTiles != null)
+        //{
+        //    foreach (Vector2Int tilePos in moveableTiles)
+        //    {
+        //        Debug.LogWarning($"デバックログ：（{tilePos.x}：{tilePos.y}）");
 
-            }
-            Debug.LogWarning($"合計数：：{moveableTiles.Count}");
-        }
-        Debug.LogWarning($"目標位置：：{bestPos}");
+        //    }
+        //    Debug.LogWarning($"合計数：：{moveableTiles.Count}");
+        //}
+        //Debug.LogWarning($"目標位置：：{bestPos}");
 
         return bestPos;
     }

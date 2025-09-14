@@ -82,6 +82,11 @@ public partial class GameManager : MonoBehaviour
 
     [SerializeField]private TurnManager _turnManager;
 
+
+
+    
+
+
     //スクリプトインスタンスがロードされたときに呼び出される
     void Awake()
     {

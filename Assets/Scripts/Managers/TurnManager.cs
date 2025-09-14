@@ -33,6 +33,14 @@ public class TurnManager : MonoBehaviour
     [SerializeField] private float _terrainChangeChance = 1.0f;//地形変化が発生する確率（仮実装は100％）
     [SerializeField]private float _tentimeidouChance = 1.0f;//大規模な地形変化が発生する確率（仮実装は100％）
 
+    //天地鳴動メインシステム：移動
+    [field: SerializeField] public int PlayerMaxMovementPoint { get; private set; }//移動ポイントの最大値
+    [field: SerializeField] public int EnemyMaxMovementPoint { get; private set; }//移動ポイントの最大値
+    [field: SerializeField] public int PlayerCurrentMovementPoints_tentimeidou { get; private set; }//一時的に別の移動ポイントを宣言
+    [field: SerializeField] public int ConfirmMovementPoints { get; private set; }//移動確定時の消費移動ポイント
+    [field: SerializeField] public int EnemyCurrentMovementPoints_tentimeidou { get; private set; }//一時的に別の移動ポイントを宣言
+
+
 
     private void Awake()
     {
@@ -63,6 +71,11 @@ public class TurnManager : MonoBehaviour
 
         CurrnetTurnState = TurnState.PreGame;
         CurrentTurnNumber = 1;
+
+        PlayerMaxMovementPoint = 20;
+        PlayerCurrentMovementPoints_tentimeidou = PlayerMaxMovementPoint;
+        EnemyMaxMovementPoint = 20;
+        EnemyCurrentMovementPoints_tentimeidou = EnemyMaxMovementPoint;
 
         //一時的にコメントアウト：MapManagerでリアルタイムでプレイヤーユニットのリストを更新する方法を試すため
         //ユニットリストを取得
@@ -222,6 +235,8 @@ public class TurnManager : MonoBehaviour
         Debug.LogWarning($"プレイヤーの数：{_playerUnits.Count}");
         Debug.LogWarning($"敵の数：{_enemyUnits.Count}");
 
+        //移動ポイントをリセット
+        RestMovementPoints();
 
         //全てのプレイヤーユニットの行動状態をリセット
         foreach (Unit unit in _allUnits)
@@ -308,6 +323,9 @@ public class TurnManager : MonoBehaviour
         Debug.Log("敵ターン開始");
 
         _currentEnemyUnitIndex = 0;//敵ユニットの行動順は固定2025/07
+
+        RestMovementPoints();
+
 
         //全ての敵ユニットの行動状態をリセット
         foreach (Unit unit in _allUnits)
@@ -530,6 +548,50 @@ public class TurnManager : MonoBehaviour
         return types[4];
         //return types[Random.Range(0, types.Length)];
     }
+
+
+    //------------------------------------天地鳴動の移動システム群---------------------------------
+
+    //移動ポイントをリセットする
+    public void RestMovementPoints()
+    {
+        PlayerCurrentMovementPoints_tentimeidou = PlayerMaxMovementPoint;
+        EnemyCurrentMovementPoints_tentimeidou = EnemyMaxMovementPoint;
+        Debug.LogWarning($"リセット後の各移動ポイント：：プレイヤー：：{PlayerCurrentMovementPoints_tentimeidou}");
+        Debug.LogWarning($"リセット後の各移動ポイント：：敵：：{EnemyCurrentMovementPoints_tentimeidou}");
+    }
+
+    //プレイヤーの移動ポイントを消費
+    public void consumptionPlayerCurrentMovementPoints_tentimeidou()
+    {
+        if(ConfirmMovementPoints > 0)
+        {
+            PlayerCurrentMovementPoints_tentimeidou -= ConfirmMovementPoints;
+        }
+        Debug.LogWarning($"消費移動ポイント：：{ConfirmMovementPoints}");
+        Debug.LogWarning($"残りの移動ポイント：：{PlayerCurrentMovementPoints_tentimeidou}");
+    }
+
+    //プレイヤーユニットの移動キャンセル時の移動ポイントの保持
+    public int SetConfirmMovementPoints(int movepoints)
+    {
+        ConfirmMovementPoints = 0;
+        ConfirmMovementPoints += movepoints;
+        return ConfirmMovementPoints;
+    }
+
+    //敵の移動ポイントを消費
+    public void consumptionEnemyCurrentMovementPoints_tentimeidou(int points)
+    {
+        if (points > 0)
+        {
+            EnemyCurrentMovementPoints_tentimeidou -= points;
+        }
+        Debug.LogWarning($"残りの移動ポイント：：{EnemyCurrentMovementPoints_tentimeidou}");
+    }
+
+    //----------------------------------------------------------------------------------------
+
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
