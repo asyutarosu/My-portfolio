@@ -331,6 +331,7 @@ public static class DijkstraPathfinder
         frontier.Enqueue(startNode, 0);
         visiteNodes[startPos] = startNode;
 
+
         //—Dæ“xƒLƒ…[‚ª‹ó‚É‚È‚é‚Ü‚Å’Tõ‚ð‘±‚¯‚é
         while(frontier.Count > 0)
         {

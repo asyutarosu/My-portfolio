@@ -72,9 +72,9 @@ public class TurnManager : MonoBehaviour
         CurrnetTurnState = TurnState.PreGame;
         CurrentTurnNumber = 1;
 
-        PlayerMaxMovementPoint = 20;
+        PlayerMaxMovementPoint = 10;
         PlayerCurrentMovementPoints_tentimeidou = PlayerMaxMovementPoint;
-        EnemyMaxMovementPoint = 20;
+        EnemyMaxMovementPoint = 4;
         EnemyCurrentMovementPoints_tentimeidou = EnemyMaxMovementPoint;
 
         //一時的にコメントアウト：MapManagerでリアルタイムでプレイヤーユニットのリストを更新する方法を試すため
@@ -580,6 +580,20 @@ public class TurnManager : MonoBehaviour
         return ConfirmMovementPoints;
     }
 
+    //プレイヤーの現在の移動ポイントを取得する
+    public int SetPlayerCurrentMovementPoints()
+    {
+        Debug.LogWarning($"現在の移動ポイント：：{PlayerCurrentMovementPoints_tentimeidou}");
+        return PlayerCurrentMovementPoints_tentimeidou;
+    }
+
+    //敵の現在の移動ポイントを取得する
+    public int SetEnemyCurrentMovementPoints()
+    {
+        return EnemyCurrentMovementPoints_tentimeidou;
+    }
+
+
     //敵の移動ポイントを消費
     public void consumptionEnemyCurrentMovementPoints_tentimeidou(int points)
     {
@@ -587,6 +601,7 @@ public class TurnManager : MonoBehaviour
         {
             EnemyCurrentMovementPoints_tentimeidou -= points;
         }
+        
         Debug.LogWarning($"残りの移動ポイント：：{EnemyCurrentMovementPoints_tentimeidou}");
     }
 

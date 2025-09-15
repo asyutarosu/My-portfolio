@@ -2365,6 +2365,13 @@ public class MapManager : MonoBehaviour
             return;
         }
 
+        //現在の移動ポイントとユニットの移動力を比較して現在の移動ポイント以上なら移動力を変更
+        int CurrentMovePoint = TurnManager.Instance.PlayerCurrentMovementPoints_tentimeidou;
+        if(unit.CurrentMovementPoints > CurrentMovePoint)
+        {
+            unit.MovementPoints();
+        }
+
         Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableNodes =
             DijkstraPathfinder.FindReachableTiles(unit.CurrentGridPosition, unit);
 

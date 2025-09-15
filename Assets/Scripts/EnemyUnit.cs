@@ -180,6 +180,14 @@ public class EnemyUnit : Unit
         Debug.Log($"{name}: 現在の移動力: {CurrentMovementPoints}"); // !!! ここで実際の移動力を確認 !!!
 
 
+        //現在の移動ポイントとユニットの移動力を比較して現在の移動ポイント以上なら移動力を変更
+        int CurrentMovePoint = TurnManager.Instance.EnemyCurrentMovementPoints_tentimeidou;
+        if (this.CurrentMovementPoints > CurrentMovePoint)
+        {
+            this.MovementPoints();
+        }
+
+
         //最も近いかつ移動コストが最小の位置にいるプレイヤーユニットへの移動目標を決定
         Vector2Int bestMoveTargetPos = Vector2Int.zero;
         List<Vector2Int> bestPath = null;
@@ -665,6 +673,8 @@ public class EnemyUnit : Unit
         {
             bestPos = targetsPos;
         }
+        Debug.LogWarning($"%%%%%%%%%%%%%%%%%%%%%%%BestPos::{bestPos}");
+
 
         //最も近い位置の攻撃可能なプレイヤーユニットを攻撃目標として取得
         PlayerUnit targetPlayer = CanAttackPlayerUnit();
@@ -747,7 +757,7 @@ public class EnemyUnit : Unit
     /// ターゲットに攻撃可能でターゲット以外の周囲2体から攻撃を受けない位置を探す
     private Vector2Int NotDoubleUnitAttackRange(List<PlayerUnit> playerUnits)
     {
-        Vector2Int bestPos = new Vector2Int();
+        Vector2Int bestPos = CurrentGridPosition;
         if(playerUnits == null || playerUnits.Count == 0)
         {
             return bestPos;
@@ -756,6 +766,8 @@ public class EnemyUnit : Unit
             DijkstraPathfinder.FindReachableTiles(this.CurrentGridPosition, this);
 
         HashSet<Vector2Int> moveableTiles = new HashSet<Vector2Int>(reachableNodes.Keys.ToList());
+
+        HashSet<Vector2Int> moveToPositions = new HashSet<Vector2Int>(reachableNodes.Keys.ToList());
 
         HashSet<Vector2Int> sharedTiles1 = new HashSet<Vector2Int>();
         HashSet<Vector2Int> sharedTiles2 = new HashSet<Vector2Int>();
@@ -775,6 +787,7 @@ public class EnemyUnit : Unit
             sharedTiles2 = GetAttackRange(playerUnits[2]);
             moveableTiles.ExceptWith(sharedTiles2);
         }
+
 
         //ターゲットへ攻撃可能な位置の計算
         HashSet<Vector2Int> potentialEnemyMoveToAttackPositions = CalculateEnemyMoveToAttackPositions(playerUnits[0].GetCurrentGridPostion());
@@ -796,14 +809,27 @@ public class EnemyUnit : Unit
                     bestPos = attackPosCandidate;
                 }
             }
+
         }
 
         //条件を満たしたマスがない場合は攻撃可能マスからランダムに取得する
         if (!isMatch)
         {
-            List<Vector2Int> tileList = potentialEnemyMoveToAttackPositions.ToList();
-            int ramdomIndex = Random.Range(0, tileList.Count);
-            bestPos = tileList[ramdomIndex];
+            List<Vector2Int> tileList = new List<Vector2Int>();
+            foreach (Vector2Int attackPosCandidate in potentialEnemyMoveToAttackPositions)
+            {
+                if (moveToPositions.Contains(attackPosCandidate))
+                {
+                    tileList.Add(attackPosCandidate);
+                }
+            }
+            Debug.LogWarning($"%%%%%%%%%%%%%%%%%%%%%%%88888888888888808[]{tileList.Count}][");
+            if (tileList.Count > 0)
+            {
+                int ramdomIndex = Random.Range(0, tileList.Count);
+                bestPos = tileList[ramdomIndex];
+            }
+
         }
 
         //if (moveableTiles != null)
@@ -833,7 +859,7 @@ public class EnemyUnit : Unit
 
         //攻撃範囲指定のマンハッタン距離方での実装(まだ各typeとの連携は未実装)
         //一部数値を仮として実装2025/06
-        int minAttackRange = targetPlayer._minAttackRange;//最小射程
+        int minAttackRange = 1;//最小射程
         int maxAttackRange = targetPlayer._maxAttackRange;//最大射程
 
         foreach (Vector2Int movePos in moveableTiles)
@@ -916,13 +942,21 @@ public class EnemyUnit : Unit
             }
         }
 
+        //残移動ポイントと自身の移動力を比較して自身の移動力を更新
+        int CurrentMovePoint = TurnManager.Instance.EnemyCurrentMovementPoints_tentimeidou;
+        if (this.CurrentMovementPoints > CurrentMovePoint)
+        {
+            this.MovementPoints();
+        }
+        Debug.LogWarning($"uuuuuuuuuuuuu::::::{CurrentMovePoint}");
+
         ///////ToDo
         if (test)
         {
 
             //最も近いターゲットが見つかったが、それが移動力を超える距離である場合、
             //ターゲットをnullにする
-            int CanAttackRange = this.BaseMovement + this._maxAttackRange;
+            int CanAttackRange = this.CurrentMovementPoints + this._maxAttackRange;
 
             if (closestPlayer != null && minDistance > CanAttackRange)
             {
@@ -950,7 +984,7 @@ public class EnemyUnit : Unit
     }
 
 
-    ////////ToDo
+    
     //敵AIのために追加：指定マスからの周囲2マスの取得
     /// <summary>
     /// 
@@ -1009,6 +1043,8 @@ public class EnemyUnit : Unit
 
         //目標のユニットの周囲２マス目のマスを取得
         var surroundingTiles = GetSurroundingTiles(targetenemyUnit);
+
+        
 
         //自身の移動可能マスを計算
         Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableTiles =
@@ -1152,6 +1188,14 @@ public class EnemyUnit : Unit
 
         Vector2Int originalCurrentGridPosition = CurrentGridPosition;
 
+        
+        //現在の移動ポイントとユニットの移動力を比較して現在の移動ポイント以上なら移動力を変更
+        int CurrentMovePoint = TurnManager.Instance.EnemyCurrentMovementPoints_tentimeidou;
+        if (this.CurrentMovementPoints > CurrentMovePoint)
+        {
+            this.MovementPoints();
+        }
+
         Dictionary<Vector2Int, DijkstraPathfinder.PathNode> TestreachableNodes =
             DijkstraPathfinder.FindReachableTiles(this.CurrentGridPosition, this);
 
@@ -1266,6 +1310,14 @@ public class EnemyUnit : Unit
     private IEnumerator PerformAggressiveMoveToAttackRange(Unit targetUnit)
     {
         //Dictionary<Vector2Int, PathNodes> reachableTiles = DijkstraPathfinder.FindReachableNodes(GetCurrentGridPostion(), this);
+
+        //ToDo
+        //現在の移動ポイントとユニットの移動力を比較して現在の移動ポイント以上なら移動力を変更
+        int CurrentMovePoint = TurnManager.Instance.EnemyCurrentMovementPoints_tentimeidou;
+        if (this.CurrentMovementPoints > CurrentMovePoint)
+        {
+            this.MovementPoints();
+        }
 
         Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableTiles =
             DijkstraPathfinder.FindReachableTiles(CurrentGridPosition, this);

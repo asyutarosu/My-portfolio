@@ -87,7 +87,6 @@ public partial class Unit : MonoBehaviour
     [SerializeField] private float _visualMoveSpeed = 5.0f;//視覚的移動速度
     
 
-
     protected virtual void Awake()
     {
         _spriteRenderer = GetComponent<SpriteRenderer>();
@@ -190,6 +189,7 @@ public partial class Unit : MonoBehaviour
         }
         Debug.Log($"移動力を消費しました。残り：{CurrentMovementPoints}");
     }
+
 
     /// <summary>
     /// ユニットが指定されたコストで移動可能か判定
@@ -297,7 +297,7 @@ public partial class Unit : MonoBehaviour
     public void SetActedThisTrun()
     {
         HasActedThisTurn |= true;
-        //一時的に変更　0->BaseMovement
+        //一時的に変更 0->BaseMovement
         //CurrentMovementPoints = 0;
         CurrentMovementPoints = BaseMovement;
         SetSelected(false );
@@ -319,6 +319,19 @@ public partial class Unit : MonoBehaviour
     public void ResetMovementPoints()
     {
         CurrentMovementPoints = BaseMovement;
+    }
+
+    //現在の移動ポイントを取得して各ユニットのタイプに応じて移動力に設定する
+    public void MovementPoints()
+    {
+        if(Faction == FactionType.Player)
+        {
+            CurrentMovementPoints = TurnManager.Instance.SetPlayerCurrentMovementPoints();
+        }
+        if(Faction == FactionType.Enemy)
+        {
+            CurrentMovementPoints = TurnManager.Instance.SetEnemyCurrentMovementPoints();
+        }
     }
 
     //占有タイルを更新する
