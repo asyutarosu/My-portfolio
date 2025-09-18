@@ -416,7 +416,7 @@ public partial class Unit : MonoBehaviour
         }
         if(Faction == FactionType.Enemy)
         {
-            if (path.Count > 2)
+            if (path.Count > 0)
             {
                 Debug.LogWarning($"敵{UnitName}が{path.Count - 1}の移動ポイントを消費しました。");
                 TurnManager.Instance.consumptionEnemyCurrentMovementPoints_tentimeidou(path.Count - 1);

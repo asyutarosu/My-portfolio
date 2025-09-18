@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;//シーン管理のため導入
 using System.Collections.Generic;//リストを使うため導入
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// ゲームの各シーンを定義する列挙型
@@ -65,10 +66,16 @@ public partial class GameManager : MonoBehaviour
     [SerializeField]private GameMode _currentgameMode;//配置モードとマップモードの切り替え用
     public GameMode CurrentMode => _currentgameMode;
 
-    [SerializeField] private GameObject _placementUI; //仮：配置UI
-    [SerializeField] private GameObject _placementUI2; //仮：配置UI
+    [SerializeField] private GameObject _placementUI; //仮：配置UI（配置モード専用）
+    [SerializeField] private GameObject _placementUI2; //仮：配置UI（配置モード専用）
     public string ButtonText = "";
-    [SerializeField] private GameObject _placeModeUI;//仮：配置モードUI
+    [SerializeField] private GameObject _placeModeUI;//仮：配置モードUI（配置モード専用）
+
+    [SerializeField]private GameObject _unitDereatUI;//仮：ユニットの削除UI（配置モード専用）
+
+    [SerializeField] private TMP_Text _movementPointUI;
+
+    [SerializeField] private UIManager _uiManager;
 
     //仮：実装
     //配置したいグリッド座標のリスト
@@ -148,6 +155,7 @@ public partial class GameManager : MonoBehaviour
         {
             _mapManager = FindFirstObjectByType<MapManager>();
             _turnManager = FindFirstObjectByType<TurnManager>();
+            _uiManager = FindFirstObjectByType<UIManager>();
 
             //_turnManager.ClearAllUnitsList();
 
@@ -155,6 +163,8 @@ public partial class GameManager : MonoBehaviour
             //_placementUI2 = GameObject.FindWithTag("UnitsPlaceButton");
 
             _placeModeUI = GameObject.FindWithTag("PlacementUI");
+            _unitDereatUI = GameObject.FindWithTag("DereatButton");
+            _movementPointUI = GameObject.Find("MovementPoints").GetComponent<TMP_Text>();
 
             GameObject[] UIButtons = GameObject.FindGameObjectsWithTag("UnitsPlaceButton");
 
@@ -186,7 +196,7 @@ public partial class GameManager : MonoBehaviour
             //_placementUI2 = UIButtons[1];
 
 
-            if (_mapManager == null || _turnManager == null)
+            if (_mapManager == null || _turnManager == null || _uiManager == null)
             {
                 Debug.LogError("シーンの初期化に失敗しました。必要なコンポーネントが見つかりません");
             }
@@ -221,6 +231,7 @@ public partial class GameManager : MonoBehaviour
             case BattlePhase.BattleDeployment:
                 break;
             case BattlePhase.BattleMain:
+                _movementPointUI.enabled = true;
                 break;
             default:
                 Debug.Log($"GameManager:未定義のゲームフェイズです{battlePhase}");
@@ -406,6 +417,8 @@ public partial class GameManager : MonoBehaviour
             _placementUI.SetActive(false);
             _placementUI2.SetActive(false);
             _placeModeUI.SetActive(false);
+            _unitDereatUI.SetActive(false);
+            _movementPointUI.enabled = false;
         }
         else
         {
@@ -413,6 +426,8 @@ public partial class GameManager : MonoBehaviour
             _placementUI.SetActive(true);
             _placementUI2.SetActive(true);
             _placeModeUI.SetActive(true);
+            _unitDereatUI.SetActive(true);
+            _movementPointUI.enabled = false;
             Debug.LogWarning("モードを配置モードに切り替えました");
         }
     }

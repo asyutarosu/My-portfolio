@@ -1268,6 +1268,9 @@ public class EnemyUnit : Unit
                     //アニメーションは Unit.AnimateMove を使用しているはずなので、以下に修正
                     yield return StartCoroutine(AnimateMove(AnimationPath));
 
+                    //現在の移動ポイントを更新
+                    //TurnManager.Instance.consumptionEnemyCurrentMovementPoints_tentimeidou(AnimationPath.Count);
+
                     //ここに攻撃処理
                     BattleManager.Instance.ResolveBattle_ShogiBase(this, targetedPlayer);
 

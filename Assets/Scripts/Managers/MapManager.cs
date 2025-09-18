@@ -2676,9 +2676,10 @@ public class MapManager : MonoBehaviour
                 _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
                 _selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
             }
+            _turnManager.consumptionPlayerCurrentMovementPoints_tentimeidou();
         }
 
-        
+
 
         Vector2Int currentPos = _selectedUnit.CurrentGridPosition;
 

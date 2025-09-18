@@ -11,6 +11,8 @@ public class TurnManager : MonoBehaviour
 
     [SerializeField]private GameManager _gameManager;
 
+    [SerializeField]private UIManager _uiManager;
+
     [SerializeField] private float _enemyTurnDelay = 1.0f;//敵のターン処理開始までの遅延時間
 
     //現在のターン状態
@@ -60,6 +62,8 @@ public class TurnManager : MonoBehaviour
             Instance = this;
             //DontDestroyOnLoad(gameObject);
         }
+        //初期値
+        PlayerCurrentMovementPoints_tentimeidou = 99;
         ClearAllUnitsList();
         
     }
@@ -237,6 +241,8 @@ public class TurnManager : MonoBehaviour
 
         //移動ポイントをリセット
         RestMovementPoints();
+        //UI
+        UpdateUI(PlayerMaxMovementPoint);
 
         //全てのプレイヤーユニットの行動状態をリセット
         foreach (Unit unit in _allUnits)
@@ -325,7 +331,7 @@ public class TurnManager : MonoBehaviour
         _currentEnemyUnitIndex = 0;//敵ユニットの行動順は固定2025/07
 
         RestMovementPoints();
-
+        UpdateUI(EnemyMaxMovementPoint);
 
         //全ての敵ユニットの行動状態をリセット
         foreach (Unit unit in _allUnits)
@@ -568,6 +574,7 @@ public class TurnManager : MonoBehaviour
         {
             PlayerCurrentMovementPoints_tentimeidou -= ConfirmMovementPoints;
         }
+        UpdateUI(PlayerCurrentMovementPoints_tentimeidou);
         Debug.LogWarning($"消費移動ポイント：：{ConfirmMovementPoints}");
         Debug.LogWarning($"残りの移動ポイント：：{PlayerCurrentMovementPoints_tentimeidou}");
     }
@@ -601,13 +608,20 @@ public class TurnManager : MonoBehaviour
         {
             EnemyCurrentMovementPoints_tentimeidou -= points;
         }
-        
+        UpdateUI(EnemyCurrentMovementPoints_tentimeidou);
         Debug.LogWarning($"残りの移動ポイント：：{EnemyCurrentMovementPoints_tentimeidou}");
     }
 
     //----------------------------------------------------------------------------------------
 
-
+    //移動ポイントUIの更新
+    private void UpdateUI(int currentMovementPoints)
+    {
+        if(_uiManager != null)
+        {
+            _uiManager.UpdaateMovePointUI(currentMovementPoints);
+        }
+    }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
