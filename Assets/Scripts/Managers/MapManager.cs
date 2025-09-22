@@ -3103,6 +3103,21 @@ public class MapManager : MonoBehaviour
         return null;
     }
 
+    //_tileDataから_tileのコストを取得
+    public int GetTileCost(Vector2Int position)
+    {
+        if (_tileDataFromTilemapTest.TryGetValue(position, out MyTile tile))
+        {
+            int TerrainCost = GetTerrainCost(tile.TerrainType);
+
+            return TerrainCost;
+        }
+        else
+        {
+            return int.MaxValue;
+        }
+    }
+
     private void ClearMapFromTilemap()
     {
         foreach (var tileEntry in _tileDataFromTilemapTest)
@@ -3150,6 +3165,7 @@ public class MapManager : MonoBehaviour
         //return tile.MovementCost;
     }
 
+
     //移動コスト基礎値＝１に各ユニットタイプと地形情報から加算する移動コストを取得
     private int GetUnitTerrainCost(TerrainType terrainType, UnitType unitType)
     {
@@ -3192,7 +3208,35 @@ public class MapManager : MonoBehaviour
         }
     }
 
-
+    //地形タイプからコストを取得
+    private int GetTerrainCost(TerrainType terrainType)
+    {
+        switch (terrainType)
+        {
+            case TerrainType.Plain://平地
+                return 1;
+            case TerrainType.Forest://森
+                return 2;
+            case TerrainType.Mountain://山
+                return 3;
+            case TerrainType.Desert://砂漠
+                return 2;
+            case TerrainType.Water://水場
+                return 4;
+            case TerrainType.Snow://積雪
+                return 2;
+            case TerrainType.River://川
+                return 999;//他のユニットは移動不可
+            case TerrainType.Flooded://水害
+                return 4;
+            case TerrainType.Landslide://土砂
+                return 3;
+            case TerrainType.Paved://舗装
+                return 1;
+            default:
+                return 1;
+        }
+    }
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created

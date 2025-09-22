@@ -58,7 +58,7 @@ public partial class MyTile : MonoBehaviour
     {
         TerrainType = newType;
         MovementCost = newCost;
-        Debug.Log($"Tile {GridPosition}: TerrainTypeを{TerrainType}に変更し、移動コストを{MovementCost}に設定");
+        //Debug.Log($"Tile {GridPosition}: TerrainTypeを{TerrainType}に変更し、移動コストを{MovementCost}に設定");
     }
 
     /// <summary>

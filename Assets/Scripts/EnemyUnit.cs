@@ -570,9 +570,9 @@ public class EnemyUnit : Unit
             yield break;
         }
 
-        yield return EnemyAIbestMoveAttack(targetPlayer);
+        //yield return EnemyAIbestMoveAttack(targetPlayer);
 
-
+        AImoveing = true;
         //各AIのタイプによって移動の仕方を帰る::現段階では仮として一律同じにしている
         if (AImoveing)
         {
@@ -1323,57 +1323,72 @@ public class EnemyUnit : Unit
         }
 
         Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableTiles =
-            DijkstraPathfinder.FindReachableTiles(CurrentGridPosition, this);
+            DijkstraPathfinder.FindReachableTiles(this.CurrentGridPosition, this);
 
         Vector2Int bestMovePos = CurrentGridPosition;
         Vector2Int originalCurrentGridPosition = CurrentGridPosition;
         int minDistanceToTarget = int.MaxValue;
 
-        List<Vector2Int> candidateTiles = new List<Vector2Int>();
-        foreach(var tilePos in reachableTiles.Keys)
-        {
-            if (!MapManager.Instance.IsTileOccupiedForStooping(tilePos, this))
-            {
-                candidateTiles.Add(tilePos);
-            }
-        }
+        //List<Vector2Int> candidateTiles = new List<Vector2Int>();
+        //foreach(var tilePos in reachableTiles.Keys)
+        //{
+        //    if (!MapManager.Instance.IsTileOccupiedForStooping(tilePos, this))
+        //    {
+        //        candidateTiles.Add(tilePos);
+        //    }
+        //}
 
-        if(candidateTiles.Count == 0)
-        {
-            Debug.Log($"{UnitName}: 移動可能なマスがないため、移動しません");
-            yield break;
-        }
+        //if(candidateTiles.Count == 0)
+        //{
+        //    Debug.Log($"{UnitName}: 移動可能なマスがないため、移動しません");
+        //    yield break;
+        //}
 
         Vector2Int targetPos = originalCurrentGridPosition;
         bool moved = false;
 
-        foreach(Vector2Int moveCandidate in candidateTiles)
-        {
-            int dist = Mathf.Abs(moveCandidate.x - targetUnit.CurrentGridPosition.x) + 
-                Mathf.Abs(moveCandidate.y - targetUnit.CurrentGridPosition.y);
+        //Todo
+        targetPos = DecideMoveAction2(targetUnit as PlayerUnit);
 
-            if(dist >= _minAttackRange && dist <= _maxAttackRange)
-            {
-                if(dist < minDistanceToTarget)
-                {
-                    minDistanceToTarget = dist;
-                    bestMovePos = moveCandidate;
-                }
-            }
-            else if(dist < minDistanceToTarget)
-            {
-                minDistanceToTarget = dist;
-                bestMovePos = moveCandidate;
-            }
-        }
+        //foreach(Vector2Int moveCandidate in candidateTiles)
+        //{
+        //    int dist = Mathf.Abs(moveCandidate.x - targetUnit.CurrentGridPosition.x) + 
+        //        Mathf.Abs(moveCandidate.y - targetUnit.CurrentGridPosition.y);
+
+        //    if(dist >= _minAttackRange && dist <= _maxAttackRange)
+        //    {
+        //        if(dist < minDistanceToTarget)
+        //        {
+        //            minDistanceToTarget = dist;
+        //            bestMovePos = moveCandidate;
+        //        }
+        //    }
+        //    else if(dist < minDistanceToTarget)
+        //    {
+        //        minDistanceToTarget = dist;
+        //        bestMovePos = moveCandidate;
+        //    }
+        //}
         
-        targetPos = bestMovePos;
-        Debug.Log($"{UnitName}: 移動型AIが目標地点を {targetPos} に決定しました");
+        //targetPos = bestMovePos;
+        Debug.LogWarning($"{UnitName}: 移動型AIが目標地点を {targetPos} に決定しました");
 
         MyTile targetTile = MapManager.Instance.GetTileAt(targetPos);
         if(targetTile != null)
         {
             MoveToGridPosition(targetPos,targetTile);
+        }
+
+        //ToDo
+        List<Vector2Int> AnimationPath = DijkstraPathfinder.GetPathToTarget(
+                originalCurrentGridPosition,
+                targetPos,
+                this);
+
+
+        if (AnimationPath != null && AnimationPath.Count > 0)
+        {
+            yield return StartCoroutine(AnimateMove(AnimationPath));
         }
 
         List<Vector2Int> pathForAnimation = DijkstraPathfinder.FindPath(originalCurrentGridPosition, targetPos, this);
@@ -1382,20 +1397,247 @@ public class EnemyUnit : Unit
             pathForAnimation = new List<Vector2Int>() { originalCurrentGridPosition };
         }
 
-        yield return AnimateMove(pathForAnimation);
+        //yield return AnimateMove(pathForAnimation);
+        //return null;
     }
 
 
     ///追加の敵AI：：常にプレイヤーユニットへ向かって範囲内であれば攻撃
 
-    //敵ユニットの行動を制御するメインメソッド
-    public void TakeTurnNomalAI(PlayerUnit targetPlayerUnit)
+    //Todo
+    //敵AIの移動先の取得
+    //目標までの移動コストによる判断
+    public Vector2Int CostBestMoveTarget(Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableNodes, Vector2Int targetPosition, Unit unit)
     {
-
+        Vector2Int bestMovePos = Vector2Int.zero;
+        float minTotalCost = 999;
    
+        foreach(var node in reachableNodes)
+        {
+            Vector2Int tilePos = node.Key;
+
+            if (MapManager.Instance.IsTileOccupiedForStooping(tilePos, this))
+            {
+                continue;
+            }
+
+            int costFromStart = node.Value.Cost;
+
+            //目標座標までの推定コストをマンハッタン距離で計算
+            int heuristicCost = Mathf.Abs(tilePos.x - targetPosition.x) + Mathf.Abs(tilePos.y - targetPosition.y);
+
+            //将来のターン数（推定）を計算
+            float estimatedTotalCost = (float)heuristicCost / unit.BaseMovement;
+
+            //総合スコアを計算
+            float totalScore = costFromStart + estimatedTotalCost;
+
+            //推定総コストが最も低いタイルを更新
+            if (totalScore < minTotalCost)
+            {
+                minTotalCost = totalScore;
+                bestMovePos = tilePos;
+            }
+        }
+        return bestMovePos;
     }
 
-    
+
+    //totalScoreを計算するためのヘルパーメソッド
+    private float CalculateTotalScore(int costFromStart, Vector2Int tilePos, Vector2Int targetUnitPosition, Unit unit)
+    {
+        //
+        if (MapManager.Instance.IsTileOccupiedForStooping(tilePos, unit))
+        {
+            return 999;
+        }
+
+        int distanceToUnit = Mathf.Abs(tilePos.x - targetUnitPosition.x) + Mathf.Abs(tilePos.y - targetUnitPosition.y);
+        float estimatedFutureTurns = (float)distanceToUnit / unit.BaseMovement;
+
+        return costFromStart + estimatedFutureTurns;
+    }
+
+    //スコア比較で優位な座標を取得
+    public Vector2Int DecideMovePoint(Unit targetUnit)
+    {
+        //ダイクストラ法で移動可能範囲を計算
+        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> reachableTiles =
+            DijkstraPathfinder.FindReachableTiles(this.CurrentGridPosition, this);
+
+        //現在地は除外
+        reachableTiles.Remove(CurrentGridPosition);
+
+        //移動可能なマスがない場合は現在地
+        if(reachableTiles.Count == 0)
+        {
+            return CurrentGridPosition;
+        }
+        //移動可能なタイルの中から、最も良いタイルを仮決定
+        Vector2Int bestMovePos = CostBestMoveTarget(reachableTiles, targetUnit.CurrentGridPosition, this);
+        //Vector2Int bestMovePos = Vector2Int.zero;
+        float minTotalScore = 999;
+
+
+        //foreach (var node in reachableTiles)
+        //{
+        //    Vector2Int tilePos = node.Key;
+
+        //    // 占拠されているタイルはスキップ
+        //    if (MapManager.Instance.IsTileOccupiedForStooping(tilePos, this))
+        //    {
+        //        continue;
+        //    }
+
+        //    // スコアを計算
+        //    int costFromStart = node.Value.Cost;
+        //    int distanceToPlayer = Mathf.Abs(tilePos.x - targetUnit.CurrentGridPosition.x) + Mathf.Abs(tilePos.y - targetUnit.CurrentGridPosition.y);
+        //    float estimatedFutureTurns = (float)distanceToPlayer / this.BaseMovement;
+        //    float totalScore = costFromStart + estimatedFutureTurns;
+
+        //    // 最もスコアが低いマスを選択
+        //    if (totalScore < minTotalScore)
+        //    {
+        //        minTotalScore = totalScore;
+        //        bestMovePos = tilePos;
+        //    }
+        //}
+
+        //// 5. 最適な移動先が見つからない場合は、現在地を返す
+        //if (bestMovePos == Vector2Int.zero)
+        //{
+        //    return CurrentGridPosition;
+        //}
+
+        //// 6. 最適な移動先を返す
+        //return bestMovePos;
+
+
+
+
+
+        //現在地を移動しない場合のスコアを計算,現在地 (this.CurrentGridPosition) の costFromStartは0
+        //float cuurentPositionScore = CalculateTotalScore(0, this.CurrentGridPosition, targetUnit.CurrentGridPosition, this);
+        float cuurentPositionScore = -1;
+
+
+        //最適な移動先のスコアを計算
+        if (reachableTiles.ContainsKey(bestMovePos))
+        {
+            DijkstraPathfinder.PathNode bestMoveNode = reachableTiles[bestMovePos];
+            float bestMoveScore = CalculateTotalScore(bestMoveNode.Cost, bestMoveNode.Position, targetUnit.CurrentGridPosition, this);
+            Debug.LogWarning($"最適コスト::{bestMoveScore}");
+            //スコアを比較
+            if (bestMoveScore > cuurentPositionScore)
+            {
+                Debug.LogWarning("===================");
+
+                //優位スコアをbestMovePos
+                return bestMovePos;
+            }
+        }
+        //bestMovePosが見つからない場合は現在地を返す
+        return this.CurrentGridPosition;
+    }
+
+
+    //Todo=test
+    public Vector2Int DecideMoveAction(PlayerUnit targetPlayer)
+    {
+        // ステップ1: プレイヤーユニットまでの最短経路を完全探索（移動力を無視）
+        // このメソッドは、開始地点から目的地までの全パスノードを返すと仮定
+        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> completePathNodes =
+            DijkstraPathfinder.FindReachableTiles_Astar(CurrentGridPosition, targetPlayer.CurrentGridPosition, this);
+
+        // パスが見つからない場合は動かない
+        if (!completePathNodes.ContainsKey(targetPlayer.CurrentGridPosition))
+        {
+            return CurrentGridPosition;
+        }
+
+        // ステップ2: 最短経路を逆算して、ユニットの移動力で進める場所を特定
+        List<Vector2Int> path = new List<Vector2Int>();
+        Vector2Int currentPos = targetPlayer.CurrentGridPosition;
+
+        // 目的地から開始地点まで親ノードをたどってパスを構築
+        while (completePathNodes.ContainsKey(currentPos) && currentPos != CurrentGridPosition)
+        {
+            path.Insert(0, currentPos);
+            //currentPos = completePathNodes[currentPos].parent;
+        }
+
+        // ステップ3: 経路上のタイルをたどり、移動力内で進める最も遠いタイルを決定
+        Vector2Int nextMovePos = CurrentGridPosition;
+        int remainingMovePoints = BaseMovement;
+
+        //foreach (Vector2Int tile in path)
+        //{
+        //    //int tileCost = MapManager.Instance.GetTileCost(tile);
+        //    if (remainingMovePoints >= tileCost)
+        //    {
+        //        remainingMovePoints -= tileCost;
+        //        nextMovePos = tile;
+        //    }
+        //    else
+        //    {
+        //        // 移動力以上のコストがかかるので、ループを抜ける
+        //        break;
+        //    }
+        //}
+
+        // ステップ4: 最適な移動先を返す
+        return nextMovePos;
+    }
+
+
+    //TooDo=test2
+    public Vector2Int DecideMoveAction2(PlayerUnit targetPlayer)
+    {
+        // ステップ1: プレイヤーユニットまでの最短経路を完全探索（移動力を無視）
+        // このメソッドは、開始地点から目的地までの全パスノードを返すと仮定
+        Dictionary<Vector2Int, DijkstraPathfinder.PathNode> completePathNodes =
+            DijkstraPathfinder.FindReachableTiles_Astar(CurrentGridPosition, targetPlayer.CurrentGridPosition,this);
+
+        // パスが見つからない場合は動かない
+        if (!completePathNodes.ContainsKey(targetPlayer.CurrentGridPosition))
+        {
+            Debug.LogWarning($"#############::::{targetPlayer.CurrentGridPosition}");
+            return CurrentGridPosition;
+        }
+
+        // ステップ2: 最短経路を逆算して、ユニットの移動力で進める場所を特定
+        List<Vector2Int> path = new List<Vector2Int>();
+        Vector2Int currentPos = targetPlayer.CurrentGridPosition;
+
+        // 目的地から開始地点まで親ノードをたどってパスを構築
+        while (completePathNodes.ContainsKey(currentPos) && currentPos != CurrentGridPosition)
+        {
+            path.Insert(0, currentPos);
+            currentPos = completePathNodes[currentPos].Parent.Position;
+        }
+
+        // ステップ3: 経路上のタイルをたどり、移動力内で進める最も遠いタイルを決定
+        Vector2Int nextMovePos = CurrentGridPosition;
+        int remainingMovePoints = BaseMovement;
+
+        foreach (Vector2Int tile in path)
+        {
+            int tileCost = MapManager.Instance.GetTileCost(tile);
+            if (remainingMovePoints >= tileCost)
+            {
+                remainingMovePoints -= tileCost;
+                nextMovePos = tile;
+            }
+            else
+            {
+                // 移動力以上のコストがかかるので、ループを抜ける
+                break;
+            }
+        }
+
+        // ステップ4: 最適な移動先を返す
+        return nextMovePos;
+    }
 
     /// <summary>
     /// 敵ユニットによる攻撃を実行する(未実装2025/07)

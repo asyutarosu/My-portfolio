@@ -596,50 +596,82 @@ public static class DijkstraPathfinder
         {
             PathNode current = frontier.Dequeue();
 
+            //目的地に到達したら探索を終了
+            if (current.Position == targetPos)
+            {
+                return visitedNodes; //目的地到達時に探索を終了
+            }
+
             if (current.Cost > visitedNodes[current.Position].Cost)
             {
                 continue;
             }
 
-            if (current.Cost > unit.CurrentMovementPoints)
-            {
-                continue;
-            }
-
+            
+            //4方向の隣接タイルを探索
             foreach (var dir in _directions)
             {
                 Vector2Int nextPos = current.Position + dir;
                 MyTile nextTile = MapManager.Instance.GetTileAt(nextPos);
+                // nextTileまでの新しい総コストを計算
 
-                if (nextTile == null || (nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != unit.Faction))
+                //新しいノードを作成
+                //PathNode nextNode = new PathNode(nextPos, nextCost, current);
+
+                //目的地が占拠されている場合でも、探索を続行できるようにする
+                bool isTargetOccupiedByEnemy = nextPos == targetPos && nextTile != null &&
+                    nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != unit.Faction;
+
+                if (nextTile == null || (nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != unit.Faction && !isTargetOccupiedByEnemy))
                 {
                     continue;
                 }
 
-                int movementCost = MapManager.Instance.GetMovementCost(nextPos, unit.Type);
+                int newCost = current.Cost + MapManager.Instance.GetTileCost(nextPos);
 
-                if (movementCost == int.MaxValue)
+                //既に訪問済みで、よりコストが低いパスが見つかった場合
+                if (!visitedNodes.ContainsKey(nextPos) || newCost < visitedNodes[nextPos].Cost)
                 {
-                    continue;
+                    //新しいノードを作成
+                    PathNode nextNode = new PathNode(nextPos, newCost, current);
+                    // 新しいパスをフロンティアに追加し、訪問済みとして記録
+                    int nextPriority = newCost + GetManhattanDistance_Astar(nextPos, targetPos);
+                    frontier.Enqueue(nextNode, nextPriority);
+                    visitedNodes[nextPos] = nextNode;
                 }
 
-                int newCost = current.Cost + movementCost;
+                
+
+                //目的地に到達したら探索を終了
+                //if (nextPos == targetPos)
+                //{
+                //    break; //探索終了ロジック
+                //}
+
+                //int movementCost = MapManager.Instance.GetMovementCost(nextPos, unit.Type);
+
+                //if (movementCost == int.MaxValue)
+                //{
+                //    continue;
+                //}
+
+                //int newCost = current.Cost + movementCost;
 
                 // 新しいコストがユニットの最大移動力以内であること
-                if (newCost <= unit.CurrentMovementPoints)
-                {
-                    if (!visitedNodes.ContainsKey(nextPos) || newCost < visitedNodes[nextPos].Cost)
-                    {
-                        PathNode nextNode = new PathNode(nextPos, newCost, current);
-                        visitedNodes[nextPos] = nextNode;
+                //if (newCost <= unit.CurrentMovementPoints)
+                //{
+                //    if (!visitedNodes.ContainsKey(nextPos) || newCost < visitedNodes[nextPos].Cost)
+                //    {
+                //        PathNode nextNode = new PathNode(nextPos, newCost, current);
+                //        visitedNodes[nextPos] = nextNode;
 
-                        // A-Starの優先度を計算
-                        int heuristicCost = GetManhattanDistance_Astar(nextPos, targetPos);
-                        int newPriority = newCost + heuristicCost;
+                //        // A-Starの優先度を計算
+                //        int heuristicCost = GetManhattanDistance_Astar(nextPos, targetPos);
+                //        int newPriority = newCost + heuristicCost;
 
-                        frontier.Enqueue(nextNode, newPriority);
-                    }
-                }
+                //        frontier.Enqueue(nextNode, newPriority);
+                //    }
+                //}
             }
         }
         return visitedNodes;
