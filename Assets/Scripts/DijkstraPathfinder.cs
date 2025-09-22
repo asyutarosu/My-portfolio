@@ -613,8 +613,18 @@ public static class DijkstraPathfinder
             {
                 Vector2Int nextPos = current.Position + dir;
                 MyTile nextTile = MapManager.Instance.GetTileAt(nextPos);
-                // nextTileまでの新しい総コストを計算
+                if(nextTile == null)
+                {
+                    continue;
+                }
 
+                if (nextTile.OccupyingUnit != null)
+                {
+                    if (nextPos != targetPos)
+                    {
+                        continue;
+                    }
+                }
                 //新しいノードを作成
                 //PathNode nextNode = new PathNode(nextPos, nextCost, current);
 
@@ -684,4 +694,7 @@ public static class DijkstraPathfinder
     {
         return Mathf.Abs(from.x - to.x) + Mathf.Abs(from.y - to.y);
     }
+
+    
+    
 }

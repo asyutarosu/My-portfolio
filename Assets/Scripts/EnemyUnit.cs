@@ -1635,8 +1635,48 @@ public class EnemyUnit : Unit
             }
         }
 
+        if (MapManager.Instance.IsTileOccupiedForStooping(nextMovePos, this))
+        {
+            return nextMovePos;
+        }
+
         // ステップ4: 最適な移動先を返す
         return nextMovePos;
+    }
+
+
+    ////////////////////////ToDo
+    /// <summary>
+    /// 探索済みノードの中から、プレイヤーに最も近く、かつ空いているタイルを見つけて返します。
+    /// </summary>
+    /// <param name="visitedNodes">A*法で探索された全てのノード</param>
+    /// <param name="targetPos">プレイヤーユニットのグリッド座標</param>
+    /// <param name="unit">移動するユニット（自身）</param>
+    /// <returns>最適な空きタイルのグリッド座標。見つからない場合は現在の位置</returns>
+    public Vector2 FindClosestEmptyTile(Dictionary<Vector2Int, PathNodes> visitedNodes, Vector2Int targetPos, Unit unit)
+    {
+        Vector2Int bestTile = unit.CurrentGridPosition;
+        int minDistance = 999;
+
+        foreach (var node in visitedNodes.Values.OrderBy(n => GetManhattanDistance_AstarEnemyUnit(n.Position, targetPos)))
+        {
+            if (!MapManager.Instance.IsTileOccupiedForStooping(node.Position, unit))
+            {
+                int distance = GetManhattanDistance_AstarEnemyUnit(node.Position, targetPos);
+
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    bestTile = node.Position;
+                }
+            }
+        }
+        return bestTile;
+    }
+
+    private static int GetManhattanDistance_AstarEnemyUnit(Vector2Int from, Vector2Int to)
+    {
+        return Mathf.Abs(from.x - to.x) + Mathf.Abs(from.y - to.y);
     }
 
     /// <summary>
