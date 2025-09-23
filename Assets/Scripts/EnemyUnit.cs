@@ -1348,7 +1348,7 @@ public class EnemyUnit : Unit
         bool moved = false;
 
         //Todo
-        targetPos = DecideMoveAction2(targetUnit as PlayerUnit);
+        targetPos = DecideMoveAction3(targetUnit as PlayerUnit);
 
         //foreach(Vector2Int moveCandidate in candidateTiles)
         //{
@@ -1602,6 +1602,7 @@ public class EnemyUnit : Unit
         if (!completePathNodes.ContainsKey(targetPlayer.CurrentGridPosition))
         {
             Debug.LogWarning($"#############::::{targetPlayer.CurrentGridPosition}");
+            //return FindClosestEmptyTile(completePathNodes,targetPlayer.CurrentGridPosition,this);
             return CurrentGridPosition;
         }
 
@@ -1609,12 +1610,20 @@ public class EnemyUnit : Unit
         List<Vector2Int> path = new List<Vector2Int>();
         Vector2Int currentPos = targetPlayer.CurrentGridPosition;
 
-        // 目的地から開始地点まで親ノードをたどってパスを構築
-        while (completePathNodes.ContainsKey(currentPos) && currentPos != CurrentGridPosition)
+        DijkstraPathfinder.PathNode currentNode = completePathNodes[targetPlayer.CurrentGridPosition];
+
+        while(currentNode != null)
         {
-            path.Insert(0, currentPos);
-            currentPos = completePathNodes[currentPos].Parent.Position;
+            path.Insert(0,currentNode.Position);
+            currentNode = currentNode.Parent;
         }
+
+        // 目的地から開始地点まで親ノードをたどってパスを構築
+        //while (completePathNodes.ContainsKey(currentPos) && currentPos != CurrentGridPosition)
+        //{
+        //    path.Insert(0, currentPos);
+        //    currentPos = completePathNodes[currentPos].Parent.Position;
+        //}
 
         // ステップ3: 経路上のタイルをたどり、移動力内で進める最も遠いタイルを決定
         Vector2Int nextMovePos = CurrentGridPosition;
@@ -1622,6 +1631,17 @@ public class EnemyUnit : Unit
 
         foreach (Vector2Int tile in path)
         {
+            if(tile == CurrentGridPosition)
+            {
+                continue;
+            }
+            //次のタイルが占拠されていないかチェック
+            if (MapManager.Instance.IsTileOccupiedForStooping(tile, this))
+            {
+                //占拠されている場合は、その手前のタイルを移動先として決定
+                break;
+            }
+
             int tileCost = MapManager.Instance.GetTileCost(tile);
             if (remainingMovePoints >= tileCost)
             {
@@ -1635,13 +1655,101 @@ public class EnemyUnit : Unit
             }
         }
 
-        if (MapManager.Instance.IsTileOccupiedForStooping(nextMovePos, this))
-        {
-            return nextMovePos;
-        }
+        //if (MapManager.Instance.IsTileOccupiedForStooping(nextMovePos, this))
+        //{
+        //    //return FindClosestEmptyTile(completePathNodes, targetPlayer.CurrentGridPosition, this);
+        //    return nextMovePos;
+        //}
 
         // ステップ4: 最適な移動先を返す
         return nextMovePos;
+    }
+
+    ////////////////Todo
+    public Vector2Int DecideMoveAction3(PlayerUnit targetPlayer)
+    {
+        //プレイヤーまでのマンハッタン距離を計算
+        int distanceToPlayer = Mathf.Abs(CurrentGridPosition.x - targetPlayer.CurrentGridPosition.x) +
+                                 Mathf.Abs(CurrentGridPosition.y - targetPlayer.CurrentGridPosition.y);
+
+        //AIが「シンプル移動モード」にいるかの判定
+        if (distanceToPlayer > 20)//例えば、20マス以上離れている場合
+        {
+            Debug.LogWarning("簡単な方の条件分岐に一旦入ります");
+
+            //シンプル移動モード
+            Vector2Int simpleMovePos = SimpleMoveAction(targetPlayer.CurrentGridPosition);
+
+            //シンプル移動で障害物にぶつかったかチェック
+            if (IsSimpleMoveBlocked(simpleMovePos))
+            {
+                //障害物にぶつかった場合は、複雑な経路探索に切り替え
+                Debug.LogWarning("難しい方です");
+                return DecideMoveAction2(targetPlayer);
+            }
+            else
+            {
+                Debug.LogWarning("簡単な方です");
+
+                return simpleMovePos;
+            }
+        }
+        else
+        {
+            //プレイヤーに近いため、複雑経路探索モード
+            Debug.LogWarning("難しい方です");
+            return DecideMoveAction2(targetPlayer);
+        }
+    }
+
+
+    //////////////////ToDo
+    /// <summary>
+    /// プレイヤーに向かって一直線に進むための次の移動位置を計算
+    /// </summary>
+    /// <param name="targetPos">プレイヤーユニットのグリッド座標</param>
+    /// <returns>次の移動先のグリッド座標</returns>
+    private Vector2Int SimpleMoveAction(Vector2Int targetPos)
+    {
+        //プレイヤーへの方向ベクトルを計算
+        Vector2Int direction = targetPos - CurrentGridPosition;
+
+        //x軸またはy軸のどちらか距離が遠い方を選択
+        if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+        {
+            //x軸方向に1マス移動
+            return CurrentGridPosition + new Vector2Int((int)Mathf.Sign(direction.x), 0);
+        }
+        else
+        {
+            //y軸方向に1マス移動
+            return CurrentGridPosition + new Vector2Int(0,(int)Mathf.Sign(direction.y));
+        }
+    }
+
+    /// <summary>
+    /// シンプル移動で向かう位置が障害物でブロックされていないか確認
+    /// </summary>
+    /// <param name="nextPos">シンプル移動で向かう次の位置</param>
+    /// <returns>ブロックされている場合はtrue、そうでない場合はfalse</returns>
+    private bool IsSimpleMoveBlocked(Vector2Int nextPos)
+    {
+        //次のタイルを取得
+        MyTile nextTile = MapManager.Instance.GetTileAt(nextPos);
+        int nextCost = MapManager.Instance.GetTileCost(nextPos);
+
+        //タイルが存在しない、または通行可能でない場合はブロックされている
+        if (nextTile == null)
+        {
+            return true;
+        }
+
+        //他のユニットが占拠している場合もブロックされているとみなす
+        if (nextTile.OccupyingUnit != null || nextCost > this.CurrentMovementPoints)
+        {
+            return true;
+        }
+        return false;
     }
 
 
@@ -1653,7 +1761,7 @@ public class EnemyUnit : Unit
     /// <param name="targetPos">プレイヤーユニットのグリッド座標</param>
     /// <param name="unit">移動するユニット（自身）</param>
     /// <returns>最適な空きタイルのグリッド座標。見つからない場合は現在の位置</returns>
-    public Vector2 FindClosestEmptyTile(Dictionary<Vector2Int, PathNodes> visitedNodes, Vector2Int targetPos, Unit unit)
+    public Vector2Int FindClosestEmptyTile(Dictionary<Vector2Int, DijkstraPathfinder.PathNode> visitedNodes, Vector2Int targetPos, Unit unit)
     {
         Vector2Int bestTile = unit.CurrentGridPosition;
         int minDistance = 999;

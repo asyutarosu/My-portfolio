@@ -573,6 +573,7 @@ public static class DijkstraPathfinder
 
     /////////////////////////////////敵AIの処理パフォーマンスの向上のためA-Starを導入
     
+    ////ToDo->PathNode=>>PathNodes
     ///
     /// <summary>
     /// A-Star法を用いて、開始地点から到達可能な全てのタイルとその最小移動コストを計算する

@@ -164,6 +164,7 @@ public partial class GameManager : MonoBehaviour
 
             _placeModeUI = GameObject.FindWithTag("PlacementUI");
             _unitDereatUI = GameObject.FindWithTag("DereatButton");
+            _unitDereatUI.SetActive(false);
             _movementPointUI = GameObject.Find("MovementPoints").GetComponent<TMP_Text>();
 
             GameObject[] UIButtons = GameObject.FindGameObjectsWithTag("UnitsPlaceButton");
@@ -232,6 +233,7 @@ public partial class GameManager : MonoBehaviour
                 break;
             case BattlePhase.BattleMain:
                 _movementPointUI.enabled = true;
+                _unitDereatUI.SetActive(false);
                 break;
             default:
                 Debug.Log($"GameManager:未定義のゲームフェイズです{battlePhase}");
@@ -417,7 +419,7 @@ public partial class GameManager : MonoBehaviour
             _placementUI.SetActive(false);
             _placementUI2.SetActive(false);
             _placeModeUI.SetActive(false);
-            _unitDereatUI.SetActive(false);
+            _unitDereatUI.SetActive(true);
             _movementPointUI.enabled = false;
         }
         else
@@ -426,7 +428,7 @@ public partial class GameManager : MonoBehaviour
             _placementUI.SetActive(true);
             _placementUI2.SetActive(true);
             _placeModeUI.SetActive(true);
-            _unitDereatUI.SetActive(true);
+            _unitDereatUI.SetActive(false);
             _movementPointUI.enabled = false;
             Debug.LogWarning("モードを配置モードに切り替えました");
         }
