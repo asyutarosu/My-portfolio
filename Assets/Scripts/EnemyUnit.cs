@@ -1673,12 +1673,12 @@ public class EnemyUnit : Unit
                                  Mathf.Abs(CurrentGridPosition.y - targetPlayer.CurrentGridPosition.y);
 
         //AIが「シンプル移動モード」にいるかの判定
-        if (distanceToPlayer > 20)//例えば、20マス以上離れている場合
+        if (distanceToPlayer > 2)//例えば、20マス以上離れている場合
         {
             Debug.LogWarning("簡単な方の条件分岐に一旦入ります");
 
             //シンプル移動モード
-            Vector2Int simpleMovePos = SimpleMoveAction(targetPlayer.CurrentGridPosition);
+            Vector2Int simpleMovePos = SimpleMoveAction(targetPlayer.CurrentGridPosition,this);
 
             //シンプル移動で障害物にぶつかったかチェック
             if (IsSimpleMoveBlocked(simpleMovePos))
@@ -1690,7 +1690,6 @@ public class EnemyUnit : Unit
             else
             {
                 Debug.LogWarning("簡単な方です");
-
                 return simpleMovePos;
             }
         }
@@ -1709,22 +1708,58 @@ public class EnemyUnit : Unit
     /// </summary>
     /// <param name="targetPos">プレイヤーユニットのグリッド座標</param>
     /// <returns>次の移動先のグリッド座標</returns>
-    private Vector2Int SimpleMoveAction(Vector2Int targetPos)
+    private Vector2Int SimpleMoveAction(Vector2Int targetPos,Unit unit)
     {
         //プレイヤーへの方向ベクトルを計算
         Vector2Int direction = targetPos - CurrentGridPosition;
 
         //x軸またはy軸のどちらか距離が遠い方を選択
+        Vector2Int moveDirection;
         if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
         {
-            //x軸方向に1マス移動
-            return CurrentGridPosition + new Vector2Int((int)Mathf.Sign(direction.x), 0);
+            //仮：x軸方向に1マス移動
+            //return CurrentGridPosition + new Vector2Int((int)Mathf.Sign(direction.x), 0);
+
+            moveDirection = new Vector2Int((int)Mathf.Sign(direction.x),0);
         }
         else
         {
-            //y軸方向に1マス移動
-            return CurrentGridPosition + new Vector2Int(0,(int)Mathf.Sign(direction.y));
+            //仮：y軸方向に1マス移動
+            //return CurrentGridPosition + new Vector2Int(0,(int)Mathf.Sign(direction.y));
+
+            moveDirection = new Vector2Int(0,(int)Mathf.Sign(direction.y));
         }
+
+        //移動力分の移動を計算
+        Vector2Int nextPos = unit.CurrentGridPosition;
+        int remainingMovePoints = unit.CurrentMovementPoints;
+
+        //ユニットの移動力分だけ、その方向に進む
+        while (remainingMovePoints > 0)
+        {
+            Vector2Int tempPos = nextPos + moveDirection;
+            MyTile tempTile = MapManager.Instance.GetTileAt(tempPos);
+
+            //次のタイルが有効で、かつ通行可能かチェック
+            if(tempTile == null || tempTile.OccupyingUnit != null || !MapManager.Instance.IsValidGridPosition(tempPos))
+            {
+                Debug.LogWarning("これが原因？？");
+                return nextPos;
+            }
+
+            // 移動コストを消費
+            int tileCost = MapManager.Instance.GetTileCost(tempPos);
+            if(remainingMovePoints >= tileCost)
+            {
+                remainingMovePoints -= tileCost;
+                nextPos = tempPos;
+            }
+            else
+            {
+                break;
+            }
+        }
+        return nextPos;
     }
 
     /// <summary>
@@ -1745,10 +1780,16 @@ public class EnemyUnit : Unit
         }
 
         //他のユニットが占拠している場合もブロックされているとみなす
-        if (nextTile.OccupyingUnit != null || nextCost > this.CurrentMovementPoints)
+        //if (nextTile.OccupyingUnit != null || nextCost > this.CurrentMovementPoints)
+        if (nextTile.OccupyingUnit != null || nextCost > 1)
+        //if (MapManager.Instance.IsTileOccupiedForStooping(nextPos,this))
         {
+            Debug.LogWarning("こっち？");
+
             return true;
         }
+        Debug.LogWarning("やったたぁー？");
+
         return false;
     }
 
