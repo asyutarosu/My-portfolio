@@ -570,7 +570,7 @@ public class EnemyUnit : Unit
             yield break;
         }
 
-        //yield return EnemyAIbestMoveAttack(targetPlayer);
+        yield return EnemyAIbestMoveAttack(targetPlayer);
 
         AImoveing = true;
         //各AIのタイプによって移動の仕方を帰る::現段階では仮として一律同じにしている
@@ -1635,12 +1635,19 @@ public class EnemyUnit : Unit
             {
                 continue;
             }
+            //if (MapManager.Instance.IsTileOccupiedForStooping(tile, this))
+            //{
+            //    break;
+            //}
+
             //次のタイルが占拠されていないかチェック
-            if (MapManager.Instance.IsTileOccupiedForStooping(tile, this))
-            {
-                //占拠されている場合は、その手前のタイルを移動先として決定
-                break;
-            }
+            MyTile nextTile = MapManager.Instance.GetTileAt(tile);
+            //if (MapManager.Instance.IsTileOccupiedForStooping(tile, this))
+            //if (nextTile != null && nextTile.OccupyingUnit != null && nextTile.OccupyingUnit != this)
+            //{
+            //    //占拠されている場合は、その手前のタイルを移動先として決定
+            //    break;
+            //}
 
             int tileCost = MapManager.Instance.GetTileCost(tile);
             if (remainingMovePoints >= tileCost)

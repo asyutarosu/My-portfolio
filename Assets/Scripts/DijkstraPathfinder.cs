@@ -619,21 +619,24 @@ public static class DijkstraPathfinder
                     continue;
                 }
 
-                if (nextTile.OccupyingUnit != null)
-                {
-                    if (nextPos != targetPos)
-                    {
-                        continue;
-                    }
-                }
+                //ToDo
+                //if (nextTile.OccupyingUnit.Faction != unit.Faction)
+                //{
+                //    if (nextPos != targetPos)
+                //    {
+                //        continue;
+                //    }
+                //}
+
                 //新しいノードを作成
                 //PathNode nextNode = new PathNode(nextPos, nextCost, current);
 
                 //目的地が占拠されている場合でも、探索を続行できるようにする
                 bool isTargetOccupiedByEnemy = nextPos == targetPos && nextTile != null &&
-                    nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != unit.Faction;
+                    nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != FactionType.Player;
 
-                if (nextTile == null || (nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != unit.Faction && !isTargetOccupiedByEnemy))
+                //if (nextTile == null || nextTile.OccupyingUnit != null && nextTile.OccupyingUnit.Faction != FactionType.Player && !isTargetOccupiedByEnemy)
+                if (nextTile == null || !MapManager.Instance.IsValidGridPosition(nextPos))
                 {
                     continue;
                 }
