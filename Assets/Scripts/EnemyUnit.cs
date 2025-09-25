@@ -44,6 +44,7 @@ public class EnemyUnit : Unit
         Debug.Log($"Enemy Unit '{UnitName}' (Type: {Type}, Faction: {Faction},AIType{EnemyAIType}) initialized at grid: {CurrentGridPosition}");
     }
 
+
     protected override void Awake()
     {
         base.Awake();

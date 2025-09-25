@@ -141,10 +141,10 @@ public class MapManager : MonoBehaviour
     [SerializeField] private Dictionary<TerrainType, TileBase> _terrainTiles = new Dictionary<TerrainType, TileBase>();
     //一時的にコメントアウト
     //[SerializeField] private Tilemap _groundTilemap;
-    
+
     //////////
     //[SerializeField] private List<TerrainTileEntry> _terrainTileEntries;
-    private Dictionary<TerrainType,CustomTile> _terrainTileAssetMap = new Dictionary<TerrainType, CustomTile>();
+    private Dictionary<TerrainType, CustomTile> _terrainTileAssetMap = new Dictionary<TerrainType, CustomTile>();
 
     //Tilemap関連
     [SerializeField] private Tilemap _generateTilemap;
@@ -170,7 +170,7 @@ public class MapManager : MonoBehaviour
     private List<GameObject> _currentPlacePlayerUnitPosHighlight = new List<GameObject>();
 
     //プレイヤーユニットの配置データのスクリプタブル・オブジェクト
-    [SerializeField]private MapUnitPlacementData _mapUnitPlacementData;
+    [SerializeField] private MapUnitPlacementData _mapUnitPlacementData;
 
 
 
@@ -240,7 +240,7 @@ public class MapManager : MonoBehaviour
 
 
     //////仮：実装Button関連
-    [SerializeField] private Button _unitButton; 
+    [SerializeField] private Button _unitButton;
 
 
     [SerializeField] private TurnManager _turnManager;
@@ -254,7 +254,8 @@ public class MapManager : MonoBehaviour
     [SerializeField] private StageDataContainer _stageDataContainer;
 
 
-    [System.Serializable] public class TerrainCost
+    [System.Serializable]
+    public class TerrainCost
     {
         public TerrainType terrainType;
         public int cost;
@@ -297,6 +298,7 @@ public class MapManager : MonoBehaviour
     // マウス入力でタイル情報を取得するための処理
     private void HandleMouseInputInBattlePreparation()
     {
+
         // ワールド座標からグリッド座標を取得
         Vector3 mouseworldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mouseworldPos.z = 0;
@@ -395,9 +397,9 @@ public class MapManager : MonoBehaviour
                     //}
 
                     /////ToDo
-                    else if(_selectedUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
+                    else if (_selectedUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Player && _clickedTile.OccupyingUnit != _selectedUnit)
                     {
-                        
+
                         Debug.LogWarning("ユニットの入れ替えを実施します");
                         Debug.LogWarning($"移動するユニット{_selectedUnitToSwap}：：入れ替え先のユニット{_clickedTile.OccupyingUnit}");
                         SwapUnits(_selectedUnitToSwap, _clickedTile.OccupyingUnit);
@@ -414,7 +416,7 @@ public class MapManager : MonoBehaviour
                             Debug.LogWarning("ユニットの移動ができないマスです");
                             CancelMove();
                         }
-                        
+
                     }
 
                     //移動範囲外の空のタイルや敵ユニットをクリックしたらキャンセル
@@ -427,7 +429,7 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    //ユニットの配置と再配置
+    //プレイヤーユニットの配置と再配置
     public void PlaceOrMoveUnit(Vector2Int gridPos)
     {
         string unitName = _gameManager.ButtonText;
@@ -469,15 +471,20 @@ public class MapManager : MonoBehaviour
     //ユニットを別の空きマスに移動させる
     public void PlacementMoveUnit(Unit unit, Vector2Int targetPos)
     {
+        //プレイヤーユニット以外は移動できない
+        if (unit.Faction != FactionType.Player)
+        {
+            return;
+        }
         //移動元のタイルのOccupyingUnitをクリア
         unit.OccupyingTile.OccupyingUnit = null;
 
         //移動先のタイルの情報を取得
         MyTile targetTile = GetTileAt(targetPos);
-        if(targetTile != null)
+        if (targetTile != null)
         {
             //ユニットの情報を更新
-            unit.MoveToGridPosition(targetPos,targetTile);
+            unit.MoveToGridPosition(targetPos, targetTile);
 
             unit.transform.position = GetWorldPositionFromGrid(targetPos);
             Debug.Log($"{unit.name} を {targetPos} に移動しました");
@@ -505,8 +512,8 @@ public class MapManager : MonoBehaviour
         //Debug.LogWarning($"ユニット２：：名前{unit2.name} ：：位置{unit2.CurrentGridPosition} ");
 
         //タイルのOccupyingUnitを入れ替える
-        unit1.MoveToGridPosition(pos2,tile2);
-        unit2.MoveToGridPosition(pos1,tile1);
+        unit1.MoveToGridPosition(pos2, tile2);
+        unit2.MoveToGridPosition(pos1, tile1);
 
         //ユニットのCurrentTileを更新
         unit1.transform.position = GetWorldPositionFromGrid(pos2);
@@ -545,13 +552,13 @@ public class MapManager : MonoBehaviour
         //既存のハイライトをすべてクリア
         ClearAllHighlights();
         _mapUnitPlacementData = placementData;
-        if(_mapUnitPlacementData == null || _placePlayerUnitPosHighlightPrefab == null)
+        if (_mapUnitPlacementData == null || _placePlayerUnitPosHighlightPrefab == null)
         {
             Debug.LogError("ハイライトデータまたはプレハブが割り当てられていません");
             return;
         }
 
-        foreach(Vector2Int position in _mapUnitPlacementData.placementPositions)
+        foreach (Vector2Int position in _mapUnitPlacementData.placementPositions)
         {
             Vector3 worldPos = GetWorldPositionFromGrid(position);
 
@@ -861,7 +868,7 @@ public class MapManager : MonoBehaviour
 
         GenerateMapFromTilemap();
 
-
+        
         //ToDo->一時的にコメントアウト
         //PlaceEnemiesForCurrentMap("Maps/map_00");
         //PlaceEnemiesForCurrentMap("test");
@@ -1011,7 +1018,7 @@ public class MapManager : MonoBehaviour
 
         _currentMapData = mapData;
 
-        _gridSize = new Vector2Int(_currentMapData.Width,_currentMapData.Height);
+        _gridSize = new Vector2Int(_currentMapData.Width, _currentMapData.Height);
 
 
         for (int y = 0; y < _currentMapData.Height; y++)
@@ -1122,7 +1129,7 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    
+
     //-----------------------天地鳴動のシステムメソッド群------------------------------
     //
     //
@@ -1175,9 +1182,9 @@ public class MapManager : MonoBehaviour
     /// </summary>
     /// <param name="gridPosition">変更するタイルのグリッド座標リスト</param>
     /// <param name="newType">変更後の地形タイプ</param>
-    public void ChangeMultipleTerrains(List<Vector2Int> gridPositions,TerrainType newType)
+    public void ChangeMultipleTerrains(List<Vector2Int> gridPositions, TerrainType newType)
     {
-        foreach(Vector2Int gridPos in gridPositions)
+        foreach (Vector2Int gridPos in gridPositions)
         {
             ChangeEventTerrain(gridPos, newType);
         }
@@ -1190,7 +1197,7 @@ public class MapManager : MonoBehaviour
     /// <param name="targetType"></param>
     /// <param name="newType"></param>
     /// <param name="changeCount"></param>
-    public void ChangeSpecificTerrain(TerrainType targetType, TerrainType newType,int changeCount)
+    public void ChangeSpecificTerrain(TerrainType targetType, TerrainType newType, int changeCount)
     {
         List<Vector2Int> targetTiles = new List<Vector2Int>();
 
@@ -1198,7 +1205,7 @@ public class MapManager : MonoBehaviour
         //ToDo->_tileData---_tileDataTilemapTest
         foreach (var tilePair in _tileDataFromTilemapTest)
         {
-            if(tilePair.Value.TerrainType == targetType)
+            if (tilePair.Value.TerrainType == targetType)
             {
                 targetTiles.Add(tilePair.Key);
             }
@@ -1206,9 +1213,9 @@ public class MapManager : MonoBehaviour
 
         //ランダムに変化させるタイルを選ぶ
         List<Vector2Int> tilesToChange = new List<Vector2Int>();
-        if(targetTiles.Count > 0)
+        if (targetTiles.Count > 0)
         {
-            for(int i = 0;i < changeCount && targetTiles.Count > 0; i++)
+            for (int i = 0; i < changeCount && targetTiles.Count > 0; i++)
             {
                 int randomIndex = Random.Range(0, targetTiles.Count);
                 tilesToChange.Add(targetTiles[randomIndex]);
@@ -1224,7 +1231,7 @@ public class MapManager : MonoBehaviour
     /// </summary>
     /// <param name="centerType"></param>
     /// <param name="newType"></param>
-    public void ChangeAroundTerrain(TerrainType centerType,TerrainType newType)
+    public void ChangeAroundTerrain(TerrainType centerType, TerrainType newType)
     {
         List<Vector2Int> tileToChange = new List<Vector2Int>();
 
@@ -1233,7 +1240,7 @@ public class MapManager : MonoBehaviour
         //ToDo->_tileData---_tileDataTilemapTest
         foreach (var tilePair in _tileDataFromTilemapTest)
         {
-            if(tilePair.Value.TerrainType == centerType)
+            if (tilePair.Value.TerrainType == centerType)
             {
                 centerTile.Add(tilePair.Key);
             }
@@ -1243,9 +1250,9 @@ public class MapManager : MonoBehaviour
         foreach (Vector2Int centerPos in centerTile)
         {
             //周囲の8マスをチェック
-            for (int y = -1;y <= 1; y++)
+            for (int y = -1; y <= 1; y++)
             {
-                for(int x = -1;x <= 1; x++)
+                for (int x = -1; x <= 1; x++)
                 {
                     // 中心タイルはスキップ
                     if (x == 0 && y == 0)
@@ -1273,14 +1280,14 @@ public class MapManager : MonoBehaviour
             }
         }
 
-        ChangeMultipleTerrains(tileToChange,newType);
+        ChangeMultipleTerrains(tileToChange, newType);
     }
     //
     //
     //-----------------------天地鳴動のシステムメソッド群------------------------------
 
 
-    
+
 
 
     /// <summary>
@@ -1604,7 +1611,6 @@ public class MapManager : MonoBehaviour
         unit.MoveToGridPosition(gridPos, targetTile);
         unit.transform.position = GetWorldPositionFromGrid(gridPos);
 
-
         if (unit is PlayerUnit playerUnit)
         {
             //_allPlayerUnits.Add(playerUnit);
@@ -1617,7 +1623,7 @@ public class MapManager : MonoBehaviour
         }
         //_allUnit.Add(unit);
         _turnManager.AddAllUnits(unit);
-        
+
     }
 
     /// <summary>
@@ -1629,6 +1635,7 @@ public class MapManager : MonoBehaviour
     ///////ToDo->string->EnemyEncounterData mapId->enconterData
     public void PlaceEnemiesForCurrentMap(EnemyEncounterData encounterData)
     {
+
         //EnemyEncounterData encounterData = EnemyEncounterManager.Instance.GetEnemyEncounterData(mapId);
         if (encounterData == null)
         {
@@ -1643,6 +1650,7 @@ public class MapManager : MonoBehaviour
             {
                 EnemyUnit enemyInstance = Instantiate(placement.enemyPrefab, transform);
                 PlaceUnit(enemyInstance, placement.gridPosition);
+                enemyInstance.Initialize(placement.overrideHP, placement.overrideMovement);
             }
             else
             {
@@ -1677,7 +1685,7 @@ public class MapManager : MonoBehaviour
             Debug.Log("移動計画中または移動中のため、新しい入力を受け付けません");
             return;
         }
-        
+
 
         //マウスのスクリーン座標をワールド座標に変換
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -1746,7 +1754,7 @@ public class MapManager : MonoBehaviour
             {
                 if (!IsTileOccupiedForStooping(clickedGridPos, _selectedUnit))
                 {
-                    StartCoroutine(InitiateVisualMove(clickedGridPos,_clickedTile));
+                    StartCoroutine(InitiateVisualMove(clickedGridPos, _clickedTile));
                 }
                 else
                 {
@@ -1758,7 +1766,7 @@ public class MapManager : MonoBehaviour
 
             else if (_isAttacking)
             {
-                if (_clickedTile.OccupyingUnit != null &&_clickedTile.OccupyingUnit.Faction == FactionType.Enemy)
+                if (_clickedTile.OccupyingUnit != null && _clickedTile.OccupyingUnit.Faction == FactionType.Enemy)
                 {
                     Debug.Log($"プレイヤーの攻撃：攻撃ユニット{_selectedUnit.name}目標ユニット{_clickedTile.OccupyingUnit.name}");
                     _isAttacking = false;
@@ -1791,7 +1799,7 @@ public class MapManager : MonoBehaviour
                 CancelMove();//現在の選択を解除
                 SelectUnit(_clickedTile.OccupyingUnit);//新しいユニットを選択
             }
-            
+
             //移動範囲外の空のタイルや敵ユニットをクリックしたらキャンセル
             else
             {
@@ -1910,7 +1918,7 @@ public class MapManager : MonoBehaviour
         {
             Debug.Log($"選択中の敵ユニット情報:名前{_selectedUnit.name}");
             CalculateAndShowMovableRange(_selectedUnit);
-            if(_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
+            if (_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
             {
                 _selectedUnit = null;
             }
@@ -1983,7 +1991,7 @@ public class MapManager : MonoBehaviour
 
 
     ///PlanMove処理の変更に伴い名前変更2025/07
-    private IEnumerator InitiateVisualMove(Vector2Int targetGridPos,MyTile targetTile)
+    private IEnumerator InitiateVisualMove(Vector2Int targetGridPos, MyTile targetTile)
     {
         _currentPlannedMovePositon = targetGridPos;
         _isMovingOrPlanning = true;
@@ -2238,7 +2246,7 @@ public class MapManager : MonoBehaviour
             Destroy(highlight);
         }
 
-        
+
         _currentHighlights.Clear();
 
         _activeHighlights.Clear();
@@ -2274,7 +2282,7 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    
+
 
     /// <summary>
     /// 経路ラインを表示する
@@ -2367,7 +2375,7 @@ public class MapManager : MonoBehaviour
 
         //現在の移動ポイントとユニットの移動力を比較して現在の移動ポイント以上なら移動力を変更
         int CurrentMovePoint = TurnManager.Instance.PlayerCurrentMovementPoints_tentimeidou;
-        if(unit.CurrentMovementPoints > CurrentMovePoint)
+        if (unit.CurrentMovementPoints > CurrentMovePoint)
         {
             unit.MovementPoints();
         }
@@ -2497,7 +2505,7 @@ public class MapManager : MonoBehaviour
 
 
 
-    
+
 
 
 
@@ -2506,7 +2514,7 @@ public class MapManager : MonoBehaviour
     /// </summary>
     /// <param name="unit">移動するユニット</param>
     /// <param name="path">移動経路のグリッド座標リスト</param>
-    public System.Collections.IEnumerator MoveUnitAlogPath(Unit unit,List<Vector2Int> path)
+    public System.Collections.IEnumerator MoveUnitAlogPath(Unit unit, List<Vector2Int> path)
     {
         //選択解除とハイライトクリアは移動開始時に行う2025/06
         //if(_selectedUnit != null)
@@ -2519,7 +2527,7 @@ public class MapManager : MonoBehaviour
 
         float moveSpeed = 5.0f;//Unitの見た目の移動速度
 
-        for(int i = 0; i < path.Count; i++)
+        for (int i = 0; i < path.Count; i++)
         {
             Vector2Int targetGridPosInPath = path[i];
             Vector3 startWorldPos = unit.transform.position;
@@ -2530,7 +2538,7 @@ public class MapManager : MonoBehaviour
             float elapsed = 0f;
 
             //各タイルへ向けて移動
-            while(elapsed < duration)
+            while (elapsed < duration)
             {
                 unit.transform.position = Vector3.Lerp(startWorldPos, targetWorldPos, elapsed / duration);
                 elapsed += Time.deltaTime;
@@ -2538,16 +2546,16 @@ public class MapManager : MonoBehaviour
             }
             unit.transform.position = targetWorldPos;//確実に目標地点に到達させる
 
-            
+
             unit.UpdatePosition(path[i]);
         }
 
-        
+
         ClearPathLine();//現在は移動完了でクリア
         Debug.Log("ユニットの移動が完了しました");
     }
 
-    public IEnumerator SmoothMoveCoroutine(Unit unit, Vector2Int startGridPos, Vector2Int endGridPos,List<Vector2Int> path)
+    public IEnumerator SmoothMoveCoroutine(Unit unit, Vector2Int startGridPos, Vector2Int endGridPos, List<Vector2Int> path)
     {
         if (path == null || path.Count <= 1) // パスが見つからない、または同じ位置にいる場合 (path.Count <= 1 は開始地点のみの場合)
         {
@@ -2813,7 +2821,7 @@ public class MapManager : MonoBehaviour
         //    //_selectedUnit.SetGridPosition(_currentPlannedMovePositon);
         //    //_selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
 
-            
+
         //    //ユニットの行動を完了状態にする
         //    _selectedUnit.SetActionTaken(true);
 
@@ -2923,9 +2931,9 @@ public class MapManager : MonoBehaviour
     /// <summary>
     /// 移動状態をリセットするヘルパーメソッド
     /// </summary>
-    private void ResetMoveState()
+    public void ResetMoveState()
     {
-        if(_selectedUnit != null)
+        if (_selectedUnit != null)
         {
             _selectedUnit.SetSelected(false);
         }
@@ -2963,7 +2971,7 @@ public class MapManager : MonoBehaviour
     {
         ClearMapFromTilemap();
 
-        if(_generateTilemap == null)
+        if (_generateTilemap == null)
         {
             Debug.LogError("Tilemapが設定されていません");
             return;
@@ -3012,7 +3020,7 @@ public class MapManager : MonoBehaviour
                         }
 
                         //取得したTileコンポーネントを初期化
-                        tile.Initialize(gridPos, terrainType, false,customTile.MovementCost);
+                        tile.Initialize(gridPos, terrainType, false, customTile.MovementCost);
 
                         //生成・初期化が完了したTileオブジェクトを後で検索できるように
                         _tileDataFromTilemapTest.Add(gridPos, tile);
@@ -3094,7 +3102,7 @@ public class MapManager : MonoBehaviour
     }
 
     //_tileDataから_tileDataFromTilemapへ参照の変更
-    public MyTile GetTileAt (Vector2Int position)
+    public MyTile GetTileAt(Vector2Int position)
     {
         if (_tileDataFromTilemapTest.TryGetValue(position, out MyTile tile))
         {
@@ -3248,7 +3256,7 @@ public class MapManager : MonoBehaviour
         //_turnManager.ClearAllUnitsList();
 
         int currentStage = _gameManager.GetCurrentStageNumber();
-        if(currentStage > 0 && currentStage <= _stageDataContainer.mapplacementDataList.Count)
+        if (currentStage > 0 && currentStage <= _stageDataContainer.mapplacementDataList.Count)
         {
             MapUnitPlacementData currentMapPlacementData = _stageDataContainer.mapplacementDataList[currentStage - 1];
             EnemyEncounterData currentEnemyEncounterData = _stageDataContainer.enemyEncounterDataList[currentStage - 1];
@@ -3287,7 +3295,7 @@ public class MapManager : MonoBehaviour
                 HandleMouseInputInBattlePreparation();
             }
 
-            if(_gameManager.CurrentMode == GameMode.MapMode)
+            if (_gameManager.CurrentMode == GameMode.MapMode)
             {
                 if (_turnManager.PlayerUnits.Count > 0)
                 {
@@ -3304,7 +3312,7 @@ public class MapManager : MonoBehaviour
             }
 
         }
-        else if(_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
+        else if (_gameManager.CurrentBattlePhase == BattlePhase.BattleMain)
         {
             //プレイヤーターン中のみ入力を受け付ける
             if (TurnManager.Instance != null && TurnManager.Instance.CurrnetTurnState != TurnState.PlayerTurn)
@@ -3359,7 +3367,7 @@ public class MapManager : MonoBehaviour
                 }
             }
 
-            
+
         }
 
 
@@ -3423,7 +3431,7 @@ public class MapManager : MonoBehaviour
         //        //}
         //        return;
         //    }
-            
+
         //}
         //Tile clickedTile = GetTileAt(clickedGridPos);
         //if(clickedTile == null)

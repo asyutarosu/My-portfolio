@@ -165,6 +165,16 @@ public partial class Unit : MonoBehaviour
         EquippedWeapon = new Weapon("SWORD001","仮装備",1,1,100);
     }
 
+    //ToDo
+    //オーバーロード
+    //encounterDataから一部ステータスを反映する
+    public virtual void Initialize(int overrideHP,int overrideMovePoint)
+    {
+        MaxHP = overrideHP;
+        BaseMovement = overrideMovePoint;
+        CurrentMovementPoints = BaseMovement;
+    }
+
     /// <summary>
     /// ユニットのグリッド座標を更新する
     /// (BatteManagerから呼ばれる)

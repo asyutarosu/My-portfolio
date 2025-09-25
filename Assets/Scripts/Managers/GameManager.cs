@@ -430,6 +430,7 @@ public partial class GameManager : MonoBehaviour
             _placeModeUI.SetActive(true);
             _unitDereatUI.SetActive(false);
             _movementPointUI.enabled = false;
+            _mapManager.ResetMoveState();
             Debug.LogWarning("モードを配置モードに切り替えました");
         }
     }
