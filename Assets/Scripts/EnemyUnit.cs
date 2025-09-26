@@ -588,7 +588,7 @@ public class EnemyUnit : Unit
     
 
     /// <summary>
-    /// きもそうなAIの行動
+    /// 特殊型AIの行動(追従)
     /// </summary>
     /// <returns></returns>
     private IEnumerator DecideDefensiveAction()
@@ -1628,11 +1628,13 @@ public class EnemyUnit : Unit
 
         // ステップ3: 経路上のタイルをたどり、移動力内で進める最も遠いタイルを決定
         Vector2Int nextMovePos = CurrentGridPosition;
+        List<Vector2Int> reachableTiles = new List<Vector2Int>();
         int remainingMovePoints = BaseMovement;
+
 
         foreach (Vector2Int tile in path)
         {
-            if(tile == CurrentGridPosition)
+            if (tile == CurrentGridPosition)
             {
                 continue;
             }
@@ -1644,17 +1646,21 @@ public class EnemyUnit : Unit
             //次のタイルが占拠されていないかチェック
             MyTile nextTile = MapManager.Instance.GetTileAt(tile);
             //if (MapManager.Instance.IsTileOccupiedForStooping(tile, this))
-            //if (nextTile != null && nextTile.OccupyingUnit != null && nextTile.OccupyingUnit != this)
+            //if (nextTile != null && nextTile.OccupyingUnit != null)
             //{
             //    //占拠されている場合は、その手前のタイルを移動先として決定
-            //    break;
+            //    //if (nextTile.OccupyingUnit is not EnemyUnit)
+            //    //{
+            //    //    break;
+            //    //}
             //}
-
+        
             int tileCost = MapManager.Instance.GetTileCost(tile);
             if (remainingMovePoints >= tileCost)
             {
                 remainingMovePoints -= tileCost;
-                nextMovePos = tile;
+                //nextMovePos = tile;
+                reachableTiles.Add(tile);
             }
             else
             {
@@ -1669,6 +1675,28 @@ public class EnemyUnit : Unit
         //    return nextMovePos;
         //}
 
+        for(int i = reachableTiles.Count - 1;i >= 0; i--)
+        {
+            Vector2Int tile = reachableTiles[i];
+            MyTile nextTile = MapManager.Instance.GetTileAt(tile);
+
+            //if(nextTile != null && (nextTile.OccupyingUnit == null || nextTile.OccupyingUnit is PlayerUnit))
+            if(nextTile == null) 
+            {
+                continue;
+            }
+
+            Unit occupyingUnit = nextTile.OccupyingUnit;
+            if(nextTile.OccupyingUnit == null)
+            //if(occupyingUnit == null || occupyingUnit is PlayerUnit)
+            {
+                nextMovePos = tile;
+                break;
+            }
+
+        }
+
+
         // ステップ4: 最適な移動先を返す
         return nextMovePos;
     }
@@ -1681,25 +1709,34 @@ public class EnemyUnit : Unit
                                  Mathf.Abs(CurrentGridPosition.y - targetPlayer.CurrentGridPosition.y);
 
         //AIが「シンプル移動モード」にいるかの判定
-        if (distanceToPlayer > 2)//例えば、20マス以上離れている場合
+        if (distanceToPlayer > 15)//例えば、20マス以上離れている場合
         {
             Debug.LogWarning("簡単な方の条件分岐に一旦入ります");
 
             //シンプル移動モード
             Vector2Int simpleMovePos = SimpleMoveAction(targetPlayer.CurrentGridPosition,this);
 
-            //シンプル移動で障害物にぶつかったかチェック
-            if (IsSimpleMoveBlocked(simpleMovePos))
+            //ToDo
+            if(simpleMovePos == CurrentGridPosition)
             {
-                //障害物にぶつかった場合は、複雑な経路探索に切り替え
                 Debug.LogWarning("難しい方です");
                 return DecideMoveAction2(targetPlayer);
             }
-            else
-            {
-                Debug.LogWarning("簡単な方です");
-                return simpleMovePos;
-            }
+            Debug.LogWarning("簡単な方です");
+            return simpleMovePos;
+
+            ////シンプル移動で障害物にぶつかったかチェック
+            //if (IsSimpleMoveBlocked(simpleMovePos))
+            //{
+            //    //障害物にぶつかった場合は、複雑な経路探索に切り替え
+            //    Debug.LogWarning("難しい方です");
+            //    return DecideMoveAction2(targetPlayer);
+            //}
+            //else
+            //{
+            //    Debug.LogWarning("簡単な方です");
+            //    return simpleMovePos;
+            //}
         }
         else
         {
@@ -1721,53 +1758,172 @@ public class EnemyUnit : Unit
         //プレイヤーへの方向ベクトルを計算
         Vector2Int direction = targetPos - CurrentGridPosition;
 
-        //x軸またはy軸のどちらか距離が遠い方を選択
-        Vector2Int moveDirection;
-        if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
-        {
-            //仮：x軸方向に1マス移動
-            //return CurrentGridPosition + new Vector2Int((int)Mathf.Sign(direction.x), 0);
+        //近い方を優先（<=で同距離ならX優先）
+        //bool preferX = Mathf.Abs(direction.x) <= Mathf.Abs(direction.y);
 
-            moveDirection = new Vector2Int((int)Mathf.Sign(direction.x),0);
-        }
-        else
-        {
-            //仮：y軸方向に1マス移動
-            //return CurrentGridPosition + new Vector2Int(0,(int)Mathf.Sign(direction.y));
-
-            moveDirection = new Vector2Int(0,(int)Mathf.Sign(direction.y));
-        }
+        //プレイヤーと同じ軸になっているか検出
+        bool alignedX = direction.y == 0;//Y座標が同じ => X軸が揃っている
+        bool alignedY = direction.x == 0;//X座標が同じ => Y軸が揃っている
 
         //移動力分の移動を計算
         Vector2Int nextPos = unit.CurrentGridPosition;
         int remainingMovePoints = unit.CurrentMovementPoints;
 
-        //ユニットの移動力分だけ、その方向に進む
-        while (remainingMovePoints > 0)
+        //優先順位リストを作成
+        List<Vector2Int> preferredDirections = new List<Vector2Int>();
+
+        //Vector2Int dirX = new Vector2Int((int)Mathf.Sign(direction.x), 0);
+        //Vector2Int dirY = new Vector2Int(0, (int)Mathf.Sign(direction.y));
+
+        //X軸が揃っている（プレイヤーと横並び）
+        if (alignedX)
         {
-            Vector2Int tempPos = nextPos + moveDirection;
-            MyTile tempTile = MapManager.Instance.GetTileAt(tempPos);
+            if (direction.x != 0) preferredDirections.Add(new Vector2Int((int)Mathf.Sign(direction.x), 0));
+        }
+        //Y軸が揃っている（プレイヤーと縦並び）
+        else
+        {
+            if (direction.y != 0) preferredDirections.Add(new Vector2Int(0, (int)Mathf.Sign(direction.y)));
+        }
 
-            //次のタイルが有効で、かつ通行可能かチェック
-            if(tempTile == null || tempTile.OccupyingUnit != null || !MapManager.Instance.IsValidGridPosition(tempPos))
-            {
-                Debug.LogWarning("これが原因？？");
-                return nextPos;
-            }
+        if(preferredDirections.Count == 0)
+        {
+            //遠い軸を優先（最短距離へ）
+            bool preferX = Mathf.Abs(direction.x) >= Mathf.Abs(direction.y);
+            Vector2Int dirX = new Vector2Int((int)Mathf.Sign(direction.x), 0);
+            Vector2Int dirY = new Vector2Int(0, (int)Mathf.Sign(direction.y));
 
-            // 移動コストを消費
-            int tileCost = MapManager.Instance.GetTileCost(tempPos);
-            if(remainingMovePoints >= tileCost)
+            if (preferX && dirX.x != 0) preferredDirections.Add(dirX);
+            if(dirY.y != 0) preferredDirections.Add(dirY);
+            if(!preferX && dirX.x != 0)preferredDirections.Add(dirX);
+        }
+
+        //X軸の距離が近い、または等しい場合、X軸移動を優先
+        //if (preferX)
+        //{
+        //    if(dirX.x != 0)
+        //    {
+        //        preferredDirections.Add(dirX);//X軸移動
+        //    }
+        //    if(dirY.y != 0)
+        //    {
+        //        preferredDirections.Add(dirY);//Y軸移動
+        //    }
+        //}
+        ////Y軸の距離が近い場合、Y軸移動を優先
+        //else
+        //{
+        //    if(dirY.y != 0)
+        //    {
+        //        preferredDirections.Add(dirY);//Y軸移動
+        //    }
+        //    if(dirX.x != 0)
+        //    {
+        //        preferredDirections.Add(dirX);//X軸移動
+        //    }
+        //}
+
+        while(remainingMovePoints > 0)
+        {
+            Vector2Int bestNextTile = nextPos;
+            bool movedThisStep = false;
+
+            //優先方向から順に、移動できるタイルを探す
+            foreach (Vector2Int moveDir in preferredDirections)
             {
-                remainingMovePoints -= tileCost;
-                nextPos = tempPos;
+                Vector2Int tempPos = nextPos + moveDir;
+                MyTile tempTile = MapManager.Instance.GetTileAt(tempPos);
+
+                //移動可能か検出（壁やユニットがないか）
+                if (tempTile != null && tempTile.OccupyingUnit != null)
+                {
+                    return CurrentGridPosition;
+                }
+
+                int cost = MapManager.Instance.GetTileCost(tempPos);
+                if (remainingMovePoints >= cost)
+                {
+                    //移動力が足りて、かつより優先度の高い移動であれば採用
+                    remainingMovePoints -= cost;
+                    nextPos = tempPos;
+                    movedThisStep = true;
+                    break;
+                }
             }
-            else
+            if (!movedThisStep)
             {
+                //どの優先方向にも移動できない場合は、ここで移動を停止
                 break;
             }
+
+            //軸が揃ったら、moveDirsを更新し、それ以降は揃った軸のみを試行するようにする
+            if (nextPos.x == targetPos.x || nextPos.y == targetPos.y)
+            {
+                //軸が揃ったので、移動方向のリストをリセットして、揃った軸のみにする
+                preferredDirections.Clear();
+                Vector2Int newDirection = targetPos - nextPos;
+
+                if (newDirection.x != 0) preferredDirections.Add(new Vector2Int((int)Mathf.Sign(newDirection.x), 0));
+                if (newDirection.y != 0) preferredDirections.Add(new Vector2Int(0, (int)Mathf.Sign(newDirection.y)));
+
+                //Y軸が揃ったらY、X軸が揃ったらXを維持
+                if (preferredDirections.Count > 1) preferredDirections.RemoveAt(0);
+            }
         }
+
+
         return nextPos;
+
+
+
+
+        ////x軸またはy軸のどちらか距離が遠い方を選択
+        //Vector2Int moveDirection;
+        //if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+        //{
+        //    //仮：x軸方向に1マス移動
+        //    //return CurrentGridPosition + new Vector2Int((int)Mathf.Sign(direction.x), 0);
+
+        //    moveDirection = new Vector2Int((int)Mathf.Sign(direction.x),0);
+        //}
+        //else
+        //{
+        //    //仮：y軸方向に1マス移動
+        //    //return CurrentGridPosition + new Vector2Int(0,(int)Mathf.Sign(direction.y));
+
+        //    moveDirection = new Vector2Int(0,(int)Mathf.Sign(direction.y));
+        //}
+
+        //////移動力分の移動を計算
+        ////Vector2Int nextPos = unit.CurrentGridPosition;
+        ////int remainingMovePoints = unit.CurrentMovementPoints;
+
+        ////ユニットの移動力分だけ、その方向に進む
+        //while (remainingMovePoints > 0)
+        //{
+        //    Vector2Int tempPos = nextPos + moveDirection;
+        //    MyTile tempTile = MapManager.Instance.GetTileAt(tempPos);
+
+        //    //次のタイルが有効で、かつ通行可能かチェック
+        //    if(tempTile == null || tempTile.OccupyingUnit != null || !MapManager.Instance.IsValidGridPosition(tempPos))
+        //    {
+        //        Debug.LogWarning("これが原因？？");
+        //        return nextPos;
+        //    }
+
+        //    // 移動コストを消費
+        //    int tileCost = MapManager.Instance.GetTileCost(tempPos);
+        //    if(remainingMovePoints >= tileCost)
+        //    {
+        //        remainingMovePoints -= tileCost;
+        //        nextPos = tempPos;
+        //    }
+        //    else
+        //    {
+        //        break;
+        //    }
+        //}
+        //return nextPos;
     }
 
     /// <summary>

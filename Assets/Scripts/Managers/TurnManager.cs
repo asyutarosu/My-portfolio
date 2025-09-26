@@ -78,7 +78,7 @@ public class TurnManager : MonoBehaviour
 
         PlayerMaxMovementPoint = 10;
         PlayerCurrentMovementPoints_tentimeidou = PlayerMaxMovementPoint;
-        EnemyMaxMovementPoint = 15;
+        EnemyMaxMovementPoint = 25;
         EnemyCurrentMovementPoints_tentimeidou = EnemyMaxMovementPoint;
 
         //一時的にコメントアウト：MapManagerでリアルタイムでプレイヤーユニットのリストを更新する方法を試すため
@@ -586,6 +586,7 @@ public class TurnManager : MonoBehaviour
         ConfirmMovementPoints += movepoints;
         return ConfirmMovementPoints;
     }
+
 
     //プレイヤーの現在の移動ポイントを取得する
     public int SetPlayerCurrentMovementPoints()

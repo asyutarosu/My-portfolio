@@ -1650,7 +1650,9 @@ public class MapManager : MonoBehaviour
             {
                 EnemyUnit enemyInstance = Instantiate(placement.enemyPrefab, transform);
                 PlaceUnit(enemyInstance, placement.gridPosition);
+                
                 enemyInstance.Initialize(placement.overrideHP, placement.overrideMovement);
+                
             }
             else
             {
@@ -1771,6 +1773,9 @@ public class MapManager : MonoBehaviour
                     Debug.Log($"プレイヤーの攻撃：攻撃ユニット{_selectedUnit.name}目標ユニット{_clickedTile.OccupyingUnit.name}");
                     _isAttacking = false;
                     BattleManager.Instance.ResolveBattle_ShogiBase(_selectedUnit, _clickedTile.OccupyingUnit);
+
+                    _turnManager.consumptionPlayerCurrentMovementPoints_tentimeidou();
+
                     _selectedUnit.SetActedThisTrun();
                     ResetMoveState();
 
@@ -2684,7 +2689,7 @@ public class MapManager : MonoBehaviour
                 _selectedUnit.MoveToGridPosition(_currentPlannedMovePositon, newTile);
                 _selectedUnit.transform.position = GetWorldPositionFromGrid(_currentPlannedMovePositon);
             }
-            _turnManager.consumptionPlayerCurrentMovementPoints_tentimeidou();
+            //_turnManager.consumptionPlayerCurrentMovementPoints_tentimeidou();
         }
 
 
