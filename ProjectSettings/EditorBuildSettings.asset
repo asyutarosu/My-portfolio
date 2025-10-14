@@ -21,8 +21,14 @@ EditorBuildSettings:
     path: Assets/Scenes/Battle2.unity
     guid: 01616066f88f41844b398e49b703cae3
   - enabled: 1
+    path: Assets/Scenes/Battle3.unity
+    guid: f384f5cd435e8584aab8fc765fc3c12a
+  - enabled: 1
     path: Assets/Scenes/Result.unity
     guid: fa5ec8cf2c629bd47801cd084876d039
+  - enabled: 1
+    path: Assets/Scenes/StageClear.unity
+    guid: 906cad1298c272242b4c2e4788be95cc
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

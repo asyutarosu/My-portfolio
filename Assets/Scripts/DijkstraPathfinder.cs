@@ -328,6 +328,8 @@ public static class DijkstraPathfinder
 
         //開始ノードを作成し、初期化
         PathNode startNode = new PathNode(startPos, 0, null);
+        //frontier.Enqueue(startNode, 0);
+        //ToDo
         frontier.Enqueue(startNode, 0);
         visiteNodes[startPos] = startNode;
 
@@ -433,12 +435,15 @@ public static class DijkstraPathfinder
     /// </summary>
     private class PathNodePriorityQueue
     {
-        private List<(PathNode node, int priority)> heap = new List<(PathNode, int)>();
+        //ToDo->List<(PathNode node, int priority、int gCost) 
+        //private List<(PathNode node, int priority)> heap = new List<(PathNode, int)>();
+        private List<(PathNode node, int priority)> heap = new List<(PathNode node, int priority)>();
 
         public int Count => heap.Count;
 
         public PathNodePriorityQueue()
         {
+            //heap = new List<(PathNode node, int priority)>();
             heap = new List<(PathNode node, int priority)>();
         }
 
@@ -447,6 +452,7 @@ public static class DijkstraPathfinder
         /// </summary>
         /// <param name="node">追加するPathNode</param>
         /// <param name="priority">ノードの優先度</param>
+        //ToDo->List<(PathNode node, int priority、int gCost) 
         public void Enqueue(PathNode node, int priority)
         {
             heap.Add((node,priority));//リストの末尾に追加
@@ -455,8 +461,10 @@ public static class DijkstraPathfinder
             int currentIndex = heap.Count - 1;
             int parentIndex;
 
-            while(currentIndex >= 0)
-            {
+
+            //while(currentIndex >= 0)
+            while(currentIndex > 0)
+                {
                 parentIndex = (currentIndex -1) / 2;
                 if(heap[currentIndex].priority < heap[parentIndex].priority)
                 {
@@ -469,6 +477,8 @@ public static class DijkstraPathfinder
                 }
             }
         }
+
+        
 
         /// <summary>
         /// 最も優先度が高いノードを取り出す

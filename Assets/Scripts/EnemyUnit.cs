@@ -573,7 +573,8 @@ public class EnemyUnit : Unit
 
         yield return EnemyAIbestMoveAttack(targetPlayer);
 
-        AImoveing = true;
+        //AImoveing = true;
+        //Debug.LogWarning($"問題のフラグ{AImoveing}");
         //各AIのタイプによって移動の仕方を帰る::現段階では仮として一律同じにしている
         if (AImoveing)
         {
@@ -1592,6 +1593,7 @@ public class EnemyUnit : Unit
 
 
     //TooDo=test2
+    //賢いAI
     public Vector2Int DecideMoveAction2(PlayerUnit targetPlayer)
     {
         // ステップ1: プレイヤーユニットまでの最短経路を完全探索（移動力を無視）
@@ -1702,6 +1704,7 @@ public class EnemyUnit : Unit
     }
 
     ////////////////Todo
+    //賢いAI
     public Vector2Int DecideMoveAction3(PlayerUnit targetPlayer)
     {
         //プレイヤーまでのマンハッタン距離を計算
@@ -1709,7 +1712,7 @@ public class EnemyUnit : Unit
                                  Mathf.Abs(CurrentGridPosition.y - targetPlayer.CurrentGridPosition.y);
 
         //AIが「シンプル移動モード」にいるかの判定
-        if (distanceToPlayer > 15)//例えば、20マス以上離れている場合
+        if (distanceToPlayer > 20)//例えば、20マス以上離れている場合
         {
             Debug.LogWarning("簡単な方の条件分岐に一旦入ります");
 

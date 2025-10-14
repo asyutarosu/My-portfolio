@@ -348,7 +348,7 @@ public partial class GameManager : MonoBehaviour
         {
             //ゲームステイトの遷移：ゲームクリア
             Debug.Log("これ以上ステージがありません。ゲームクリア！");
-            ChangeState(GameState.StageClear);
+            ChangeState(GameState.Result);
         }
     }
 
